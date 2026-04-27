@@ -5,6 +5,7 @@ Stalize Backend — FastAPI Ana Uygulama
 """
 import asyncio
 import logging
+import os
 from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -220,7 +221,6 @@ async def startup_refresh_sources():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Uygulama başlangıç & kapanış."""
-    import os
     logging.info("Stalize API başlıyor...")
 
     # Runtime dizinlerini oluştur (Railway'de yoksa)
@@ -301,10 +301,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — Frontend'in bağlanabilmesi için
+# CORS — allow_origins env var ile override edilebilir; yoksa her yerden açık
+_cors_origins = os.environ.get("CORS_ORIGINS", "*")
+_origins = [o.strip() for o in _cors_origins.split(",")] if _cors_origins != "*" else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Geliştirme sırasında her yerden erişim
+    allow_origins=_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

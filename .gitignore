@@ -72,3 +72,4 @@ htmlcov/
 
 # TypeScript build info
 *.tsbuildinfo
+.vercel
