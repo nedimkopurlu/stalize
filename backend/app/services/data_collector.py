@@ -49,8 +49,17 @@ async def get_ticker_history(yahoo_symbol: str, period: str = "5d") -> pd.DataFr
         return cached
 
     def _fetch():
-        ticker = yf.Ticker(yahoo_symbol)
-        return ticker.history(period=period)
+        import time
+        for attempt in range(3):
+            try:
+                ticker = yf.Ticker(yahoo_symbol)
+                return ticker.history(period=period)
+            except Exception as e:
+                if "rate" in str(e).lower() or "429" in str(e):
+                    time.sleep(10 * (attempt + 1))
+                else:
+                    raise
+        return pd.DataFrame()
 
     loop = asyncio.get_event_loop()
     hist = await loop.run_in_executor(None, _fetch)
@@ -167,8 +176,12 @@ class DataCollector:
         logger.info(f"📈 Fiyat verileri toplanıyor (period={period})...")
 
         async with AsyncSessionLocal() as db:
-            for symbol in self.symbols:
+            for i, symbol in enumerate(self.symbols):
                 await self._collect_stock_prices(db, symbol, period)
+                # Rate limit koruması: her 5 hissede bir 2 saniye bekle
+                if (i + 1) % 5 == 0:
+                    await db.commit()
+                    await asyncio.sleep(2)
             await db.commit()
 
         logger.info("✅ Fiyat verileri toplandı")

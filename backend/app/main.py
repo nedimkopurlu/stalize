@@ -220,7 +220,12 @@ async def startup_refresh_sources():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Uygulama başlangıç & kapanış."""
+    import os
     logging.info("Stalize API başlıyor...")
+
+    # Runtime dizinlerini oluştur (Railway'de yoksa)
+    for d in ["runtime", "cache", "cache/llm", "cache/yfinance", "models"]:
+        os.makedirs(d, exist_ok=True)
 
     # Tablo oluştur (eğer yoksa)
     async with database.async_engine.begin() as conn:
