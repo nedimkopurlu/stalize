@@ -1,0 +1,78 @@
+.chartGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 20px;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.positionForm {
+  display: grid;
+  gap: 12px;
+}
+
+.formGridFour {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.formGridThree {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.changeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.decisionBand {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 16px;
+}
+
+.changeBlock {
+  display: grid;
+  gap: 10px;
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.changeList {
+  display: grid;
+  gap: 8px;
+}
+
+@media (max-width: 980px) {
+  .chartGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .changeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formGridFour,
+  .formGridThree {
+    grid-template-columns: 1fr;
+  }
+
+  .decisionBand {
+    grid-template-columns: 1fr;
+  }
+}

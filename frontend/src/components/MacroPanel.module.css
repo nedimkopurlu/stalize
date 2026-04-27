@@ -1,0 +1,81 @@
+/* MacroPanel — horizontal indicator bar. Uses globals.css CSS variable tokens. */
+
+.macroPanel {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.indicatorCard {
+  background: linear-gradient(145deg, rgba(13, 27, 22, 0.86), rgba(6, 14, 12, 0.78));
+  border: 1px solid rgba(198, 255, 221, 0.1);
+  border-radius: 18px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.indicatorLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted, #64748b);
+}
+
+.indicatorValue {
+  font-size: 1.35rem;
+  font-weight: 800;
+  font-family: var(--font-mono), monospace;
+  color: var(--text-primary, #e2e8f0);
+  white-space: nowrap;
+}
+
+.indicatorMeta {
+  color: var(--text-muted, #64748b);
+  font-size: 0.74rem;
+}
+
+.asOf {
+  grid-column: 1 / -1;
+  font-size: 0.7rem;
+  color: var(--text-muted, #64748b);
+  justify-self: end;
+  padding-right: 6px;
+}
+
+.skeleton {
+  height: 64px;
+  background: rgba(148, 163, 184, 0.06);
+  animation: shimmer 1.5s infinite ease-in-out;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.errorNote {
+  font-size: 0.82rem;
+  color: var(--text-muted, #64748b);
+  padding: 12px 0;
+}
+
+@media (max-width: 640px) {
+  .macroPanel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .indicatorCard {
+    min-height: 92px;
+  }
+}
+
+@media (max-width: 1080px) {
+  .macroPanel {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

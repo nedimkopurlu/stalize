@@ -1,0 +1,471 @@
+"""Stock domain router — hisse listesi, detay, fiyat, teknik analiz, sıralama, skorlama."""
+import logging
+from fastapi import APIRouter, HTTPException, Query
+from typing import Optional, List, Dict
+from datetime import datetime, timedelta, timezone
+from sqlalchemy import select, func, and_
+from app.core.database import AsyncSessionLocal
+from app.models.news import NewsItem
+from app.models.fundamental import Fundamental
+from app.models.stock import Stock
+from app.models.price import PriceHistory
+from app.services.technical import technical_engine, compute_volume_ratio
+from app.services.scoring import scoring_engine
+
+router = APIRouter()
+logger = logging.getLogger(__name__)
+
+
+@router.get("/stocks")
+async def get_stocks(
+    sort_by: str = Query("overall_score", description="Sıralama kriteri"),
+    limit: int = Query(100, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    sector: Optional[str] = None,
+    bist30: Optional[bool] = None,
+    search: Optional[str] = None,
+    recommendation: Optional[str] = None,
+):
+    """Hisse listesi — filtreleme ve sıralama."""
+    async with AsyncSessionLocal() as db:
+        query = select(Stock).where(Stock.is_active)
+
+        if bist30 is not None:
+            if bist30:
+                query = query.where(Stock.is_bist30)
+        if sector:
+            query = query.where(Stock.sector == sector)
+        if search:
+            query = query.where(
+                (Stock.symbol.ilike(f"%{search}%")) | (Stock.name.ilike(f"%{search}%"))
+            )
+        if recommendation:
+            query = query.where(Stock.recommendation == recommendation)
+
+        # Sort
+        sort_col = getattr(Stock, sort_by, Stock.overall_score)
+        if sort_col is not None:
+            query = query.order_by(sort_col.desc().nullslast())
+        query = query.offset(offset).limit(limit)
+
+        result = await db.execute(query)
+        stocks = result.scalars().all()
+
+        # Batched 20-day average volume query (SGNL-02) — one subquery, no N+1
+        from sqlalchemy import func as sa_func
+
+        stock_ids = [s.id for s in stocks]
+        avg_volumes: Dict[int, Optional[float]] = {sid: None for sid in stock_ids}
+
+        if stock_ids:
+            # Row-number window to get last 20 rows per stock, then group-average.
+            row_num = sa_func.row_number().over(
+                partition_by=PriceHistory.stock_id,
+                order_by=PriceHistory.date.desc(),
+            ).label("rn")
+            ranked = (
+                select(
+                    PriceHistory.stock_id.label("sid"),
+                    PriceHistory.volume.label("vol"),
+                    row_num,
+                )
+                .where(PriceHistory.stock_id.in_(stock_ids))
+                .subquery()
+            )
+            avg_q = (
+                select(ranked.c.sid, sa_func.avg(ranked.c.vol).label("avg_vol"))
+                .where(ranked.c.rn <= 20)
+                .group_by(ranked.c.sid)
+            )
+            avg_rows = await db.execute(avg_q)
+            for sid, avg_vol in avg_rows.fetchall():
+                avg_volumes[sid] = float(avg_vol) if avg_vol is not None else None
+
+        # Total count
+        count_query = select(func.count(Stock.id)).where(Stock.is_active)
+        if bist30:
+            count_query = count_query.where(Stock.is_bist30)
+        if sector:
+            count_query = count_query.where(Stock.sector == sector)
+        total_result = await db.execute(count_query)
+        total = total_result.scalar()
+
+    return {
+        "stocks": [
+            {
+                "symbol": s.symbol, "name": s.name, "sector": s.sector,
+                "industry": s.industry, "current_price": s.current_price,
+                "daily_change_pct": s.daily_change_pct, "volume": s.volume,
+                "volume_ratio": compute_volume_ratio(s.volume, avg_volumes.get(s.id)),
+                "market_cap": s.market_cap, "is_bist30": s.is_bist30,
+                "is_bist100": s.is_bist100,
+                "technical_score": s.technical_score,
+                "fundamental_score": s.fundamental_score,
+                "sentiment_score": s.sentiment_score,
+                "overall_score": s.overall_score,
+                "recommendation": s.recommendation,
+            }
+            for s in stocks
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@router.get("/stocks/sectors")
+async def get_stock_sectors():
+    """Aktif hisselerin distinct sektör listesi — frontend dropdown için."""
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(func.distinct(Stock.sector))
+            .where(Stock.is_active)
+            .where(Stock.sector.isnot(None))
+            .order_by(Stock.sector)
+        )
+        sectors = [row[0] for row in result.fetchall()]
+        return {"sectors": sectors}
+
+
+@router.get("/stocks/kap-feed")
+async def get_kap_feed(limit: int = Query(10, ge=1, le=50)):
+    """Son KAP bildirimleri — source='KAP' olan NewsItem kayıtları."""
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(NewsItem, Stock.symbol)
+            .join(Stock, NewsItem.stock_id == Stock.id, isouter=True)
+            .where(NewsItem.source == "KAP")
+            .order_by(NewsItem.published_at.desc().nullslast(), NewsItem.id.desc())
+            .limit(limit)
+        )
+        rows = result.fetchall()
+
+    return [
+        {
+            "id": item.id,
+            "symbol": sym or "",
+            "title": item.title,
+            "published_at": item.published_at.isoformat() if item.published_at else "",
+            "kap_url": item.url,
+        }
+        for item, sym in rows
+    ]
+
+
+@router.get("/stocks/sparkline")
+async def get_sparkline(
+    symbol: str = Query(..., description="yfinance sembolü, örn. XU100 veya USDTRY=X"),
+    days: int = Query(30, ge=5, le=365),
+):
+    """yfinance'den sembol için son N günlük kapanış verisi — sparkline grafiği için."""
+    import yfinance as yf
+    from datetime import date as date_cls
+
+    end = date_cls.today()
+    start = end - timedelta(days=days + 7)  # yfinance hafta sonu/tatil boşluklarını kapsar
+
+    try:
+        ticker = yf.Ticker(symbol)
+        df = ticker.history(start=start.isoformat(), end=end.isoformat(), interval="1d")
+    except Exception as exc:
+        logger.warning("yfinance sparkline hatası %s: %s", symbol, exc)
+        return {"symbol": symbol, "points": []}
+
+    if df is None or df.empty:
+        return {"symbol": symbol, "points": []}
+
+    points = []
+    for idx, row in df.iterrows():
+        close_val = row.get("Close", None)
+        if close_val is None:
+            continue
+        try:
+            close_float = float(close_val)
+        except (TypeError, ValueError):
+            continue
+        date_str = idx.strftime("%Y-%m-%d") if hasattr(idx, "strftime") else str(idx)[:10]
+        points.append({"date": date_str, "close": close_float})
+
+    # Son `days` noktayı al
+    points = points[-days:]
+    return {"symbol": symbol, "points": points}
+
+
+@router.get("/stocks/{symbol}")
+async def get_stock_detail(symbol: str):
+    """Tek hisse detaylı bilgi."""
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(Stock).where(Stock.symbol == symbol.upper())
+        )
+        stock = result.scalar_one_or_none()
+        if not stock:
+            raise HTTPException(status_code=404, detail=f"Hisse bulunamadı: {symbol}")
+
+        # Son 30 günlük fiyat
+        prices_result = await db.execute(
+            select(PriceHistory)
+            .where(PriceHistory.stock_id == stock.id)
+            .order_by(PriceHistory.date.desc())
+            .limit(30)
+        )
+        recent_prices = prices_result.scalars().all()
+
+    return {
+        "stock": {
+            "symbol": stock.symbol, "name": stock.name,
+            "sector": stock.sector, "industry": stock.industry,
+            "current_price": stock.current_price,
+            "daily_change_pct": stock.daily_change_pct,
+            "volume": stock.volume, "market_cap": stock.market_cap,
+            "currency": stock.currency,
+            "is_bist30": stock.is_bist30, "is_bist100": stock.is_bist100,
+            "technical_score": stock.technical_score,
+            "fundamental_score": stock.fundamental_score,
+            "sentiment_score": stock.sentiment_score,
+            "overall_score": stock.overall_score,
+            "recommendation": stock.recommendation,
+            "last_data_update": stock.last_data_update.isoformat() if stock.last_data_update else None,
+        },
+        "recent_prices": [
+            {
+                "date": p.date.isoformat(),
+                "open": p.open, "high": p.high, "low": p.low,
+                "close": p.close, "volume": p.volume,
+                "sma_20": p.sma_20, "sma_50": p.sma_50, "sma_200": p.sma_200,
+                "rsi_14": p.rsi_14, "macd": p.macd, "macd_signal": p.macd_signal,
+                "bb_upper": p.bb_upper, "bb_middle": p.bb_middle, "bb_lower": p.bb_lower,
+            }
+            for p in reversed(recent_prices)
+        ],
+    }
+
+
+@router.get("/stocks/{symbol}/prices")
+async def get_stock_prices(
+    symbol: str,
+    period: str = Query("1y", description="1m, 3m, 6m, 1y, 5y"),
+):
+    """Hisse fiyat geçmişi — grafik verisi."""
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(Stock).where(Stock.symbol == symbol.upper())
+        )
+        stock = result.scalar_one_or_none()
+        if not stock:
+            raise HTTPException(status_code=404, detail=f"Hisse bulunamadı: {symbol}")
+
+        # Period mapping
+        period_days = {"1m": 30, "3m": 90, "6m": 180, "1y": 365, "5y": 1825}
+        days = period_days.get(period, 365)
+        start_date = datetime.now(timezone.utc).date() - timedelta(days=days)
+
+        prices_result = await db.execute(
+            select(PriceHistory)
+            .where(and_(
+                PriceHistory.stock_id == stock.id,
+                PriceHistory.date >= start_date,
+            ))
+            .order_by(PriceHistory.date.asc())
+        )
+        prices = prices_result.scalars().all()
+
+    return {
+        "symbol": stock.symbol,
+        "name": stock.name,
+        "period": period,
+        "prices": [
+            {
+                "date": p.date.isoformat(),
+                "open": p.open, "high": p.high, "low": p.low,
+                "close": p.close, "volume": p.volume,
+                "sma_20": p.sma_20, "sma_50": p.sma_50, "sma_200": p.sma_200,
+                "ema_12": p.ema_12, "ema_26": p.ema_26,
+                "rsi_14": p.rsi_14,
+                "macd": p.macd, "macd_signal": p.macd_signal, "macd_histogram": p.macd_histogram,
+                "bb_upper": p.bb_upper, "bb_middle": p.bb_middle, "bb_lower": p.bb_lower,
+                "atr_14": p.atr_14, "obv": p.obv,
+            }
+            for p in prices
+        ],
+    }
+
+
+@router.get("/stocks/{symbol}/technical")
+async def get_stock_technical(symbol: str):
+    """Tek hisse için tam teknik analiz."""
+    result = await technical_engine.analyze_stock(symbol.upper())
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Teknik analiz yapılamadı: {symbol}")
+    return result
+
+
+@router.get("/stocks/{symbol}/score-breakdown")
+async def get_stock_score_breakdown(symbol: str):
+    """Tek hissenin skor katkı kırılımını getir."""
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(Stock).where(Stock.symbol == symbol.upper())
+        )
+        stock = result.scalar_one_or_none()
+
+    if not stock:
+        raise HTTPException(status_code=404, detail=f"Hisse bulunamadı: {symbol}")
+
+    breakdown = await scoring_engine.get_contextual_score_breakdown(stock)
+    return {
+        "symbol": stock.symbol,
+        "name": stock.name,
+        "breakdown": breakdown,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.get("/stocks/{symbol}/news")
+async def get_stock_news(symbol: str, limit: int = Query(10, ge=1, le=50)):
+    """Tek hisse için son haber/KAP akışını getir."""
+    async with AsyncSessionLocal() as db:
+        stock_result = await db.execute(
+            select(Stock).where(Stock.symbol == symbol.upper())
+        )
+        stock = stock_result.scalar_one_or_none()
+
+        if not stock:
+            raise HTTPException(status_code=404, detail=f"Hisse bulunamadı: {symbol}")
+
+        news_result = await db.execute(
+            select(NewsItem)
+            .where(NewsItem.stock_id == stock.id)
+            .order_by(NewsItem.published_at.desc(), NewsItem.id.desc())
+            .limit(limit)
+        )
+        news_items = news_result.scalars().all()
+
+    return {
+        "symbol": stock.symbol,
+        "name": stock.name,
+        "items": [
+            {
+                "id": item.id,
+                "title": item.title,
+                "summary": item.summary,
+                "source": item.source,
+                "category": item.category,
+                "url": item.url,
+                "published_at": item.published_at.isoformat() if item.published_at else None,
+                "sentiment_score": item.sentiment_score,
+                "sentiment_label": item.sentiment_label,
+                "importance_score": item.importance_score,
+            }
+            for item in news_items
+        ],
+        "count": len(news_items),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.get("/stocks/{symbol}/fundamentals")
+async def get_stock_fundamentals(symbol: str):
+    """Hisse için en güncel temel analiz verileri."""
+    async with AsyncSessionLocal() as db:
+        stock_result = await db.execute(
+            select(Stock).where(Stock.symbol == symbol.upper())
+        )
+        stock = stock_result.scalar_one_or_none()
+        if not stock:
+            raise HTTPException(status_code=404, detail=f"Hisse bulunamadı: {symbol}")
+
+        # En son period kaydını al (updated_at desc)
+        fund_result = await db.execute(
+            select(Fundamental)
+            .where(Fundamental.stock_id == stock.id)
+            .order_by(Fundamental.updated_at.desc())
+            .limit(1)
+        )
+        fund = fund_result.scalar_one_or_none()
+
+        if not fund:
+            return {
+                "symbol": stock.symbol,
+                "period": None,
+                "pe_ratio": None,
+                "pb_ratio": None,
+                "roe": None,
+                "net_margin": None,
+                "debt_to_equity": None,
+                "fundamental_score": None,
+            }
+
+    return {
+        "symbol": stock.symbol,
+        "period": fund.period,
+        "pe_ratio": fund.pe_ratio,
+        "pb_ratio": fund.pb_ratio,
+        "roe": fund.roe,
+        "net_margin": fund.net_margin,
+        "debt_to_equity": fund.debt_to_equity,
+        "fundamental_score": fund.fundamental_score,
+    }
+
+
+@router.post("/analysis/technical/run")
+async def run_technical_analysis():
+    """Tüm hisseler için teknik analiz çalıştır."""
+    results = await technical_engine.analyze_all()
+    return {
+        "status": "completed",
+        "analyzed": len(results),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.get("/rankings")
+async def get_rankings(
+    sort_by: str = Query("overall_score"),
+    limit: int = Query(30, ge=1, le=100),
+    sector: Optional[str] = None,
+    bist30: bool = Query(False),
+):
+    """Hisse sıralaması."""
+    results = await scoring_engine.get_rankings(
+        sort_by=sort_by, limit=limit,
+        sector=sector, bist30_only=bist30,
+    )
+    return {"rankings": results, "sort_by": sort_by, "count": len(results)}
+
+
+@router.get("/sectors")
+async def get_sectors():
+    """Sektör bazlı özet."""
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(
+                Stock.sector,
+                func.count(Stock.id).label("count"),
+                func.avg(Stock.overall_score).label("avg_score"),
+                func.avg(Stock.daily_change_pct).label("avg_change"),
+            )
+            .where(and_(Stock.is_active, Stock.sector.isnot(None)))
+            .group_by(Stock.sector)
+            .order_by(func.avg(Stock.overall_score).desc().nullslast())
+        )
+        sectors = result.fetchall()
+
+    return {
+        "sectors": [
+            {
+                "sector": s[0],
+                "stock_count": s[1],
+                "avg_score": round(float(s[2]), 2) if s[2] else None,
+                "avg_daily_change": round(float(s[3]), 2) if s[3] else None,
+            }
+            for s in sectors
+        ]
+    }
+
+
+@router.post("/scoring/update")
+async def update_all_scores():
+    """Tüm hisse skorlarını güncelle."""
+    updated = await scoring_engine.update_all_scores()
+    return {"status": "completed", "updated": updated}

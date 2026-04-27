@@ -1,0 +1,8 @@
+# XGBoost per-stock model files (generated artifacts)
+models/*.ubj
+models/*.joblib
+
+# diskcache storage directories
+cache/llm/
+cache/yfinance/
+cache/

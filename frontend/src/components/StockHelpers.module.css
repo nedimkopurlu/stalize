@@ -1,0 +1,19 @@
+.badgeEmpty {
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--text-muted);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+.priceChange {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.priceChangePositive {
+  color: var(--green-400);
+}
+
+.priceChangeNegative {
+  color: var(--red-400);
+}

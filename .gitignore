@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Environment & Secrets
+.env
+.env.local
+.env.production
+.env.*.local
+*.pem
+
+# Example files are safe to commit
+!.env.example
+!**/.env.example
+
+# Logs
+*.log
+uvicorn.log
+
+# Runtime cache (generated, never committed)
+backend/cache/
+backend/runtime/
+backend/models/
+
+# Database
+*.sqlite3
+*.db
+
+# Node
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+frontend/out/
+frontend/.vercel/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python virtualenv
+.python-version
+
+# Alembic — generated upgrade scripts are committed, not this
+*.pyc
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# TypeScript build info
+*.tsbuildinfo
