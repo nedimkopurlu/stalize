@@ -15,10 +15,10 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md`
+See: `.planning/PROJECT.md` (updated 2026-04-27)
 
 **Core value:** Gerçek ve denetlenebilir veriyle çalışan BIST100 analiz ve portföy işletim sistemi kur.
-**Current focus:** 10 fazlık çekirdek tamamlandı — bundan sonrası kalibrasyon, veri kapsamı ve yeni milestone genişlemeleri
+**Current focus:** v2.0 tamamlandı — v3.0 hedefleri için `/gsd:new-milestone`
 
 ## Current Position
 
