@@ -167,6 +167,14 @@ class Settings(BaseSettings):
         "us_2y": "^IRX",
     }
 
+    def model_post_init(self, __context) -> None:
+        # Railway provides postgresql:// — convert to driver-specific URLs
+        raw = self.DATABASE_URL
+        if raw.startswith("postgresql://") or raw.startswith("postgres://"):
+            base = raw.replace("postgres://", "postgresql://", 1)
+            object.__setattr__(self, "DATABASE_URL", base.replace("postgresql://", "postgresql+asyncpg://", 1))
+            object.__setattr__(self, "DATABASE_SYNC_URL", base.replace("postgresql://", "postgresql+psycopg2://", 1))
+
     class Config:
         env_file = ".env"
         case_sensitive = True
