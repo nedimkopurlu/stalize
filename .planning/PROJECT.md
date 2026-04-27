@@ -53,9 +53,19 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 - Kişisel portföy — ayrı yüzey, benchmark karşılaştırma, günlük snapshot
 - Glassmorphism terminal arayüzü — dashboard, hisse detay, portföy, glassmorphism design system
 
-## Current Milestone: v3.0 — (Tanımlanmadı)
+## Current Milestone: v3.0 — Tüm Borsa + Kullanılabilir Platform
 
-**Sonraki adım:** `/gsd:new-milestone` ile v3.0 hedeflerini belirle
+**Tanımlandı:** 2026-04-27
+
+**Hedefler:**
+- BIST100 → Tüm Borsa İstanbul (~500 hisse) genişlemesi
+- UI/UX baştan — Robinhood/Midas esinli, temiz kartlar, sistem teması (dark/light otomatik)
+- Her hisse sayfasında: TradingView grafik + temel metrikler + KAP akışı + skor kartı
+- Tarama motoru: hazır şablonlar + özelleştirilebilir filtre builder
+- Watchlist + portföy: işlem girişi, P&L, performans görselleştirme
+- Alarm yok (v4.0'a ertelendi), AI yok (kullanıcı istemedi)
+
+**Fazlar:** Phase 17–21
 
 ## Requirements
 
@@ -73,9 +83,16 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 - ✓ Kişisel portföy ayrı yüzey + BIST100 benchmark karşılaştırma — v2.0
 - ✓ Glassmorphism terminal arayüzü — dashboard, hisse detay, portföy — v2.0
 
-### Active
+### Active (v3.0)
 
-(v3.0 için yeni gereksinimler — `/gsd:new-milestone` ile tanımlanacak)
+- [ ] F-01: Tüm Borsa İstanbul evren genişlemesi (~500 hisse, rate limiting, sembol discovery)
+- [ ] F-02: Güvenilir hisse sayfası (TradingView, temel metrik, rakip kıyaslaması, KAP akışı, skor)
+- [ ] F-03: Tarama motoru (hazır şablonlar + özelleştirilebilir builder, kaydet/yükle)
+- [ ] F-04: Watchlist + portföy modülü (işlem girişi, P&L, portföy özet)
+- [ ] F-05: Dashboard yeniden tasarımı (piyasa özet, makro bar, portföy özet kartı)
+- [ ] NF-01: UI/UX tam yeniden yazım — Robinhood/Midas esinli, sistem teması
+- [ ] NF-02: ~500 hisse için güvenilir günlük veri güncellemesi
+- [ ] NF-03: Sayfa yükleme süreleri (liste <2s, detay <3s, tarama <5s)
 
 ### Out of Scope
 

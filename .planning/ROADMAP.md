@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v2.0 Gerçek Veri Çekirdeği** — Phases 01–16 (shipped 2026-04-27)
-- 📋 **v3.0** — (tanımlanmadı — `/gsd:new-milestone` ile başlat)
+- 🚀 **v3.0 Tüm Borsa + Kullanılabilir Platform** — Phases 17–21 (başlıyor)
 
 ## Phases
 
@@ -28,6 +28,16 @@
 Full details: `.planning/milestones/v2.0-ROADMAP.md`
 
 </details>
+
+## v3.0 Tüm Borsa + Kullanılabilir Platform
+
+**Hedef:** BIST100'den tüm Borsa İstanbul'a genişle, UI'yi baştan yaz, araştırma → karar → takip döngüsünü kapat.
+
+- [ ] **Phase 17: Evren Genişlemesi** — BIST100 → tüm Borsa İstanbul (~500 hisse), rate limiting, sembol discovery
+- [ ] **Phase 18: Hisse Sayfası Overhaul** — TradingView grafik, temel metrikler, rakip karşılaştırma, KAP akışı, skor kartı
+- [ ] **Phase 19: UI/UX Foundation** — Robinhood/Midas tasarım sistemi, sistem teması (dark/light), bileşen kütüphanesi, mobil uyumluluk
+- [ ] **Phase 20: Tarama Motoru** — hazır filtre şablonları + özelleştirilebilir builder, kaydet/yükle, sıralanabilir sonuç tablosu
+- [ ] **Phase 21: Watchlist + Portföy** — izleme listesi, işlem girişi, P&L hesabı, portföy özet
 
 ---
 
