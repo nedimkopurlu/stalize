@@ -1,6 +1,6 @@
 ---
 gsd_state_version: 1.0
-milestone: v4.0
+milestone: v3.1
 milestone_name: Audit Düzeltmeleri
 status: active
 last_updated: "2026-04-28T00:00:00.000Z"
@@ -18,7 +18,7 @@ progress:
 See: `.planning/PROJECT.md`
 
 **Core value:** Gerçek ve denetlenebilir veriyle çalışan, tüm Borsa İstanbul'u kapsayan yatırım araştırma ve portföy takip platformu.
-**Current milestone:** v4.0 — Audit Düzeltmeleri (aktif)
+**Current milestone:** v3.1 — Audit Düzeltmeleri (aktif)
 **Previous milestone:** v3.0 — ARCHIVED 2026-04-28 (5 faz, 9 plan)
 
 ## Current Position
@@ -31,7 +31,7 @@ See: `.planning/PROJECT.md`
 Progress: ░░░░░░░░░░░░░░░░░░░░ 0/6 phases
 ```
 
-## v4.0 Phases
+## v3.1 Phases
 
 - [ ] Phase 22: Async Infrastructure — event loop ve bağlantı havuzu sağlığı
 - [ ] Phase 23: Security Hardening — endpoint auth, CORS, hata sanitizasyonu
@@ -42,7 +42,7 @@ Progress: ░░░░░░░░░░░░░░░░░░░░ 0/6 phase
 
 ## Performance Metrics
 
-| Metric | v3.0 | v4.0 |
+| Metric | v3.0 | v3.1 |
 |--------|-------|-------|
 | Phases | 5 | 6 |
 | Plans | 9 | TBD |
@@ -55,7 +55,7 @@ Progress: ░░░░░░░░░░░░░░░░░░░░ 0/6 phase
 ### Key Decisions
 
 - Glassmorphism CSS kaldırılmıyor (kullanıcı mevcut tasarımı onayladı)
-- Watchlist backend persistence v4.0 kapsamı dışı (localStorage yeterli)
+- Watchlist backend persistence v3.1 kapsamı dışı (localStorage yeterli)
 - Otomatik BIST universe güncelleme kapsam dışı (statik liste yeterli)
 - Test coverage arttırılmıyor; mevcut suite korunuyor
 
@@ -71,7 +71,7 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-04-28 — v4.0 roadmap oluşturuldu (6 faz, 25 gereksinim)
+**Last session:** 2026-04-28 — v3.1 roadmap oluşturuldu (6 faz, 25 gereksinim)
 **Next action:** `/gsd:plan-phase 22`
 
 ---

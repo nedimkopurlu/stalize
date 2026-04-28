@@ -4,7 +4,7 @@
 
 - ✅ **v2.0 Gerçek Veri Çekirdeği** — Phases 01–16 (shipped 2026-04-27)
 - ✅ **v3.0 Tüm Borsa + Kullanılabilir Platform** — Phases 17–21 (shipped 2026-04-28)
-- 🔄 **v4.0 Audit Düzeltmeleri** — Phases 22–27 (aktif)
+- 🔄 **v3.1 Audit Düzeltmeleri** — Phases 22–27 (aktif)
 
 ## Phases
 
@@ -43,7 +43,7 @@ Full details: `.planning/milestones/v3.0-ROADMAP.md`
 
 </details>
 
-### v4.0 Audit Düzeltmeleri (Phases 22–27) — AKTİF
+### v3.1 Audit Düzeltmeleri (Phases 22–27) — AKTİF
 
 - [ ] **Phase 22: Async Infrastructure** — Event loop ve bağlantı havuzu sağlığı
 - [ ] **Phase 23: Security Hardening** — Endpoint auth, CORS, hata sanitizasyonu
@@ -56,7 +56,7 @@ Full details: `.planning/milestones/v3.0-ROADMAP.md`
 
 ### Phase 22: Async Infrastructure
 **Goal**: Servis, yük altında event loop'u bloke etmeden ve bağlantı havuzunu sızdırmadan çalışıyor.
-**Depends on**: Nothing (first v4.0 phase)
+**Depends on**: Nothing (first v3.1 phase)
 **Requirements**: ASYNC-01, ASYNC-02, ASYNC-03, ASYNC-04
 **Success Criteria** (what must be TRUE):
   1. Yfinance retry sırasında diğer API request'leri yanıt vermeye devam ediyor; `time.sleep()` kodu artık yok.

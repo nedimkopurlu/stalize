@@ -1,9 +1,9 @@
-# Requirements: Stalize v4.0 — Audit Düzeltmeleri
+# Requirements: Stalize v3.1 — Audit Düzeltmeleri
 
 **Tanımlandı:** 2026-04-28
 **Core Value:** Gerçek ve denetlenebilir veriyle çalışan, tüm Borsa İstanbul'u kapsayan yatırım araştırma ve portföy takip platformu.
 
-## v4.0 Gereksinimleri
+## v3.1 Gereksinimleri
 
 ### ASYNC — Async & Concurrency
 
@@ -54,7 +54,7 @@
 |---------|-------|
 | OAuth / kullanıcı sistemi | Kişisel kullanım; API key yeterli |
 | Glassmorphism CSS kaldırma | Kullanıcı mevcut tasarımı onayladı |
-| Watchlist backend persistence | localStorage v4.0 için yeterli |
+| Watchlist backend persistence | localStorage v3.1 için yeterli |
 | Otomatik BIST universe güncelleme | Statik liste yılda 1-2 güncelleme yeterli |
 | Test coverage arttırma | Mevcut test suite korunuyor; yeni test eklenmeyecek |
 
@@ -89,10 +89,10 @@
 | INFRA-03 | Phase 27 | Bekliyor |
 
 **Kapsam:**
-- v4.0 gereksinimleri: 25 toplam
+- v3.1 gereksinimleri: 25 toplam
 - Faza atanan: 25
 - Atamasız: 0 ✓
 
 ---
 *Gereksinimler tanımlandı: 2026-04-28*
-*Son güncelleme: 2026-04-28 — v4.0 Audit Düzeltmeleri milestone başlatıldı*
+*Son güncelleme: 2026-04-28 — v3.1 Audit Düzeltmeleri milestone başlatıldı*

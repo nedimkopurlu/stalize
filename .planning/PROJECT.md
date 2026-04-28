@@ -9,7 +9,7 @@ Stalize, BIST100 odaklı ama BIST'i etkileyen yerel ve küresel akışları birl
 Gerçek ve denetlenebilir veriyle çalışan, orta ve uzun vadeli yatırım kararlarını güçlendiren bir BIST100 analiz ve portföy işletim sistemi kur.
 Ana kullanım odağı: dashboard-first, hisse seçimi ve portföy yönetimi.
 
-## Current Milestone: v4.0 — Audit Düzeltmeleri
+## Current Milestone: v3.1 — Audit Düzeltmeleri
 
 **Başlandı:** 2026-04-28
 **Fazlar:** 22–27 (6 faz)
@@ -101,7 +101,7 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 - ✓ Tarama motoru: /screener endpoint, 4 şablon, özelleştirilebilir builder, localStorage — v3.0
 - ✓ İzleme listesi: localStorage tabanlı, hisse sayfasından toggle — v3.0
 
-### Active (v4.0)
+### Active (v3.1)
 
 - [ ] **ASYNC-01**: `time.sleep()` → `await asyncio.sleep()` — Phase 22
 - [ ] **ASYNC-02**: Tüm API route'ları `Depends(get_db)` kullanıyor — Phase 22
@@ -142,16 +142,16 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 | XGBoost fiyat tahmini | Kaldırıldı — veri yetersizliği, güvenilmez (v2.0) |
 | Simülasyon/backtesting çıktısı | Gerçek veri dışında kabul yok |
 | Operasyonel debug panellerinin ana dashboard'da görünmesi | Son kullanıcı odağına hizmet etmiyor |
-| Glassmorphism CSS kaldırma | Kullanıcı mevcut tasarımı onayladı (v4.0) |
-| Watchlist backend persistence | localStorage v4.0 için yeterli (v4.0) |
-| Otomatik BIST universe güncelleme | Statik liste yılda 1-2 güncelleme yeterli (v4.0) |
-| Test coverage arttırma | Mevcut test suite korunuyor (v4.0) |
+| Glassmorphism CSS kaldırma | Kullanıcı mevcut tasarımı onayladı (v3.1) |
+| Watchlist backend persistence | localStorage v3.1 için yeterli (v3.1) |
+| Otomatik BIST universe güncelleme | Statik liste yılda 1-2 güncelleme yeterli (v3.1) |
+| Test coverage arttırma | Mevcut test suite korunuyor (v3.1) |
 
 ## Context
 
-**v4.0 başlangıç durumu (2026-04-28):**
+**v3.1 başlangıç durumu (2026-04-28):**
 - 21 faz toplam (v2.0 + v3.0), 51 plan
-- v4.0: 6 faz (22–27), 25 gereksinim, planlar henüz başlatılmadı
+- v3.1: 6 faz (22–27), 25 gereksinim, planlar henüz başlatılmadı
 - Backend: FastAPI + SQLAlchemy async + PostgreSQL
 - Frontend: Next.js App Router; screener + watchlist sayfaları, TradingView iframe, infinite scroll
 - Stock model: is_bist250 + market_tier kolonları; alembic migration 003
@@ -168,9 +168,9 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 - 2. Resmi kurumlar: Borsa İstanbul, TCMB, TÜİK, HMB, MKK, Takasbank, TEFAS (9 aktif)
 - 3. Global + yerel haber: Reuters, Bloomberg, FT, CNBC, Investing, BloombergHT, Ekonomim, Dunya
 
-**Teknik borç (v4.0 için — aktif çalışma):**
+**Teknik borç (v3.1 için — aktif çalışma):**
 - Pydantic V2 ConfigDict geçişi
-- Watchlist backend persistence yok (localStorage only — v4.0 kapsamı dışı)
+- Watchlist backend persistence yok (localStorage only — v3.1 kapsamı dışı)
 - Screener performance optimization (500 hisse sub-query join)
 - Makro parser kalibrasyon (TCMB/TÜİK kırılgan uçlar)
 
@@ -179,7 +179,7 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 - **Gerçek veri zorunlu**: mock, simülasyon, sentetik olay yok
 - **Kaynak önceliği**: ülkeye göre değil, BIST etkisine göre; şirket olayında KAP birinci
 - **LLM yok**: sistem kural tabanlı ve veri tabanlı çalışır
-- **Python**: 3.12 (v4.0 sonrası)
+- **Python**: 3.12 (v3.1 sonrası)
 - **Çalışma ortamı**: lokal geliştirme, localhost servisleri
 
 ## Key Decisions
@@ -202,8 +202,8 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 | Watchlist localStorage tabanlı | backend gerektirmiyor, kişisel kullanım için yeterli | ✓ v3.0 tamamlandı |
 | TradingView iframe embed | free widget, BIST:SYMBOL format çalışıyor, sıfır bakım | ✓ v3.0 tamamlandı |
 | Screener iki aşamalı (SQL + Python) | SQL hız + Python esnekliği; Fundamental join karmaşıklığını azaltır | ✓ v3.0 tamamlandı |
-| Glassmorphism CSS korunuyor | kullanıcı mevcut tasarımı onayladı; kaldırma v4.0 kapsamı dışı | ✓ v4.0 kararı |
-| Python 3.12 geçişi | 3.9 EOL; Railway uyumu ve güncel ekosistem | v4.0 Phase 27 |
+| Glassmorphism CSS korunuyor | kullanıcı mevcut tasarımı onayladı; kaldırma v3.1 kapsamı dışı | ✓ v3.1 kararı |
+| Python 3.12 geçişi | 3.9 EOL; Railway uyumu ve güncel ekosistem | v3.1 Phase 27 |
 
 ---
-*Last updated: 2026-04-28 — v4.0 milestone başlatıldı (6 faz, 25 gereksinim)*
+*Last updated: 2026-04-28 — v3.1 milestone başlatıldı (6 faz, 25 gereksinim)*
