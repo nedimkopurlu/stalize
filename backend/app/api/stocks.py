@@ -23,6 +23,8 @@ async def get_stocks(
     offset: int = Query(0, ge=0),
     sector: Optional[str] = None,
     bist30: Optional[bool] = None,
+    bist100: Optional[bool] = None,
+    bist250: Optional[bool] = None,
     search: Optional[str] = None,
     recommendation: Optional[str] = None,
 ):
@@ -33,6 +35,12 @@ async def get_stocks(
         if bist30 is not None:
             if bist30:
                 query = query.where(Stock.is_bist30)
+        if bist100 is not None:
+            if bist100:
+                query = query.where(Stock.is_bist100 == True)
+        if bist250 is not None:
+            if bist250:
+                query = query.where(Stock.is_bist250 == True)
         if sector:
             query = query.where(Stock.sector == sector)
         if search:
@@ -85,6 +93,10 @@ async def get_stocks(
         count_query = select(func.count(Stock.id)).where(Stock.is_active)
         if bist30:
             count_query = count_query.where(Stock.is_bist30)
+        if bist100:
+            count_query = count_query.where(Stock.is_bist100 == True)
+        if bist250:
+            count_query = count_query.where(Stock.is_bist250 == True)
         if sector:
             count_query = count_query.where(Stock.sector == sector)
         total_result = await db.execute(count_query)
@@ -394,6 +406,7 @@ async def get_stock_fundamentals(symbol: str):
                 "net_margin": None,
                 "debt_to_equity": None,
                 "fundamental_score": None,
+                "ev_ebitda": None,
             }
 
     return {
@@ -405,6 +418,53 @@ async def get_stock_fundamentals(symbol: str):
         "net_margin": fund.net_margin,
         "debt_to_equity": fund.debt_to_equity,
         "fundamental_score": fund.fundamental_score,
+        "ev_ebitda": fund.ev_ebitda,
+    }
+
+
+@router.get("/stocks/{symbol}/peers")
+async def get_stock_peers(symbol: str):
+    """Aynı sektörden 3-5 hisse döndürür (rakip karşılaştırma)."""
+    async with AsyncSessionLocal() as db:
+        # Get the target stock
+        result = await db.execute(select(Stock).where(Stock.symbol == symbol.upper()))
+        stock = result.scalar_one_or_none()
+        if not stock or not stock.sector:
+            return {"peers": []}
+
+        # Get same-sector stocks, exclude self, limit to 5
+        peers_result = await db.execute(
+            select(Stock)
+            .where(
+                and_(
+                    Stock.sector == stock.sector,
+                    Stock.symbol != stock.symbol,
+                    Stock.is_active == True,
+                    Stock.current_price.isnot(None),
+                )
+            )
+            .order_by(Stock.market_cap.desc().nullslast())
+            .limit(5)
+        )
+        peers = peers_result.scalars().all()
+
+    return {
+        "symbol": stock.symbol,
+        "sector": stock.sector,
+        "peers": [
+            {
+                "symbol": p.symbol,
+                "name": p.name,
+                "current_price": p.current_price,
+                "daily_change_pct": p.daily_change_pct,
+                "market_cap": p.market_cap,
+                "overall_score": p.overall_score,
+                "recommendation": p.recommendation,
+                "is_bist30": p.is_bist30,
+                "is_bist100": p.is_bist100,
+            }
+            for p in peers
+        ],
     }
 
 
@@ -469,3 +529,149 @@ async def update_all_scores():
     """Tüm hisse skorlarını güncelle."""
     updated = await scoring_engine.update_all_scores()
     return {"status": "completed", "updated": updated}
+
+
+@router.get("/screener")
+async def screen_stocks(
+    # Sector & index filters
+    sector: Optional[str] = None,
+    bist30: Optional[bool] = None,
+    bist100: Optional[bool] = None,
+    bist250: Optional[bool] = None,
+    # Score filters
+    score_min: Optional[float] = None,
+    score_max: Optional[float] = None,
+    recommendation: Optional[str] = None,
+    # Price/market filters
+    market_cap_min: Optional[float] = None,
+    market_cap_max: Optional[float] = None,
+    daily_change_min: Optional[float] = None,
+    daily_change_max: Optional[float] = None,
+    # Fundamental filters
+    pe_ratio_min: Optional[float] = None,
+    pe_ratio_max: Optional[float] = None,
+    pb_ratio_min: Optional[float] = None,
+    pb_ratio_max: Optional[float] = None,
+    roe_min: Optional[float] = None,
+    roe_max: Optional[float] = None,
+    debt_to_equity_max: Optional[float] = None,
+    # Pagination
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    sort_by: str = Query("overall_score"),
+):
+    """Çok boyutlu hisse tarama motoru."""
+    async with AsyncSessionLocal() as db:
+        # Step 1: Build and execute Stock-level query
+        stock_query = select(Stock).where(Stock.is_active == True)
+
+        if sector:
+            stock_query = stock_query.where(Stock.sector == sector)
+        if bist30:
+            stock_query = stock_query.where(Stock.is_bist30 == True)
+        if bist100:
+            stock_query = stock_query.where(Stock.is_bist100 == True)
+        if bist250:
+            stock_query = stock_query.where(Stock.is_bist250 == True)
+        if score_min is not None:
+            stock_query = stock_query.where(Stock.overall_score >= score_min)
+        if score_max is not None:
+            stock_query = stock_query.where(Stock.overall_score <= score_max)
+        if recommendation:
+            stock_query = stock_query.where(Stock.recommendation == recommendation)
+        if market_cap_min is not None:
+            stock_query = stock_query.where(Stock.market_cap >= market_cap_min)
+        if market_cap_max is not None:
+            stock_query = stock_query.where(Stock.market_cap <= market_cap_max)
+        if daily_change_min is not None:
+            stock_query = stock_query.where(Stock.daily_change_pct >= daily_change_min)
+        if daily_change_max is not None:
+            stock_query = stock_query.where(Stock.daily_change_pct <= daily_change_max)
+
+        sort_col = getattr(Stock, sort_by, Stock.overall_score)
+        stock_query = stock_query.order_by(sort_col.desc().nullslast())
+        stock_query = stock_query.offset(offset).limit(limit)
+
+        stock_result = await db.execute(stock_query)
+        stocks = stock_result.scalars().all()
+
+        # Step 2: Batch-fetch latest fundamentals for matched stocks
+        stock_ids = [s.id for s in stocks]
+        fund_by_stock: Dict[int, Optional[Fundamental]] = {}
+
+        if stock_ids:
+            # DISTINCT ON stock_id ordered by updated_at desc — one row per stock
+            fund_result = await db.execute(
+                select(Fundamental)
+                .where(Fundamental.stock_id.in_(stock_ids))
+                .order_by(Fundamental.stock_id, Fundamental.updated_at.desc())
+            )
+            all_funds = fund_result.scalars().all()
+            # Keep only the first (latest) record per stock_id
+            for f in all_funds:
+                if f.stock_id not in fund_by_stock:
+                    fund_by_stock[f.stock_id] = f
+
+        # Step 3: Apply fundamental post-filters (only stocks with fundamental data pass)
+        has_fund_filters = any([
+            pe_ratio_min is not None,
+            pe_ratio_max is not None,
+            pb_ratio_min is not None,
+            pb_ratio_max is not None,
+            roe_min is not None,
+            roe_max is not None,
+            debt_to_equity_max is not None,
+        ])
+
+        def passes_fund_filters(s: Stock) -> bool:
+            if not has_fund_filters:
+                return True
+            f = fund_by_stock.get(s.id)
+            if f is None:
+                return False
+            if pe_ratio_min is not None and (f.pe_ratio is None or f.pe_ratio < pe_ratio_min):
+                return False
+            if pe_ratio_max is not None and (f.pe_ratio is None or f.pe_ratio > pe_ratio_max):
+                return False
+            if pb_ratio_min is not None and (f.pb_ratio is None or f.pb_ratio < pb_ratio_min):
+                return False
+            if pb_ratio_max is not None and (f.pb_ratio is None or f.pb_ratio > pb_ratio_max):
+                return False
+            if roe_min is not None and (f.roe is None or f.roe < roe_min):
+                return False
+            if roe_max is not None and (f.roe is None or f.roe > roe_max):
+                return False
+            if debt_to_equity_max is not None and (f.debt_to_equity is None or f.debt_to_equity > debt_to_equity_max):
+                return False
+            return True
+
+        filtered_stocks = [s for s in stocks if passes_fund_filters(s)]
+
+        # Step 4: Build response
+        stocks_data = []
+        for s in filtered_stocks:
+            f = fund_by_stock.get(s.id)
+            stocks_data.append({
+                "symbol": s.symbol,
+                "name": s.name,
+                "sector": s.sector,
+                "current_price": s.current_price,
+                "daily_change_pct": s.daily_change_pct,
+                "market_cap": s.market_cap,
+                "is_bist30": s.is_bist30,
+                "is_bist100": s.is_bist100,
+                "is_bist250": s.is_bist250,
+                "overall_score": s.overall_score,
+                "technical_score": s.technical_score,
+                "fundamental_score": s.fundamental_score,
+                "recommendation": s.recommendation,
+                "pe_ratio": f.pe_ratio if f is not None else None,
+                "pb_ratio": f.pb_ratio if f is not None else None,
+                "roe": f.roe if f is not None else None,
+                "debt_to_equity": f.debt_to_equity if f is not None else None,
+            })
+
+        return {
+            "count": len(stocks_data),
+            "stocks": stocks_data,
+        }

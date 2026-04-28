@@ -13,6 +13,12 @@ from app.data.bist100_universe import (
     get_bist100_symbols,
     get_bist30_symbols,
 )
+from app.data.bist_full_universe import (
+    BIST_FULL_UNIVERSE,
+    get_bist_full_symbols,
+    get_bist_full_company_map,
+    get_bist_full_sector_map,
+)
 
 
 class Settings(BaseSettings):
@@ -121,6 +127,10 @@ class Settings(BaseSettings):
     BIST100_SECTORS: Dict[str, str] = get_bist100_sector_map()
     BIST100_SYMBOLS: List[str] = get_bist100_symbols()
     BIST30_SYMBOLS: List[str] = get_bist30_symbols()
+    BIST_FULL_UNIVERSE: List[Dict[str, object]] = BIST_FULL_UNIVERSE
+    BIST_FULL_SYMBOLS: List[str] = get_bist_full_symbols()
+    BIST_FULL_COMPANIES: Dict[str, str] = get_bist_full_company_map()
+    BIST_FULL_SECTORS: Dict[str, str] = get_bist_full_sector_map()
 
     # Commodity Symbols (Yahoo Finance)
     COMMODITY_SYMBOLS: Dict[str, str] = {

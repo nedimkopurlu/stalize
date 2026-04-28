@@ -21,6 +21,8 @@ class Stock(Base):
     currency = Column(String(10), default="TRY")
     is_bist30 = Column(Boolean, default=False)
     is_bist100 = Column(Boolean, default=True)
+    is_bist250 = Column(Boolean, default=False)
+    market_tier = Column(String(20), nullable=True)  # yıldız / ana / gelişen
     is_active = Column(Boolean, default=True)
 
     # Current price data (cached)

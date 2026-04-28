@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useState, use } from 'react';
 import AppShell from '@/components/AppShell';
 import { formatPrice, formatVolume, formatMarketCap } from '@/components/StockHelpers';
-import api, { KapNewsItem, ScoreBreakdownResponse, StockDetail, StockFundamentals, StockPricesResponse, TechnicalResult } from '@/lib/api';
+import api, { KapNewsItem, ScoreBreakdownResponse, StockDetail, StockFundamentals, StockPeer, StockPricesResponse, TechnicalResult } from '@/lib/api';
 import CandlestickEMAPanel from '@/components/CandlestickEMAPanel';
 import FundamentalMetricCard from '@/components/FundamentalMetricCard';
 import KAPNewsCard from '@/components/KAPNewsCard';
@@ -15,11 +15,13 @@ import Link from 'next/link';
 export default function StockDetailPage({ params }: { params: Promise<{ symbol: string }> }) {
   const { symbol } = use(params);
   const [detail, setDetail] = useState<StockDetail | null>(null);
+  const [inWatchlist, setInWatchlist] = useState(false);
   const [prices, setPrices] = useState<StockPricesResponse | null>(null);
   const [technical, setTechnical] = useState<TechnicalResult | null>(null);
   const [scoreBreakdown, setScoreBreakdown] = useState<ScoreBreakdownResponse | null>(null);
   const [fundamentals, setFundamentals] = useState<StockFundamentals | null>(null);
   const [kapNews, setKapNews] = useState<KapNewsItem[]>([]);
+  const [peers, setPeers] = useState<StockPeer[]>([]);
   const [fundLoading, setFundLoading] = useState(true);
   const [newsLoading, setNewsLoading] = useState(true);
   const [period, setPeriod] = useState('1y');
@@ -43,10 +45,14 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
         .catch(() => setFundamentals(null))
         .finally(() => setFundLoading(false));
 
-      api.getStockNews(symbol, 5)
+      api.getStockNews(symbol, 10)
         .then(r => setKapNews(r.items))
         .catch(() => setKapNews([]))
         .finally(() => setNewsLoading(false));
+
+      api.getStockPeers(symbol)
+        .then(r => setPeers(r.peers))
+        .catch(() => setPeers([]));
     } catch {
       /* API error */
     } finally {
@@ -66,6 +72,23 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
   useEffect(() => {
     void loadStock();
   }, [loadStock]);
+
+  useEffect(() => {
+    const list = JSON.parse(localStorage.getItem('stalize-watchlist') || '[]') as string[];
+    setInWatchlist(list.includes(symbol));
+  }, [symbol]);
+
+  function toggleWatchlist() {
+    const list = JSON.parse(localStorage.getItem('stalize-watchlist') || '[]') as string[];
+    let newList: string[];
+    if (inWatchlist) {
+      newList = list.filter((s: string) => s !== symbol);
+    } else {
+      newList = [...list, symbol];
+    }
+    localStorage.setItem('stalize-watchlist', JSON.stringify(newList));
+    setInWatchlist(!inWatchlist);
+  }
 
   useEffect(() => {
     void loadPrices();
@@ -98,9 +121,17 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
           title={`${s.symbol} Detay`}
           description={`${s.name || s.symbol} için fiyat, teknik yapı, skor dağılımı ve son haber akışını birlikte incele.`}
           action={(
-            <button className="btn btn-primary" onClick={() => void loadStock()}>
-              Veriyi Yenile
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                className={`btn btn-sm ${inWatchlist ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={toggleWatchlist}
+              >
+                {inWatchlist ? '★ İzlemede' : '☆ İzlemeye Ekle'}
+              </button>
+              <button className="btn btn-primary" onClick={() => void loadStock()}>
+                Veriyi Yenile
+              </button>
+            </div>
           )}
         />
 
@@ -162,6 +193,19 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             )}
           </section>
         )}
+
+        {/* ── TradingView Chart ─────────────────────── */}
+        <div className={styles.glassCard} style={{ marginBottom: 20, overflow: 'hidden' }}>
+          <div className={styles.chartHeader}>
+            <h3 className={styles.sectionTitle}>TradingView Grafik</h3>
+          </div>
+          <iframe
+            src={`https://www.tradingview.com/chart/?symbol=BIST%3A${s.symbol}&interval=D&theme=dark&style=1&locale=tr&toolbar_bg=%23f1f3f6&enable_publishing=false&hide_top_toolbar=false&hide_legend=false&save_image=false&container_id=tv_chart_${s.symbol}`}
+            style={{ width: '100%', height: 500, border: 'none', display: 'block' }}
+            title={`TradingView ${s.symbol}`}
+            allowFullScreen
+          />
+        </div>
 
         {/* ── Chart Section (full width) ─────────────── */}
         <div className={styles.glassCard} style={{ marginBottom: 20 }}>
@@ -243,6 +287,60 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             )}
           </div>
         </div>
+
+        {/* ── Rakip Karşılaştırma ────────────────── */}
+        {peers.length > 0 && (
+          <div className={styles.glassCard} style={{ marginBottom: 20 }}>
+            <h3 className={styles.sectionTitle} style={{ marginBottom: 12 }}>Sektör Karşılaştırması</h3>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Hisse</th>
+                    <th>Fiyat</th>
+                    <th>Değişim</th>
+                    <th>Piyasa Değeri</th>
+                    <th>Skor</th>
+                    <th>Sinyal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {peers.map(peer => (
+                    <tr key={peer.symbol}>
+                      <td>
+                        <Link href={`/stocks/${peer.symbol}`} className={styles.stockLink}>
+                          <strong>{peer.symbol}</strong>
+                          {peer.is_bist30 && <span style={{ marginLeft: 4, fontSize: '0.65rem', color: 'var(--accent)' }}>B30</span>}
+                        </Link>
+                      </td>
+                      <td className="font-mono">{peer.current_price != null ? peer.current_price.toFixed(2) : '—'}</td>
+                      <td>
+                        <span style={{ color: (peer.daily_change_pct ?? 0) >= 0 ? 'var(--green-500)' : 'var(--red-500)', fontFamily: 'monospace' }}>
+                          {peer.daily_change_pct != null ? `${peer.daily_change_pct >= 0 ? '+' : ''}${peer.daily_change_pct.toFixed(2)}%` : '—'}
+                        </span>
+                      </td>
+                      <td className="font-mono text-muted">
+                        {peer.market_cap != null ? (peer.market_cap / 1e9).toFixed(1) + 'B' : '—'}
+                      </td>
+                      <td>
+                        {peer.overall_score != null ? (
+                          <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>
+                            {peer.overall_score.toFixed(1)}
+                          </span>
+                        ) : '—'}
+                      </td>
+                      <td>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: 'rgba(148,163,184,0.1)' }}>
+                          {peer.recommendation || '—'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* ── Bottom Grid: Signals + KAP (2 columns) ─── */}
         <div className={styles.bottomGrid}>

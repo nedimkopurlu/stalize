@@ -1,4 +1,4 @@
-# Stalize — Gerçek Veri BIST100 Analiz Terminali
+# Stalize — Borsa İstanbul Analiz Terminali
 
 ## What This Is
 
@@ -53,19 +53,16 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 - Kişisel portföy — ayrı yüzey, benchmark karşılaştırma, günlük snapshot
 - Glassmorphism terminal arayüzü — dashboard, hisse detay, portföy, glassmorphism design system
 
-## Current Milestone: v3.0 — Tüm Borsa + Kullanılabilir Platform
+## Shipped: v3.0 — Tüm Borsa + Kullanılabilir Platform ✅
 
-**Tanımlandı:** 2026-04-27
+**Tamamlandı:** 2026-04-28 — 5 faz, 9 plan
 
-**Hedefler:**
-- BIST100 → Tüm Borsa İstanbul (~500 hisse) genişlemesi
-- UI/UX baştan — Robinhood/Midas esinli, temiz kartlar, sistem teması (dark/light otomatik)
-- Her hisse sayfasında: TradingView grafik + temel metrikler + KAP akışı + skor kartı
-- Tarama motoru: hazır şablonlar + özelleştirilebilir filtre builder
-- Watchlist + portföy: işlem girişi, P&L, performans görselleştirme
-- Alarm yok (v4.0'a ertelendi), AI yok (kullanıcı istemedi)
-
-**Fazlar:** Phase 17–21
+**Teslim edilenler:**
+- BIST100 kısıtı kaldırıldı; 399 aktif Borsa İstanbul hissesi, rate limiting, hata izolasyonu
+- Hisse sayfası: TradingView gömülü grafik, EV/EBITDA, rakip karşılaştırma, 10 KAP haberi
+- Sistem teması auto-detect (prefers-color-scheme), manuel toggle, Tarama + Watchlist nav
+- Tarama motoru: /screener endpoint + frontend, 4 hazır şablon, özelleştirilebilir builder, localStorage
+- İzleme listesi: /watchlist sayfası (localStorage), hisse sayfasından toggle
 
 ## Requirements
 
@@ -82,17 +79,15 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 - ✓ Haftalık model portföy + öz değerlendirme + günlük snapshot — v2.0
 - ✓ Kişisel portföy ayrı yüzey + BIST100 benchmark karşılaştırma — v2.0
 - ✓ Glassmorphism terminal arayüzü — dashboard, hisse detay, portföy — v2.0
+- ✓ 399 aktif Borsa İstanbul hissesi; rate limiting + hata izolasyonu ile güvenli çekim — v3.0
+- ✓ TradingView gömülü grafik + EV/EBITDA + rakip karşılaştırma + 10 KAP haberi — v3.0
+- ✓ Sistem teması auto-detect (prefers-color-scheme), manuel toggle — v3.0
+- ✓ Tarama motoru: /screener endpoint, 4 şablon, özelleştirilebilir builder, localStorage — v3.0
+- ✓ İzleme listesi: localStorage tabanlı, hisse sayfasından toggle — v3.0
 
-### Active (v3.0)
+### Active (v4.0)
 
-- [ ] F-01: Tüm Borsa İstanbul evren genişlemesi (~500 hisse, rate limiting, sembol discovery)
-- [ ] F-02: Güvenilir hisse sayfası (TradingView, temel metrik, rakip kıyaslaması, KAP akışı, skor)
-- [ ] F-03: Tarama motoru (hazır şablonlar + özelleştirilebilir builder, kaydet/yükle)
-- [ ] F-04: Watchlist + portföy modülü (işlem girişi, P&L, portföy özet)
-- [ ] F-05: Dashboard yeniden tasarımı (piyasa özet, makro bar, portföy özet kartı)
-- [ ] NF-01: UI/UX tam yeniden yazım — Robinhood/Midas esinli, sistem teması
-- [ ] NF-02: ~500 hisse için güvenilir günlük veri güncellemesi
-- [ ] NF-03: Sayfa yükleme süreleri (liste <2s, detay <3s, tarama <5s)
+*(Henüz tanımlanmadı — `/gsd:new-milestone` ile başlat)*
 
 ### Out of Scope
 
@@ -112,10 +107,12 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 
 ## Context
 
-**v2.0 teslim durumu (2026-04-27):**
-- 16 faz, 42 plan, 24/24 gereksinim tamamlandı
-- Backend: ~730K satır Python | Frontend: ~4.6K satır TypeScript
-- 57 aktif route, 17/17 teknik test geçiyor, TypeScript sıfır hata
+**v3.0 teslim durumu (2026-04-28):**
+- 21 faz toplam, 51 plan, v3.0: 5 faz / 9 plan
+- Backend: FastAPI + SQLAlchemy async + PostgreSQL; /screener + /peers endpoint eklendi
+- Frontend: Next.js App Router; screener + watchlist sayfaları, TradingView iframe, infinite scroll
+- Stock model: is_bist250 + market_tier kolonları; alembic migration 003
+- TypeScript sıfır hata
 
 **Altyapı:**
 - FastAPI + SQLAlchemy async + PostgreSQL
@@ -128,9 +125,11 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 - 2. Resmi kurumlar: Borsa İstanbul, TCMB, TÜİK, HMB, MKK, Takasbank, TEFAS (9 aktif)
 - 3. Global + yerel haber: Reuters, Bloomberg, FT, CNBC, Investing, BloombergHT, Ekonomim, Dunya
 
-**Teknik borç (v3.0 için):**
+**Teknik borç (v4.0 için):**
 - Pydantic V2 ConfigDict geçişi
-- 5 fazda formal VERIFICATION.md eksik
+- Glassmorphism CSS kaldırma (deferred — kullanıcı mevcut tasarımı beğeniyor)
+- Watchlist backend persistence yok (localStorage only)
+- Screener performance optimization (500 hisse sub-query join)
 - Makro parser kalibrasyon (TCMB/TÜİK kırılgan uçlar)
 
 ## Constraints
@@ -157,6 +156,10 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 | Faz içi tasarım temizliği | teknik ilerleme sırasında görülen UI tutarsızlığı ertelenmez | ✓ aktif ilke |
 | EMA 50/200 blend (60/40) | orta vadeli trend sinyalini teknik skora yansıt | ✓ v2.0 tamamlandı |
 | Glassmorphism terminal | koyu tema, sade, kurumsal operatör terminali hissi | ✓ v2.0 tamamlandı |
+| bist_full_universe.py statik liste | yılda 1-2 güncelleme yeterli, otomatik discovery karmaşıklık ekliyor | ✓ v3.0 tamamlandı |
+| Watchlist localStorage tabanlı | backend gerektirmiyor, kişisel kullanım için yeterli | ✓ v3.0 tamamlandı |
+| TradingView iframe embed | free widget, BIST:SYMBOL format çalışıyor, sıfır bakım | ✓ v3.0 tamamlandı |
+| Screener iki aşamalı (SQL + Python) | SQL hız + Python esnekliği; Fundamental join karmaşıklığını azaltır | ✓ v3.0 tamamlandı |
 
 ---
-*Last updated: 2026-04-27 — v2.0 milestone tamamlandı (16 faz, 24/24 gereksinim)*
+*Last updated: 2026-04-28 — v3.0 milestone tamamlandı (5 faz, 9 plan)*

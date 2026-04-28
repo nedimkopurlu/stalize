@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import AppShell from '@/components/AppShell';
 import ScoreRing from '@/components/ScoreRing';
 import RecommendationBadge, { PriceChange, formatPrice, formatVolume } from '@/components/StockHelpers';
@@ -16,11 +16,17 @@ export default function StocksPage() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('overall_score');
   const [filterBist30, setFilterBist30] = useState(false);
+  const [filterBist100, setFilterBist100] = useState(false);
+  const [filterBist250, setFilterBist250] = useState(false);
   const [filterRec, setFilterRec] = useState('');
   const [filterSector, setFilterSector] = useState('');
   const [minScore, setMinScore] = useState<number | ''>('');
   const [maxScore, setMaxScore] = useState<number | ''>('');
   const [sectors, setSectors] = useState<string[]>([]);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Load sector list from API on mount
   useEffect(() => {
@@ -35,37 +41,66 @@ export default function StocksPage() {
     }
   }, []);
 
-  const loadStocks = useCallback(async () => {
-    setLoading(true);
+  const loadStocks = useCallback(async (pageNum: number, append: boolean) => {
+    if (append) setLoadingMore(true);
+    else setLoading(true);
     try {
       const res = await api.getStocks({
         sort_by: sortBy,
-        limit: 100,
+        limit: 50,
+        offset: pageNum * 50,
         search: search || undefined,
         bist30: filterBist30 || undefined,
+        bist100: filterBist100 || undefined,
+        bist250: filterBist250 || undefined,
         recommendation: filterRec || undefined,
         sector: filterSector || undefined,
       });
-      setStocks(res.stocks);
+      if (append) {
+        setStocks(prev => [...prev, ...res.stocks]);
+      } else {
+        setStocks(res.stocks);
+      }
       setTotal(res.total);
+      setHasMore(res.stocks.length === 50);
     } catch {
       /* */
     } finally {
-      setLoading(false);
+      if (append) setLoadingMore(false);
+      else setLoading(false);
     }
-  }, [filterBist30, filterRec, filterSector, search, sortBy]);
+  }, [filterBist30, filterBist100, filterBist250, filterRec, filterSector, search, sortBy]);
 
+  // Reload on filter/sort changes
   useEffect(() => {
-    void loadStocks();
-  }, [loadStocks]);
+    setPage(0);
+    void loadStocks(0, false);
+  }, [filterBist30, filterBist100, filterBist250, filterRec, filterSector, sortBy, loadStocks]);
 
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
-      void loadStocks();
+      setPage(0);
+      void loadStocks(0, false);
     }, 300);
     return () => clearTimeout(timer);
-  }, [loadStocks]);
+  }, [search, loadStocks]);
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore && !loading) {
+          const nextPage = page + 1;
+          setPage(nextPage);
+          void loadStocks(nextPage, true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (sentinelRef.current) observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, loadingMore, loading, page, loadStocks]);
 
   const filtered = stocks.filter((s) => {
     if (minScore !== '' && (s.overall_score ?? 0) < minScore) return false;
@@ -80,7 +115,7 @@ export default function StocksPage() {
           title="Hisse Radarı"
           description="BIST100 evrenini skor, sektör ve sinyal filtreleriyle daralt; karar listeni hızlıca kur."
           action={(
-            <button className="btn btn-primary" onClick={() => void loadStocks()}>
+            <button className="btn btn-primary" onClick={() => { setPage(0); void loadStocks(0, false); }}>
               Listeyi Yenile
             </button>
           )}
@@ -158,14 +193,26 @@ export default function StocksPage() {
           </div>
 
           <button
-              className={`btn ${filterBist30 ? 'btn-primary' : 'btn-ghost'} btn-sm`}
-              onClick={() => setFilterBist30(!filterBist30)}
-            >
-              BIST30
+            className={`btn ${filterBist30 ? 'btn-primary' : 'btn-ghost'} btn-sm`}
+            onClick={() => setFilterBist30(!filterBist30)}
+          >
+            BIST30
+          </button>
+          <button
+            className={`btn ${filterBist100 ? 'btn-primary' : 'btn-ghost'} btn-sm`}
+            onClick={() => setFilterBist100(!filterBist100)}
+          >
+            BIST100
+          </button>
+          <button
+            className={`btn ${filterBist250 ? 'btn-primary' : 'btn-ghost'} btn-sm`}
+            onClick={() => setFilterBist250(!filterBist250)}
+          >
+            BIST250
           </button>
 
           <span className={styles.resultCount}>
-            {filtered.length} / {total} hisse
+            {stocks.length} / {total} hisse
           </span>
         </div>
 
@@ -237,6 +284,18 @@ export default function StocksPage() {
             </table>
           </div>
         </div>
+
+        <div ref={sentinelRef} style={{ height: 1 }} />
+        {loadingMore && (
+          <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)' }}>
+            Yükleniyor...
+          </div>
+        )}
+        {!hasMore && stocks.length > 0 && (
+          <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+            Tüm {total} hisse yüklendi
+          </div>
+        )}
       </TerminalShell>
     </AppShell>
   );

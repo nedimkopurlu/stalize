@@ -9,11 +9,13 @@ import ThemeToggle from './ThemeToggle';
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', short: '01', note: 'Genel görünüm' },
   { href: '/stocks', label: 'Hisse Radarı', short: '02', note: 'Seçim ve filtreleme' },
-  { href: '/intelligence', label: 'Piyasa Akışı', short: '03', note: 'KAP ve etkili haberler' },
-  { href: '/sectors', label: 'Sektörler', short: '04', note: 'Sektör dağılımı' },
-  { href: '/rankings', label: 'Sıralama', short: '05', note: 'Liderlik tablosu' },
-  { href: '/model-portfolio', label: 'Model Portföy', short: '06', note: 'Sistemin haftalık seçimi' },
-  { href: '/portfolio', label: 'Portföyüm', short: '07', note: 'Kişisel portföy yönetimi' },
+  { href: '/screener', label: 'Tarama', short: '03', note: 'Filtrele ve keşfet' },
+  { href: '/intelligence', label: 'Piyasa Akışı', short: '04', note: 'KAP ve etkili haberler' },
+  { href: '/sectors', label: 'Sektörler', short: '05', note: 'Sektör dağılımı' },
+  { href: '/rankings', label: 'Sıralama', short: '06', note: 'Liderlik tablosu' },
+  { href: '/model-portfolio', label: 'Model Portföy', short: '07', note: 'Sistemin haftalık seçimi' },
+  { href: '/watchlist', label: 'İzleme Listesi', short: '08', note: 'Takip ettiğin hisseler' },
+  { href: '/portfolio', label: 'Portföyüm', short: '09', note: 'Kişisel portföy yönetimi' },
 ];
 
 export default function Sidebar() {
@@ -61,7 +63,7 @@ export default function Sidebar() {
           </div>
           <div>
             <div className={styles.logoText}>Stalize</div>
-            <div className={styles.logoSub}>BIST100 Analiz</div>
+            <div className={styles.logoSub}>BIST Analiz Terminali</div>
           </div>
         </div>
 
@@ -95,7 +97,7 @@ export default function Sidebar() {
             <div className={styles.statusDot} />
             <div>
               <div className={styles.statusTitle}>Odak</div>
-              <div className={styles.statusSub}>Hisse seçimi, piyasa takibi, model portföy ve portföyüm</div>
+              <div className={styles.statusSub}>Hisse seçimi, tarama, model portföy ve kişisel takip</div>
             </div>
           </div>
           <div className={styles.themeCard}>

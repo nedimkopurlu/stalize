@@ -93,10 +93,10 @@ async def get_ticker_info(yahoo_symbol: str) -> dict:
 
 
 class DataCollector:
-    """Main data collection orchestrator for BIST100 stocks."""
+    """Main data collection orchestrator for Borsa İstanbul stocks."""
 
     def __init__(self):
-        self.universe = list(settings.BIST100_UNIVERSE)
+        self.universe = list(settings.BIST_FULL_UNIVERSE)
         self.symbols = [item["symbol"] for item in self.universe]
         self._universe_by_symbol = {item["symbol"]: item for item in self.universe}
         self.commodity_symbols = settings.COMMODITY_SYMBOLS
@@ -111,6 +111,7 @@ class DataCollector:
         logger.info(f"📊 BIST100 hisseleri veritabanına ekleniyor ({len(self.symbols)} hisse)...")
 
         async with AsyncSessionLocal() as db:
+            processed = 0
             for symbol in self.symbols:
                 yahoo_symbol = f"{symbol}.IS"
                 canonical = self._universe_by_symbol[symbol]
@@ -124,46 +125,57 @@ class DataCollector:
 
                 if existing:
                     existing.yahoo_symbol = yahoo_symbol
-                    existing.is_bist100 = True
+                    existing.is_bist100 = bool(canonical.get("is_bist100", False))
+                    existing.is_bist250 = bool(canonical.get("is_bist250", False))
+                    existing.market_tier = str(canonical.get("market_tier", "ana"))
                     existing.is_active = True
                     existing.name = canonical_name
                     existing.sector = canonical_sector
                     existing.is_bist30 = canonical_is_bist30
-                    continue
+                else:
+                    # Fetch info from Yahoo Finance
+                    try:
+                        info = await get_ticker_info(yahoo_symbol)
 
-                # Fetch info from Yahoo Finance
-                try:
-                    info = await get_ticker_info(yahoo_symbol)
+                        stock = Stock(
+                            symbol=symbol,
+                            yahoo_symbol=yahoo_symbol,
+                            name=canonical_name,
+                            sector=canonical_sector,
+                            industry=info.get("industry"),
+                            market_cap=info.get("marketCap"),
+                            current_price=info.get("currentPrice") or info.get("regularMarketPrice"),
+                            daily_change_pct=info.get("regularMarketChangePercent"),
+                            volume=info.get("regularMarketVolume"),
+                            is_bist30=canonical_is_bist30,
+                            is_bist100=bool(canonical.get("is_bist100", False)),
+                            is_bist250=bool(canonical.get("is_bist250", False)),
+                            market_tier=str(canonical.get("market_tier", "ana")),
+                            is_active=True,
+                        )
+                        db.add(stock)
+                        logger.info(f"  ✅ {symbol} — {stock.name}")
+                    except Exception as e:
+                        logger.warning(f"  ⚠️ {symbol} bilgisi alınamadı: {e}")
+                        # Add with minimal info
+                        stock = Stock(
+                            symbol=symbol,
+                            yahoo_symbol=yahoo_symbol,
+                            name=canonical_name,
+                            sector=canonical_sector,
+                            is_bist30=canonical_is_bist30,
+                            is_bist100=bool(canonical.get("is_bist100", False)),
+                            is_bist250=bool(canonical.get("is_bist250", False)),
+                            market_tier=str(canonical.get("market_tier", "ana")),
+                            is_active=True,
+                        )
+                        db.add(stock)
 
-                    stock = Stock(
-                        symbol=symbol,
-                        yahoo_symbol=yahoo_symbol,
-                        name=canonical_name,
-                        sector=canonical_sector,
-                        industry=info.get("industry"),
-                        market_cap=info.get("marketCap"),
-                        current_price=info.get("currentPrice") or info.get("regularMarketPrice"),
-                        daily_change_pct=info.get("regularMarketChangePercent"),
-                        volume=info.get("regularMarketVolume"),
-                        is_bist30=canonical_is_bist30,
-                        is_bist100=True,
-                        is_active=True,
-                    )
-                    db.add(stock)
-                    logger.info(f"  ✅ {symbol} — {stock.name}")
-                except Exception as e:
-                    logger.warning(f"  ⚠️ {symbol} bilgisi alınamadı: {e}")
-                    # Add with minimal info
-                    stock = Stock(
-                        symbol=symbol,
-                        yahoo_symbol=yahoo_symbol,
-                        name=canonical_name,
-                        sector=canonical_sector,
-                        is_bist30=canonical_is_bist30,
-                        is_bist100=True,
-                        is_active=True,
-                    )
-                    db.add(stock)
+                processed += 1
+                if processed % 10 == 0:
+                    await db.commit()
+                    await asyncio.sleep(1)
+                    logger.info(f"  ⏱️ {processed}/{len(self.symbols)} hisse işlendi")
 
             await self._deactivate_noncanonical_stocks(db)
             await db.commit()
@@ -177,11 +189,13 @@ class DataCollector:
 
         async with AsyncSessionLocal() as db:
             for i, symbol in enumerate(self.symbols):
-                await self._collect_stock_prices(db, symbol, period)
-                # Rate limit koruması: her 5 hissede bir 2 saniye bekle
-                if (i + 1) % 5 == 0:
+                try:
+                    await self._collect_stock_prices(db, symbol, period)
+                except Exception as e:
+                    logger.warning(f"  ⚠️ {symbol} fiyat verisi atlandı: {e}")
+                if (i + 1) % 10 == 0:
                     await db.commit()
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(1)
             await db.commit()
 
         logger.info("✅ Fiyat verileri toplandı")

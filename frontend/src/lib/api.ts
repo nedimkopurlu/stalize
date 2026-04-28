@@ -45,6 +45,8 @@ export interface StockSummary {
   market_cap: number | null;
   is_bist30: boolean;
   is_bist100?: boolean;
+  is_bist250?: boolean;
+  market_tier?: string | null;
   technical_score: number | null;
   fundamental_score: number | null;
   sentiment_score: number | null;
@@ -342,6 +344,7 @@ export interface StockFundamentals {
   net_margin: number | null;
   debt_to_equity: number | null;
   fundamental_score: number | null;
+  ev_ebitda?: number | null;
 }
 
 export interface EventImpact {
@@ -646,6 +649,24 @@ export interface MacroEventsResponse {
   events: MacroEventItem[];
 }
 
+export interface StockPeer {
+  symbol: string;
+  name: string;
+  current_price: number | null;
+  daily_change_pct: number | null;
+  market_cap: number | null;
+  overall_score: number | null;
+  recommendation: string | null;
+  is_bist30: boolean;
+  is_bist100: boolean;
+}
+
+export interface StockPeersResponse {
+  symbol: string;
+  sector: string;
+  peers: StockPeer[];
+}
+
 export interface ImpactRankingItem {
   title?: string;
   sources?: string[];
@@ -709,6 +730,8 @@ export const api = {
     offset?: number;
     sector?: string;
     bist30?: boolean;
+    bist100?: boolean;
+    bist250?: boolean;
     search?: string;
     recommendation?: string;
   }) => {
@@ -718,6 +741,8 @@ export const api = {
     if (params?.offset) searchParams.set('offset', String(params.offset));
     if (params?.sector) searchParams.set('sector', params.sector);
     if (params?.bist30) searchParams.set('bist30', 'true');
+    if (params?.bist100) searchParams.set('bist100', 'true');
+    if (params?.bist250) searchParams.set('bist250', 'true');
     if (params?.search) searchParams.set('search', params.search);
     if (params?.recommendation) searchParams.set('recommendation', params.recommendation);
     return apiFetch<StockListResponse>(`/stocks?${searchParams.toString()}`);
@@ -748,6 +773,9 @@ export const api = {
 
   getStockFundamentals: (symbol: string) =>
     apiFetch<StockFundamentals>(`/stocks/${symbol}/fundamentals`),
+
+  getStockPeers: (symbol: string) =>
+    apiFetch<StockPeersResponse>(`/stocks/${symbol}/peers`),
 
   getRankings: (params?: { sort_by?: string; limit?: number; sector?: string; bist30?: boolean }) => {
     const searchParams = new URLSearchParams();

@@ -9,9 +9,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Stalize — BIST100 Analiz Terminali",
-  description: "BIST100 hisselerini teknik ve temel analiz ile değerlendirin",
-  keywords: ["BIST100", "BIST30", "borsa", "hisse analiz", "teknik analiz", "temel analiz", "KAP"],
+  title: "Stalize — Borsa İstanbul Analiz Terminali",
+  description: "BIST hisselerini teknik ve temel analiz ile değerlendirin — 400+ hisse, tarama motoru, portföy takibi",
+  keywords: ["BIST100", "BIST30", "BIST250", "borsa", "hisse analiz", "teknik analiz", "temel analiz", "KAP", "screener"],
 };
 
 export default function RootLayout({

@@ -73,6 +73,7 @@ export default function FundamentalMetricCard({ fundamentals, loading }: Props) 
         decimals={1}
       />
       <MetricRow label="Borç/Özsermaye" value={fundamentals.debt_to_equity} />
+      <MetricRow label="FD/FAVÖK (EV/EBITDA)" value={fundamentals.ev_ebitda} />
     </div>
   );
 }
