@@ -9,6 +9,22 @@ Stalize, BIST100 odaklı ama BIST'i etkileyen yerel ve küresel akışları birl
 Gerçek ve denetlenebilir veriyle çalışan, orta ve uzun vadeli yatırım kararlarını güçlendiren bir BIST100 analiz ve portföy işletim sistemi kur.
 Ana kullanım odağı: dashboard-first, hisse seçimi ve portföy yönetimi.
 
+## Current Milestone: v4.0 — Audit Düzeltmeleri
+
+**Başlandı:** 2026-04-28
+**Fazlar:** 22–27 (6 faz)
+**Gereksinimler:** 25/25 mapped
+
+**Hedef:** Async güvenliği, endpoint auth, veri güvenilirliği, skor tutarlılığı, frontend hata yönetimi ve Python 3.12 geçişi ile sistemin denetim bulgularını gidermek.
+
+**Aktif fazlar:**
+- [ ] Phase 22: Async Infrastructure (ASYNC-01, 02, 03, 04)
+- [ ] Phase 23: Security Hardening (SEC-01, 02, 03, 04)
+- [ ] Phase 24: Data Reliability (DATA-01, 02, 03, 04, 05)
+- [ ] Phase 25: Business Logic Correctness (LOGIC-01, 02, 03, 04)
+- [ ] Phase 26: Frontend Quality (FE-01, 02, 03, 04, 05)
+- [ ] Phase 27: Infrastructure Upgrade (INFRA-01, 02, 03)
+
 ## Design Philosophy
 
 Stalize'da tasarım ayrı bir katman değil, ürün mantığının parçasıdır.
@@ -87,9 +103,31 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 
 ### Active (v4.0)
 
-*(Henüz tanımlanmadı — `/gsd:new-milestone` ile başlat)*
-
-### Out of Scope
+- [ ] **ASYNC-01**: `time.sleep()` → `await asyncio.sleep()` — Phase 22
+- [ ] **ASYNC-02**: Tüm API route'ları `Depends(get_db)` kullanıyor — Phase 22
+- [ ] **ASYNC-03**: 14 scheduler job staggered, thundering herd yok — Phase 22
+- [ ] **ASYNC-04**: Startup `asyncio.create_task()` hataları sessizce kırmıyor — Phase 22
+- [ ] **SEC-01**: Tüm POST/DELETE API key dependency gerektiriyor — Phase 23
+- [ ] **SEC-02**: CORS wildcard yok, credentials ile CSRF vektörü kapalı — Phase 23
+- [ ] **SEC-03**: API response'ları `str(e)` döndürmüyor — Phase 23
+- [ ] **SEC-04**: `DEBUG=False` varsayılan, SQL echo production'da kapalı — Phase 23
+- [ ] **DATA-01**: KAP symbol extraction `BIST_FULL_SYMBOLS` kullanıyor — Phase 24
+- [ ] **DATA-02**: `datetime.now(timezone.utc)` data_collector'da zorunlu — Phase 24
+- [ ] **DATA-03**: yfinance boş dönüş ile ağ hatası ayırt ediliyor — Phase 24
+- [ ] **DATA-04**: Diskcache dizin boyutu sınırlı — Phase 24
+- [ ] **DATA-05**: `NewsItem(source, url)` unique constraint DB seviyesinde — Phase 24
+- [ ] **LOGIC-01**: İki scoring fonksiyonu aynı ağırlıkları kullanıyor — Phase 25
+- [ ] **LOGIC-02**: Screener geçersiz aralıkları HTTP 400 ile reddediyor — Phase 25
+- [ ] **LOGIC-03**: ATR volatilite teknik skorda bileşen olarak aktif — Phase 25
+- [ ] **LOGIC-04**: Portfolio P&L eksik fiyatları `partial: true` ile işaretliyor — Phase 25
+- [ ] **FE-01**: Boş `catch(() => {})` kaldırıldı, hata UI'ı görünüyor — Phase 26
+- [ ] **FE-02**: `MacroPanel` unsafe type assertion düzeltildi — Phase 26
+- [ ] **FE-03**: Screener `api.ts` helper kullanıyor — Phase 26
+- [ ] **FE-04**: Portfolio formu client-side validation yapıyor — Phase 26
+- [ ] **FE-05**: Yıkıcı aksiyonlar onay dialogu gösteriyor — Phase 26
+- [ ] **INFRA-01**: Python 3.9 → 3.12 yükseltmesi — Phase 27
+- [ ] **INFRA-02**: `/health` endpoint DB bağlantısını test ediyor — Phase 27
+- [ ] **INFRA-03**: Emoji'siz structured logging — Phase 27
 
 ### Out of Scope
 
@@ -104,12 +142,17 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 | XGBoost fiyat tahmini | Kaldırıldı — veri yetersizliği, güvenilmez (v2.0) |
 | Simülasyon/backtesting çıktısı | Gerçek veri dışında kabul yok |
 | Operasyonel debug panellerinin ana dashboard'da görünmesi | Son kullanıcı odağına hizmet etmiyor |
+| Glassmorphism CSS kaldırma | Kullanıcı mevcut tasarımı onayladı (v4.0) |
+| Watchlist backend persistence | localStorage v4.0 için yeterli (v4.0) |
+| Otomatik BIST universe güncelleme | Statik liste yılda 1-2 güncelleme yeterli (v4.0) |
+| Test coverage arttırma | Mevcut test suite korunuyor (v4.0) |
 
 ## Context
 
-**v3.0 teslim durumu (2026-04-28):**
-- 21 faz toplam, 51 plan, v3.0: 5 faz / 9 plan
-- Backend: FastAPI + SQLAlchemy async + PostgreSQL; /screener + /peers endpoint eklendi
+**v4.0 başlangıç durumu (2026-04-28):**
+- 21 faz toplam (v2.0 + v3.0), 51 plan
+- v4.0: 6 faz (22–27), 25 gereksinim, planlar henüz başlatılmadı
+- Backend: FastAPI + SQLAlchemy async + PostgreSQL
 - Frontend: Next.js App Router; screener + watchlist sayfaları, TradingView iframe, infinite scroll
 - Stock model: is_bist250 + market_tier kolonları; alembic migration 003
 - TypeScript sıfır hata
@@ -125,10 +168,9 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 - 2. Resmi kurumlar: Borsa İstanbul, TCMB, TÜİK, HMB, MKK, Takasbank, TEFAS (9 aktif)
 - 3. Global + yerel haber: Reuters, Bloomberg, FT, CNBC, Investing, BloombergHT, Ekonomim, Dunya
 
-**Teknik borç (v4.0 için):**
+**Teknik borç (v4.0 için — aktif çalışma):**
 - Pydantic V2 ConfigDict geçişi
-- Glassmorphism CSS kaldırma (deferred — kullanıcı mevcut tasarımı beğeniyor)
-- Watchlist backend persistence yok (localStorage only)
+- Watchlist backend persistence yok (localStorage only — v4.0 kapsamı dışı)
 - Screener performance optimization (500 hisse sub-query join)
 - Makro parser kalibrasyon (TCMB/TÜİK kırılgan uçlar)
 
@@ -137,7 +179,7 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 - **Gerçek veri zorunlu**: mock, simülasyon, sentetik olay yok
 - **Kaynak önceliği**: ülkeye göre değil, BIST etkisine göre; şirket olayında KAP birinci
 - **LLM yok**: sistem kural tabanlı ve veri tabanlı çalışır
-- **Python**: 3.9
+- **Python**: 3.12 (v4.0 sonrası)
 - **Çalışma ortamı**: lokal geliştirme, localhost servisleri
 
 ## Key Decisions
@@ -160,6 +202,8 @@ Bu ürün şu kullanıcı profiline göre şekilleniyor:
 | Watchlist localStorage tabanlı | backend gerektirmiyor, kişisel kullanım için yeterli | ✓ v3.0 tamamlandı |
 | TradingView iframe embed | free widget, BIST:SYMBOL format çalışıyor, sıfır bakım | ✓ v3.0 tamamlandı |
 | Screener iki aşamalı (SQL + Python) | SQL hız + Python esnekliği; Fundamental join karmaşıklığını azaltır | ✓ v3.0 tamamlandı |
+| Glassmorphism CSS korunuyor | kullanıcı mevcut tasarımı onayladı; kaldırma v4.0 kapsamı dışı | ✓ v4.0 kararı |
+| Python 3.12 geçişi | 3.9 EOL; Railway uyumu ve güncel ekosistem | v4.0 Phase 27 |
 
 ---
-*Last updated: 2026-04-28 — v3.0 milestone tamamlandı (5 faz, 9 plan)*
+*Last updated: 2026-04-28 — v4.0 milestone başlatıldı (6 faz, 25 gereksinim)*

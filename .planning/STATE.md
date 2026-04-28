@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: Tüm Borsa + Kullanılabilir Platform
-status: archived
+milestone: v4.0
+milestone_name: Audit Düzeltmeleri
+status: active
 last_updated: "2026-04-28T00:00:00.000Z"
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 9
-  completed_plans: 9
+  total_phases: 6
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -18,18 +18,60 @@ progress:
 See: `.planning/PROJECT.md`
 
 **Core value:** Gerçek ve denetlenebilir veriyle çalışan, tüm Borsa İstanbul'u kapsayan yatırım araştırma ve portföy takip platformu.
-**Last milestone:** v3.0 — ARCHIVED 2026-04-28
+**Current milestone:** v4.0 — Audit Düzeltmeleri (aktif)
+**Previous milestone:** v3.0 — ARCHIVED 2026-04-28 (5 faz, 9 plan)
 
-## Completed Phases (v3.0)
+## Current Position
 
-- [x] Phase 17: Evren Genişlemesi — 399 aktif Borsa İstanbul hissesi, rate limiting, infinite scroll
-- [x] Phase 18: Hisse Sayfası Overhaul — TradingView, rakip karşılaştırma, EV/EBITDA, 10 KAP haberi
-- [x] Phase 19: UI/UX Foundation — sistem teması auto-detect, yeni nav items, branding
-- [x] Phase 20: Tarama Motoru — /screener endpoint + frontend, 4 şablon, kaydet/yükle
-- [x] Phase 21: Watchlist + Portföy — /watchlist sayfası, hisse sayfasından toggle
+**Active phase:** Phase 22 — Async Infrastructure
+**Active plan:** None (planning not started)
+**Status:** Roadmap created, ready for `/gsd:plan-phase 22`
 
-## Next Step
+```
+Progress: ░░░░░░░░░░░░░░░░░░░░ 0/6 phases
+```
 
-`/gsd:new-milestone` ile v4.0 planlamasına geç.
+## v4.0 Phases
+
+- [ ] Phase 22: Async Infrastructure — event loop ve bağlantı havuzu sağlığı
+- [ ] Phase 23: Security Hardening — endpoint auth, CORS, hata sanitizasyonu
+- [ ] Phase 24: Data Reliability — KAP sembol kapsamı, datetime doğruluğu, cache sınırları
+- [ ] Phase 25: Business Logic Correctness — skor tutarlılığı, screener validasyonu, volatilite
+- [ ] Phase 26: Frontend Quality — hata görünürlüğü, tip güvenliği, form validasyonu
+- [ ] Phase 27: Infrastructure Upgrade — Python 3.12, health endpoint, structured logging
+
+## Performance Metrics
+
+| Metric | v3.0 | v4.0 |
+|--------|-------|-------|
+| Phases | 5 | 6 |
+| Plans | 9 | TBD |
+| Requirements | — | 25/25 mapped |
+| Started | 2026-04-28 | 2026-04-28 |
+| Completed | 2026-04-28 | - |
+
+## Accumulated Context
+
+### Key Decisions
+
+- Glassmorphism CSS kaldırılmıyor (kullanıcı mevcut tasarımı onayladı)
+- Watchlist backend persistence v4.0 kapsamı dışı (localStorage yeterli)
+- Otomatik BIST universe güncelleme kapsam dışı (statik liste yeterli)
+- Test coverage arttırılmıyor; mevcut suite korunuyor
+
+### Known Constraints
+
+- Python 3.9 → 3.12 geçişi Phase 27'de; tüm bağımlılıklar 3.12-uyumlu olmalı
+- Lokal geliştirme ortamı; Railway deployment hedefi
+- LLM yok; sistem kural tabanlı ve veri tabanlı
+
+### Blockers
+
+None.
+
+## Session Continuity
+
+**Last session:** 2026-04-28 — v4.0 roadmap oluşturuldu (6 faz, 25 gereksinim)
+**Next action:** `/gsd:plan-phase 22`
 
 ---
