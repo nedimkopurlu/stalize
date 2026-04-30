@@ -20,7 +20,6 @@ import re
 
 from app.core.database import AsyncSessionLocal
 from app.models.news import NewsItem
-from app.models.stock import Stock
 from sqlalchemy import select
 from app.services.source_health import record_source_failure, record_source_success
 # Harici model entegrasyonu yok; kural tabanlı etki skoru kullanılır.
@@ -313,22 +312,12 @@ class TCMBAdapter:
                 # Makro olaylar için "MACROVERI" stock record'u kullan
                 # (veya tüm 100 hisseyi etkileyebilir)
 
-                # Test: THYAO'yu etkilediğini varsay
-                stock_result = await db.execute(
-                    select(Stock).where(Stock.symbol == "THYAO")
-                )
-                stock = stock_result.scalar_one_or_none()
-
-                if not stock:
-                    logger.warning("THYAO bulunamadı")
-                    return False
-
                 # Kural tabanlı nötr varsayılan.
                 analysis = {"sentiment_score": 0.0, "importance_score": 1.0}
 
-                # NewsItem oluştur
+                # NewsItem oluştur — makro haber, belirli bir hisseye bağlı değil
                 news = NewsItem(
-                    stock_id=stock.id,
+                    stock_id=None,
                     title=event_data.get("title", "TCMB Bildirimi"),
                     summary=event_data.get("summary", ""),
                     url=event_data.get("url", "https://www.tcmb.gov.tr"),

@@ -198,7 +198,7 @@ class ScoringEngine:
         }
 
     def _score_risk_overlay(self, stock: Stock, crisis_mode: bool) -> Dict[str, Union[float, str]]:
-        score = 55.0
+        score = 50.0
         reasons = []
         daily_move = abs(float(stock.daily_change_pct or 0.0))
         if daily_move >= 5:
@@ -263,21 +263,21 @@ class ScoringEngine:
             {
                 "key": "fundamental_score",
                 "label": "Temel",
-                "raw_score": round(float(stock.fundamental_score or self.DEFAULT_SCORE), 2),
+                "raw_score": round(float(stock.fundamental_score), 2) if stock.fundamental_score is not None else None,
                 "base_weight": self.CONTEXTUAL_WEIGHTS["fundamental_score"],
                 "reason": "Sirket kalitesi ve carpansal dayaniklilik",
             },
             {
                 "key": "technical_score",
                 "label": "Teknik",
-                "raw_score": round(float(stock.technical_score or self.DEFAULT_SCORE), 2),
+                "raw_score": round(float(stock.technical_score), 2) if stock.technical_score is not None else None,
                 "base_weight": self.CONTEXTUAL_WEIGHTS["technical_score"],
                 "reason": "Trend ve momentum kalitesi",
             },
             {
                 "key": "sentiment_score",
                 "label": "Haber",
-                "raw_score": round(float(stock.sentiment_score or self.DEFAULT_SCORE), 2),
+                "raw_score": round(float(stock.sentiment_score), 2) if stock.sentiment_score is not None else None,
                 "base_weight": self.CONTEXTUAL_WEIGHTS["sentiment_score"],
                 "reason": "Anlik haber ve KAP akisindan gelen taban algi",
             },
@@ -310,9 +310,17 @@ class ScoringEngine:
             },
         ])
 
-        total_weight = sum(component["base_weight"] for component in contextual_components)
+        # NULL bileşenleri ağırlıklandırmadan çıkar (50.0 doldurmak yerine)
+        available = [c for c in contextual_components if c["raw_score"] is not None]
+        missing = [c for c in contextual_components if c["raw_score"] is None]
+
+        total_weight = sum(c["base_weight"] for c in available)
         weighted_sum = 0.0
         for component in contextual_components:
+            if component["raw_score"] is None:
+                component["normalized_weight"] = 0.0
+                component["contribution"] = 0.0
+                continue
             normalized_weight = component["base_weight"] / total_weight if total_weight else 0.0
             component["normalized_weight"] = round(normalized_weight, 4)
             component["contribution"] = round(component["raw_score"] * normalized_weight, 2)
@@ -324,12 +332,12 @@ class ScoringEngine:
             "overall_score": overall,
             "recommendation": recommendation,
             "components": contextual_components,
-            "missing_components": [],
+            "missing_components": [c["key"] for c in missing],
             "summary": {
-                "available_component_count": len(contextual_components),
-                "missing_component_count": 0,
-                "normalization_applied": False,
-                "weight_coverage": 1.0,
+                "available_component_count": len(available),
+                "missing_component_count": len(missing),
+                "normalization_applied": len(missing) > 0,
+                "weight_coverage": round(total_weight / sum(c["base_weight"] for c in contextual_components), 4) if contextual_components else 1.0,
                 "crisis_mode": crisis_mode,
             },
         }

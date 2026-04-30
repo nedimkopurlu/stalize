@@ -698,30 +698,20 @@ class DataCollector:
     # ─── NEWS & SENTIMENT DATA COLLECTION ─────────────────────────────────
 
     async def collect_sentiment(self):
-        """Analyze news sentiment for all BIST100 stocks."""
-        logger.info("📰 Haber duygu analizi toplanıyor...")
-        
-        # 1. İlk olarak KAP bildirimlerini çek (En yüksek öncelik)
+        """
+        Sentiment güncelleme — KAP bildirimleri üzerinden çalışır.
+        Gerçek zamanlı sentiment background_kap_scan (her 5 dk) ile güncellenir;
+        bu metod yalnızca ilk kurulum uyumluluğu için korunmuştur.
+        """
+        logger.info("JOB_START source=sentiment_via_kap")
         from app.services.kap_parser import run_kap_scan
         await run_kap_scan()
-        
-        # 2. Genel haber ve yfinance analizi
-        engine = SentimentAnalysisEngine()
-        async with AsyncSessionLocal() as db:
-            result = await db.execute(select(Stock))
-            stocks = result.scalars().all()
-            
-            for stock in stocks:
-                if stock.is_active:
-                    await engine.analyze_stock(db, stock)
-                    
-        logger.info("✅ Duygu analizleri tamamlandı")
 
     # ─── DAILY UPDATE ────────────────────────────────────────────────────
 
     async def daily_update(self):
-        """Refresh intraday decision data without hammering slow yfinance fundamentals/news."""
-        logger.info("🔄 Günlük veri güncelleme başlıyor...")
+        """Refresh intraday decision data: prices, technicals, scores."""
+        logger.info("JOB_START source=daily_update")
         await self.collect_price_data(period="5d")
         await self.collect_live_bist_quotes()
         await self.collect_market_data(period="5d")
@@ -730,19 +720,19 @@ class DataCollector:
 
         await technical_engine.analyze_all()
         await scoring_engine.update_all_scores()
-        logger.info("✅ Günlük güncelleme tamamlandı")
+        logger.info("JOB_DONE source=daily_update")
 
     # ─── FULL INITIAL LOAD ───────────────────────────────────────────────
 
     async def full_initial_load(self):
         """Complete initial data load — run once on first setup."""
-        logger.info("🚀 İlk veri yüklemesi başlıyor...")
+        logger.info("JOB_START source=full_initial_load")
         await self.initialize_stocks()
         await self.collect_price_data(period="5y")
         await self.collect_market_data(period="2y")
         await self.collect_fundamentals()
         await self.collect_sentiment()
-        logger.info("🎉 İlk veri yüklemesi tamamlandı!")
+        logger.info("JOB_DONE source=full_initial_load")
 
     # ─── HELPERS ─────────────────────────────────────────────────────────
 

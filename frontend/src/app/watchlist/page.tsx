@@ -37,10 +37,10 @@ export default function WatchlistPage() {
     if (syms.length === 0) { setStocks([]); return; }
     setLoading(true);
     try {
-      // Fetch all stocks and filter by watchlist
-      const res = await api.getStocks({ limit: 500, sort_by: 'overall_score' });
-      const watchlistStocks = res.stocks.filter(s => syms.includes(s.symbol));
-      // Preserve watchlist order
+      // Sadece izleme listesindeki sembolleri çek — 500 hisse değil
+      const res = await api.getStocks({ symbols: syms.join(','), sort_by: 'overall_score', limit: syms.length + 5 });
+      const watchlistStocks = res.stocks;
+      // İzleme listesi sırasını koru
       const ordered = syms.map(sym => watchlistStocks.find(s => s.symbol === sym)).filter(Boolean) as StockSummary[];
       setStocks(ordered);
       setError('');

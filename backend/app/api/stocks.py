@@ -30,10 +30,16 @@ async def get_stocks(
     bist250: Optional[bool] = None,
     search: Optional[str] = None,
     recommendation: Optional[str] = None,
+    symbols: Optional[str] = Query(None, description="Virgülle ayrılmış sembol listesi: THYAO,GARAN,EREGL"),
     db: AsyncSession = Depends(get_db),
 ):
-    """Hisse listesi — filtreleme ve sıralama."""
+    """Hisse listesi — filtreleme ve sıralama. symbols parametresi ile sadece belirli hisseler döner."""
     query = select(Stock).where(Stock.is_active)
+
+    if symbols:
+        symbol_list = [s.strip().upper().removesuffix(".IS") for s in symbols.split(",") if s.strip()]
+        if symbol_list:
+            query = query.where(Stock.symbol.in_(symbol_list))
 
     if bist30 is not None:
         if bist30:

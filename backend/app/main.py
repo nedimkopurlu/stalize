@@ -206,6 +206,15 @@ async def background_data_update():
         logging.error(f"DataCollector güncelleme hatası: {e}")
 
 
+async def background_fundamentals_update():
+    """Temel finansal verileri haftalık güncelle (F/K, PD/DD, ROE vb.)."""
+    logging.info("JOB_START source=fundamentals")
+    try:
+        await data_collector.collect_fundamentals()
+    except Exception as e:
+        logging.error(f"Temel veri güncelleme hatası: {e}", exc_info=True)
+
+
 async def startup_seed_stock_universe():
     """Fast startup seed: keep BIST100 metadata canonical without triggering heavy backfills."""
     await data_collector.initialize_stocks()
@@ -301,7 +310,7 @@ async def lifespan(app: FastAPI):
     # Model portföy günlük izleme snapshot'ı
     scheduler.add_job(background_model_portfolio_snapshot, "interval", hours=1, max_instances=1, misfire_grace_time=300, start_date=_now + timedelta(minutes=6))
 
-    # Hisse fiyat + temel veri güncelleme (yfinance)
+    # Hisse fiyat + teknik veri güncelleme (yfinance)
     scheduler.add_job(
         background_data_update,
         "interval",
@@ -309,6 +318,16 @@ async def lifespan(app: FastAPI):
         max_instances=1,
         misfire_grace_time=300,
         start_date=_now + timedelta(minutes=10),
+    )
+
+    # Temel finansal veri güncelleme — haftalık (F/K, PD/DD, ROE)
+    scheduler.add_job(
+        background_fundamentals_update,
+        "interval",
+        hours=168,  # 7 gün
+        max_instances=1,
+        misfire_grace_time=3600,
+        start_date=_now + timedelta(minutes=25),
     )
 
     scheduler.start()

@@ -744,6 +744,7 @@ export const api = {
     bist250?: boolean;
     search?: string;
     recommendation?: string;
+    symbols?: string;
   }) => {
     const searchParams = new URLSearchParams();
     if (params?.sort_by) searchParams.set('sort_by', params.sort_by);
@@ -755,6 +756,7 @@ export const api = {
     if (params?.bist250) searchParams.set('bist250', 'true');
     if (params?.search) searchParams.set('search', params.search);
     if (params?.recommendation) searchParams.set('recommendation', params.recommendation);
+    if (params?.symbols) searchParams.set('symbols', params.symbols);
     return apiFetch<StockListResponse>(`/stocks?${searchParams.toString()}`);
   },
 

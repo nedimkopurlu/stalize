@@ -22,7 +22,6 @@ import re
 
 from app.core.database import AsyncSessionLocal
 from app.models.news import NewsItem
-from app.models.stock import Stock
 from sqlalchemy import select
 from app.services.source_health import record_source_failure, record_source_success
 # Harici model entegrasyonu yok; kural tabanlı etki skoru kullanılır.
@@ -455,21 +454,12 @@ class TUIKAdapter:
                 # Makro olaylar tipik olarak GARAN (banka), EREGL (metal) vb. etkilenir
                 # Düşük faiz → Bankalar kötü
                 # Yüksek işsizlik → Consumer stocks zayıf
-                stock_result = await db.execute(
-                    select(Stock).where(Stock.symbol == "GARAN")
-                )
-                stock = stock_result.scalar_one_or_none()
-
-                if not stock:
-                    logger.warning("GARAN bulunamadı")
-                    return False
-
                 # Kural tabanlı nötr varsayılan.
                 analysis = {"sentiment_score": 0.0, "importance_score": 1.0}
 
-                # NewsItem oluştur
+                # NewsItem oluştur — makro haber, belirli bir hisseye bağlı değil
                 news = NewsItem(
-                    stock_id=stock.id,
+                    stock_id=None,
                     title=event_data.get("title", "TUIK Bildirimi"),
                     summary=event_data.get("summary", ""),
                     url=event_data.get("url", "https://www.tuik.gov.tr"),
