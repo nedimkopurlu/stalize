@@ -4,6 +4,7 @@
  */
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
 interface FetchOptions {
   method?: string;
@@ -18,6 +19,7 @@ async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promis
     method,
     headers: {
       'Content-Type': 'application/json',
+      ...(API_KEY ? { 'X-API-Key': API_KEY } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
     signal,
@@ -404,6 +406,7 @@ export interface PortfolioPosition {
   rationale: string | null;
   current_price: number | null;
   pnl_pct: number | null;
+  partial: boolean;
 }
 
 export interface PortfolioSnapshot {
@@ -545,6 +548,8 @@ export interface ModelPortfolioWeekSummary {
   portfolio_return_pct: number | null;
   daily_return_pct?: number | null;
   benchmark_symbol?: string;
+  benchmark_entry?: number | null;
+  benchmark_last?: number | null;
   benchmark_return_pct: number | null;
   active_return_spread: number | null;
   review_summary?: string | null;
@@ -616,6 +621,11 @@ export interface MacroIndicators {
   interest_rate: number | null;
   inflation_rate: number | null;
   as_of: string;
+  usdtry_as_of: string | null;
+  gold_try_as_of: string | null;
+  bist100_as_of: string | null;
+  interest_rate_as_of: string | null;
+  inflation_rate_as_of: string | null;
 }
 
 export interface KapNotification {
@@ -792,6 +802,11 @@ export const api = {
 
   getStockSectors: () =>
     apiFetch<StockSectorsResponse>('/stocks/sectors'),
+
+  screenStocks: (params: Record<string, string>) => {
+    const qs = new URLSearchParams(params).toString();
+    return apiFetch<{ stocks?: StockSummary[]; count?: number }>(`/screener?${qs}`);
+  },
 
   // Health
   health: () =>

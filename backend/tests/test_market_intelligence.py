@@ -7,7 +7,7 @@ from app.services.market_intelligence import MarketIntelligenceService
 async def test_unified_feed_prefers_higher_priority_source_on_duplicate_headline(monkeypatch):
     service = MarketIntelligenceService()
 
-    async def fake_macro():
+    async def fake_external(limit=20):
         return [
             {
                 "headline": "TCMB Politika Faiz Oranı: 37%",
@@ -36,10 +36,6 @@ async def test_unified_feed_prefers_higher_priority_source_on_duplicate_headline
             }
         ]
 
-    async def fake_external(limit=20):
-        return []
-
-    monkeypatch.setattr("app.services.market_intelligence.macro_news_collector.fetch_real_events", fake_macro)
     monkeypatch.setattr("app.services.market_intelligence.kap_parser.get_recent_feed", fake_kap)
     monkeypatch.setattr(service, "get_official_feed", fake_official)
     monkeypatch.setattr("app.services.market_intelligence.external_news_rss_collector.fetch_market_news", fake_external)
@@ -124,9 +120,6 @@ async def test_overview_tracks_horizon_summary(monkeypatch):
 async def test_unified_feed_filters_stale_company_items(monkeypatch):
     service = MarketIntelligenceService()
 
-    async def fake_macro():
-        return []
-
     async def fake_kap(limit=20):
         return [
             {
@@ -158,7 +151,6 @@ async def test_unified_feed_filters_stale_company_items(monkeypatch):
     async def fake_external(limit=20):
         return []
 
-    monkeypatch.setattr("app.services.market_intelligence.macro_news_collector.fetch_real_events", fake_macro)
     monkeypatch.setattr("app.services.market_intelligence.kap_parser.get_recent_feed", fake_kap)
     monkeypatch.setattr(service, "get_official_feed", fake_official)
     monkeypatch.setattr("app.services.market_intelligence.external_news_rss_collector.fetch_market_news", fake_external)

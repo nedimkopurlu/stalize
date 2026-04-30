@@ -174,7 +174,10 @@ async def _store_items(
     if stored > 0:
         record_source_success(source_key, detail={"fetched_count": fetched, "stored_count": stored})
     else:
-        record_source_failure(source_key, "No new records persisted", detail={"fetched_count": fetched, "stored_count": 0})
+        record_source_success(
+            source_key,
+            detail={"fetched_count": fetched, "stored_count": 0, "status": "unchanged"},
+        )
 
     return stored
 

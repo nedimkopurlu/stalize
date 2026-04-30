@@ -10,6 +10,7 @@ RED: before main.py is updated (no kwargs present yet)
 GREEN: after main.py is updated with both kwargs on all 10 add_job() calls
 """
 import pytest
+from datetime import timedelta
 from unittest.mock import AsyncMock, patch
 
 
@@ -95,3 +96,19 @@ def test_removed_briefing_job_not_registered():
 
     job_funcs = [job.func.__name__ for job in scheduler.get_jobs()]
     assert "generate_daily_briefing" not in job_funcs
+
+
+@pytest.mark.asyncio
+async def test_planned_tefas_source_is_not_scheduled():
+    """TEFAS is on-demand while its bulk endpoint is disabled, so it must not run in the scheduler."""
+    jobs = await _get_all_jobs_via_lifespan()
+    job_funcs = [job.func.__name__ for job in jobs]
+    assert "background_tefas_scan" not in job_funcs
+
+
+@pytest.mark.asyncio
+async def test_model_portfolio_generation_not_intraday_forced():
+    """Weekly model portfolio selection must not churn every few minutes."""
+    jobs = await _get_all_jobs_via_lifespan()
+    job = next(job for job in jobs if job.func.__name__ == "background_model_portfolio_generate")
+    assert getattr(job.trigger, "interval", None) >= timedelta(hours=6)

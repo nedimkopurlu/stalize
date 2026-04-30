@@ -20,9 +20,9 @@ class ScoringEngine:
 
     DEFAULT_SCORE = 50.0
     CONTEXTUAL_WEIGHTS = {
-        "fundamental_score": 0.30,
-        "technical_score": 0.25,
-        "sentiment_score": 0.15,
+        "fundamental_score": settings.WEIGHT_FUNDAMENTAL,
+        "technical_score": settings.WEIGHT_TECHNICAL,
+        "sentiment_score": settings.WEIGHT_NEWS,
         "company_event_score": 0.15,
         "macro_regime_score": 0.10,
         "risk_overlay_score": 0.05,
@@ -30,14 +30,14 @@ class ScoringEngine:
 
     def _resolve_weights(self) -> Dict[str, float]:
         """
-        Agirliklar config.py uzerinden okunur.
-        Toplam her zaman 1.0 olmali: 0.45 + 0.40 + 0.15 = 1.0
+        CONTEXTUAL_WEIGHTS'teki 3 çekirdek bileşenin göreli oranlarını 1.0'a
+        normalize eder; böylece calculate_overall_score ve get_contextual_score_breakdown
+        aynı ağırlık oranlarını kullanır.
         """
-        return {
-            "fundamental_score": settings.WEIGHT_FUNDAMENTAL,
-            "technical_score": settings.WEIGHT_TECHNICAL,
-            "sentiment_score": settings.WEIGHT_NEWS,
-        }
+        core_keys = ("fundamental_score", "technical_score", "sentiment_score")
+        core = {k: self.CONTEXTUAL_WEIGHTS[k] for k in core_keys}
+        total = sum(core.values())
+        return {k: v / total for k, v in core.items()}
 
     def calculate_overall_score(self, stock: Stock) -> tuple:
         """

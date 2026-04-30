@@ -1,7 +1,7 @@
 """
 News & Sentiment model — Haberler ve duygu analizi
 """
-from sqlalchemy import Column, Integer, Float, String, Text, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, Float, String, Text, DateTime, ForeignKey, Boolean, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -10,6 +10,9 @@ from app.core.database import Base
 class NewsItem(Base):
     """A news article with sentiment analysis results."""
     __tablename__ = "news_items"
+    __table_args__ = (
+        UniqueConstraint("source", "url", name="uq_news_source_url"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     stock_id = Column(Integer, ForeignKey("stocks.id"), nullable=True, index=True)  # nullable for general market news

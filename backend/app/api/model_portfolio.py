@@ -1,7 +1,8 @@
 """Otomatik haftalık model portföy API router."""
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
+from app.core.security import verify_api_key
 
 from app.services.model_portfolio import (
     generate_weekly_model_portfolio,
@@ -24,14 +25,14 @@ async def model_portfolio_history(limit: int = Query(12, ge=1, le=52)):
 
 
 @router.post("/model-portfolio/generate")
-async def model_portfolio_generate(force: bool = Query(False)):
+async def model_portfolio_generate(force: bool = Query(False), _: None = Depends(verify_api_key)):
     payload = await generate_weekly_model_portfolio(force=force)
     payload["generated_at"] = datetime.now(timezone.utc).isoformat()
     return payload
 
 
 @router.post("/model-portfolio/snapshot")
-async def model_portfolio_snapshot():
+async def model_portfolio_snapshot(_: None = Depends(verify_api_key)):
     payload = await take_model_portfolio_snapshot()
     return {
         "snapshot": payload,

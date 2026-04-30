@@ -307,6 +307,8 @@ async def review_model_portfolio_week(week_id: int) -> Optional[dict[str, Any]]:
                 )
 
         benchmark_return = None
+        if week.benchmark_entry in (None, 0) and benchmark_last is not None:
+            week.benchmark_entry = benchmark_last
         if week.benchmark_entry not in (None, 0) and benchmark_last is not None:
             benchmark_return = ((benchmark_last - week.benchmark_entry) / week.benchmark_entry) * 100
 
@@ -545,6 +547,8 @@ async def take_model_portfolio_snapshot(for_week_start: Optional[date] = None) -
             )
 
         benchmark_last = await _fetch_benchmark_close(week.benchmark_symbol)
+        if week.benchmark_entry in (None, 0) and benchmark_last is not None:
+            week.benchmark_entry = benchmark_last
         benchmark_return = None
         if week.benchmark_entry not in (None, 0) and benchmark_last is not None:
             benchmark_return = ((benchmark_last - week.benchmark_entry) / week.benchmark_entry) * 100
@@ -650,6 +654,8 @@ async def get_current_model_portfolio() -> dict[str, Any]:
             "portfolio_return_pct": week.portfolio_return_pct,
             "daily_return_pct": week.daily_return_pct,
             "benchmark_symbol": week.benchmark_symbol,
+            "benchmark_entry": week.benchmark_entry,
+            "benchmark_last": week.benchmark_last,
             "benchmark_return_pct": week.benchmark_return_pct,
             "active_return_spread": week.active_return_spread,
             "review_summary": week.review_summary,

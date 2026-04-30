@@ -53,12 +53,13 @@ export default function ScreenerPage() {
   const [filters, setFilters] = useState<ScreenerFilters>({ sort_by: 'overall_score' });
   const [results, setResults] = useState<ScreenerResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [screenError, setScreenError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [sectors, setSectors] = useState<string[]>([]);
   const [savedName, setSavedName] = useState('');
 
   useEffect(() => {
-    api.getStockSectors().then(r => setSectors(r.sectors)).catch(() => {});
+    api.getStockSectors().then(r => setSectors(r.sectors)).catch((e: unknown) => console.error('Sector load failed:', e));
   }, []);
 
   const runScreener = useCallback(async (f: ScreenerFilters) => {
@@ -79,12 +80,12 @@ export default function ScreenerPage() {
       if (f.sort_by) params.sort_by = f.sort_by;
       params.limit = '200';
 
-      const qs = new URLSearchParams(params).toString();
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/screener?${qs}`);
-      const data = await res.json() as { stocks?: ScreenerResult[]; count?: number };
+      setScreenError(null);
+      const data = await api.screenStocks(params) as { stocks?: ScreenerResult[]; count?: number };
       setResults(data.stocks ?? []);
       setTotal(data.count ?? 0);
-    } catch {
+    } catch (err) {
+      setScreenError(err instanceof Error ? err.message : 'Tarama yapılamadı');
       setResults([]);
     } finally {
       setLoading(false);
@@ -256,6 +257,12 @@ export default function ScreenerPage() {
             />
             <button className="btn btn-ghost btn-sm" onClick={saveFilter}>Kaydet</button>
             <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{total} sonuç bulundu</span>
+          </div>
+        )}
+
+        {screenError && (
+          <div style={{ color: 'var(--red-400)', padding: '12px 0', fontWeight: 600 }}>
+            Hata: {screenError}
           </div>
         )}
 

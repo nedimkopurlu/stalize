@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional
 import yfinance as yf
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.models.stock import Stock
 from app.models.fundamental import Fundamental
@@ -129,7 +129,7 @@ class FundamentalAnalysisEngine:
             score = self._calculate_score(metrics)
             
             # Use current year as period (simplified for initial implementation)
-            current_year = str(datetime.now().year)
+            current_year = str(datetime.now(timezone.utc).year)
             period = f"{current_year}-Current"
             
             # Upsert fundamental record

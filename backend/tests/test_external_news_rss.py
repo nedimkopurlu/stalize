@@ -1,4 +1,6 @@
 import types
+from datetime import datetime, timezone
+from email.utils import format_datetime
 
 import pytest
 
@@ -7,6 +9,10 @@ from app.services.external_news_rss import ExternalNewsRSSCollector
 
 def _entry(**kwargs):
     return types.SimpleNamespace(**kwargs)
+
+
+def _fresh_rfc2822():
+    return format_datetime(datetime.now(timezone.utc))
 
 
 def test_normalize_entry_filters_personal_finance_marketwatch_item():
@@ -18,7 +24,7 @@ def test_normalize_entry_filters_personal_finance_marketwatch_item():
             "title": "I’m planning to retire at 60. Should I sell my house?",
             "summary": "Personal finance decision",
             "link": "https://example.com/retire",
-            "published": "Fri, 24 Apr 2026 22:08:00 GMT",
+            "published": _fresh_rfc2822(),
         },
         feed_def,
     )
@@ -35,7 +41,7 @@ def test_normalize_entry_keeps_macro_relevant_item():
             "title": "Jobless claims fall to lowest level since mid-May",
             "summary": "Labor market data and treasury yields move lower.",
             "link": "https://example.com/jobless",
-            "published": "Fri, 24 Apr 2026 22:08:00 GMT",
+            "published": _fresh_rfc2822(),
         },
         feed_def,
     )
@@ -55,7 +61,7 @@ def test_normalize_entry_filters_investing_insider_filing_noise():
             "title": "Netlist director Blake Welcher sells $75,000 in common stock",
             "summary": "",
             "link": "https://example.com/insider",
-            "published": "2026-04-25 01:34:25",
+            "published": _fresh_rfc2822(),
         },
         feed_def,
     )
@@ -74,7 +80,7 @@ async def test_fetch_market_news_dedupes_same_item(monkeypatch):
                     "title": "Dollar slips after U.S., Iran agree to more peace talks",
                     "summary": "Forex markets react.",
                     "link": "https://example.com/fx",
-                    "published": "2026-04-25 01:00:00",
+                    "published": _fresh_rfc2822(),
                 }
             ]
         )

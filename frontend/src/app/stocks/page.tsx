@@ -13,6 +13,7 @@ export default function StocksPage() {
   const [stocks, setStocks] = useState<StockSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('overall_score');
   const [filterBist30, setFilterBist30] = useState(false);
@@ -30,7 +31,7 @@ export default function StocksPage() {
 
   // Load sector list from API on mount
   useEffect(() => {
-    api.getStockSectors().then((res) => setSectors(res.sectors)).catch(() => {});
+    api.getStockSectors().then((res) => setSectors(res.sectors)).catch((e: unknown) => console.error('Sector load failed:', e));
   }, []);
 
   useEffect(() => {
@@ -63,8 +64,8 @@ export default function StocksPage() {
       }
       setTotal(res.total);
       setHasMore(res.stocks.length === 50);
-    } catch {
-      /* */
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Hisse listesi alınamadı');
     } finally {
       if (append) setLoadingMore(false);
       else setLoading(false);
@@ -120,6 +121,11 @@ export default function StocksPage() {
             </button>
           )}
         />
+        {loadError && (
+          <div style={{ color: 'var(--red-400)', padding: '12px 0', fontWeight: 600 }}>
+            Hata: {loadError}
+          </div>
+        )}
         {/* Filter Bar */}
         <div className={styles.filterBar}>
           <div className={styles.searchWrap}>

@@ -39,7 +39,7 @@ def test_startup_error_without_feedparser(monkeypatch):
 @pytest.mark.asyncio
 async def test_kap_unreachable_returns_empty(monkeypatch):
     """
-    When feedparser.parse() raises an exception (KAP temporarily down),
+    When both KAP API and feedparser fallback raise exceptions,
     fetch_latest_announcements must return [] with a WARNING log — not mock data.
     """
     import feedparser
@@ -50,10 +50,59 @@ async def test_kap_unreachable_returns_empty(monkeypatch):
     def raise_network_error(url):
         raise ConnectionError("KAP RSS unreachable")
 
+    def raise_api_error(*args, **kwargs):
+        raise ConnectionError("KAP API unreachable")
+
+    monkeypatch.setattr("app.services.kap_parser.requests.post", raise_api_error)
     monkeypatch.setattr(feedparser, "parse", raise_network_error)
+    monkeypatch.setattr("app.services.kap_parser.record_source_failure", lambda *args, **kwargs: None)
+    monkeypatch.setattr("app.services.kap_parser.record_source_success", lambda *args, **kwargs: None)
 
     result = await parser.fetch_latest_announcements()
     assert result == [], f"Expected [], got {result!r} — mock data is still being returned"
+
+
+@pytest.mark.asyncio
+async def test_kap_disclosure_api_rows_are_converted(monkeypatch):
+    """Current KAP disclosure API rows must become stock-level announcements."""
+    from app.services.kap_parser import KAPParser
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return [
+                {
+                    "publishDate": "29.04.2026 23:41:21",
+                    "kapTitle": "BİM BİRLEŞİK MAĞAZALAR A.Ş.",
+                    "subject": "Kar Payı Dağıtım İşlemlerine İlişkin Bildirim",
+                    "summary": "Yönetim kurulu kar payı dağıtım teklifini açıkladı.",
+                    "disclosureIndex": 1599000,
+                    "stockCodes": "BIMAS",
+                    "disclosureClass": "ODA",
+                }
+            ]
+
+    captured = {}
+
+    def fake_post(url, **kwargs):
+        captured["url"] = url
+        captured["payload"] = kwargs["json"]
+        return FakeResponse()
+
+    parser = KAPParser()
+    parser.max_age_hours = 999999
+    monkeypatch.setattr("app.services.kap_parser.requests.post", fake_post)
+    monkeypatch.setattr("app.services.kap_parser.record_source_success", lambda *args, **kwargs: None)
+
+    result = await parser.fetch_latest_announcements()
+
+    assert captured["url"].endswith("/api/disclosure/members/byCriteria")
+    assert captured["payload"]["memberType"] == "IGS"
+    assert len(result) == 1
+    assert result[0]["symbol"] == "BIMAS"
+    assert result[0]["event_type"] == "dividend"
+    assert result[0]["link"] == "https://www.kap.org.tr/tr/Bildirim/1599000"
 
 
 def test_kap_event_classification_and_scoring_are_more_specific():
@@ -79,6 +128,16 @@ def test_kap_event_classification_and_scoring_are_more_specific():
         analysis = parser._analyze_announcement(title, detected)
         assert detected == event_type
         assert analysis["sentiment_label"] == label
+
+
+def test_kap_symbol_extraction_requires_symbol_boundaries():
+    from app.services.kap_parser import KAPParser
+
+    parser = KAPParser()
+
+    symbols = parser._extract_symbols("KONTR - Pay Alım Satım Bildirimi")
+    assert "KONTR" in symbols
+    assert "KONT" not in symbols
 
 
 def test_kap_event_priority_prefers_dividend_before_generic_earnings():

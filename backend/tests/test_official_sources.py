@@ -35,7 +35,7 @@ def test_official_source_catalog_keys_are_unique():
 
 def test_official_source_catalog_has_expected_active_sources():
     active_keys = {item["key"] for item in OFFICIAL_SOURCE_CATALOG if item["ingest_status"] == "active"}
-    assert {"kap", "borsa_istanbul", "bist_datastore", "tcmb", "tuik", "hmb", "tefas", "mkk", "takasbank"}.issubset(active_keys)
+    assert {"kap", "borsa_istanbul", "bist_datastore", "tcmb", "tuik", "hmb", "mkk", "takasbank"}.issubset(active_keys)
 
 
 async def test_source_catalog_endpoint_summary_counts():
@@ -61,15 +61,15 @@ async def test_source_catalog_exposes_runner_availability():
     assert sources["hmb"]["runner_available"] is True
     assert sources["mkk"]["runner_available"] is True
     assert sources["takasbank"]["runner_available"] is True
-    assert sources["tefas"]["runner_available"] is True
+    assert sources["tefas"]["runner_available"] is False
     assert sources["hmb"]["scan_mode"] == "scheduler+manual"
-    assert sources["tefas"]["scan_mode"] == "scheduler+manual"
+    assert sources["tefas"]["scan_mode"] == "on_demand"
     assert sources["borsa_istanbul"]["scan_mode"] == "scheduler+manual"
     assert sources["bist_datastore"]["scan_mode"] == "scheduler+manual"
     assert sources["mkk"]["scan_mode"] == "scheduler+manual"
     assert sources["takasbank"]["scan_mode"] == "scheduler+manual"
     assert sources["hmb"]["health_status"] in {"missing", "fresh", "failing"}
-    assert sources["tefas"]["health_status"] in {"missing", "fresh"}
+    assert sources["tefas"]["health_status"] == "not_run"
     assert sources["borsa_istanbul"]["health_status"] in {"missing", "fresh"}
     assert sources["bist_datastore"]["health_status"] in {"missing", "fresh"}
     assert sources["mkk"]["health_status"] in {"missing", "fresh"}
@@ -371,7 +371,7 @@ def test_is_source_active_matches_catalog():
     assert is_source_active("hmb") is True
     assert is_source_active("mkk") is True
     assert is_source_active("takasbank") is True
-    assert is_source_active("tefas") is True
+    assert is_source_active("tefas") is False
 
 
 @pytest.mark.asyncio
@@ -742,7 +742,6 @@ async def test_health_check_includes_official_ingest_sources_without_degrading(m
         async def execute(self, _query):
             return FakeScalarResult(next(self.values))
 
-    monkeypatch.setattr(admin, "AsyncSessionLocal", lambda: FakeSession())
     monkeypatch.setattr(
         admin,
         "get_all_source_health",
@@ -765,7 +764,7 @@ async def test_health_check_includes_official_ingest_sources_without_degrading(m
         lambda source_keys=None, per_source_limit=5: {},
     )
 
-    payload = await health_check()
+    payload = await health_check(db=FakeSession())
 
     assert payload["status"] == "healthy"
     assert "borsa_istanbul" in payload["sources"]

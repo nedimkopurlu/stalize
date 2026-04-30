@@ -379,8 +379,19 @@ class TechnicalAnalysisEngine:
         ema_component = self._compute_ema_trend_score(df)
         ema_normalized = ema_component * 2.0  # 0-100'e normalize
 
-        # Harmanlama: sinyal %60 + EMA %40
-        blended = signal_score * 0.6 + ema_normalized * 0.4
+        # ATR volatilite düzeltmesi: yüksek volatilite riski artırır → skoru düşürür
+        atr_adjustment = 0.0
+        if "atr_14" in df.columns and "close" in df.columns:
+            last_atr = df["atr_14"].iloc[-1]
+            last_close = df["close"].iloc[-1]
+            if not pd.isna(last_atr) and not pd.isna(last_close) and last_close > 0:
+                atr_pct = float(last_atr) / float(last_close)  # ATR as % of price
+                # Penalty for high volatility: >5% ATR pulls score toward neutral
+                if atr_pct > 0.05:
+                    atr_adjustment = -min((atr_pct - 0.05) * 100, 10.0)
+
+        # Harmanlama: sinyal %60 + EMA %40 + ATR ayarlaması
+        blended = signal_score * 0.6 + ema_normalized * 0.4 + atr_adjustment
         score = round(max(0.0, min(100.0, blended)), 2)
 
         # Öneri belirleme

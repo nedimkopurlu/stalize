@@ -15,6 +15,7 @@ def test_concurrent_source_updates_keep_all_sources(tmp_path, monkeypatch):
 
     monkeypatch.setattr(source_health, "RUNTIME_DIR", runtime_dir)
     monkeypatch.setattr(source_health, "STATE_FILE", state_file)
+    monkeypatch.setattr(source_health, "_persist_ledger_event", lambda *args, **kwargs: None)
 
     original_write_state = source_health._write_state
 
@@ -51,6 +52,7 @@ def test_failure_without_detail_preserves_last_success_detail(tmp_path, monkeypa
 
     monkeypatch.setattr(source_health, "RUNTIME_DIR", runtime_dir)
     monkeypatch.setattr(source_health, "STATE_FILE", state_file)
+    monkeypatch.setattr(source_health, "_persist_ledger_event", lambda *args, **kwargs: None)
 
     source_health.record_source_success("kap", detail={"stored_count": 4, "fetched_count": 5})
     source_health.record_source_failure("kap", "temporary fetch error")
@@ -67,6 +69,7 @@ def test_runtime_summary_tracks_success_rate_and_failure_streak(tmp_path, monkey
 
     monkeypatch.setattr(source_health, "RUNTIME_DIR", runtime_dir)
     monkeypatch.setattr(source_health, "STATE_FILE", state_file)
+    monkeypatch.setattr(source_health, "_persist_ledger_event", lambda *args, **kwargs: None)
 
     source_health.record_source_success("tcmb", detail={"stored_count": 2})
     source_health.record_source_failure("tcmb", "first failure")

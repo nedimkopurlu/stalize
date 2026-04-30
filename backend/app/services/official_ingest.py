@@ -94,7 +94,6 @@ ACTIVE_SOURCE_RUNNERS: Dict[str, SourceRunner] = {
     "hmb": _run_hmb,
     "mkk": _run_mkk,
     "takasbank": _run_takasbank,
-    "tefas": _run_tefas,
 }
 
 

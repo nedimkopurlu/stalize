@@ -45,12 +45,12 @@ Full details: `.planning/milestones/v3.0-ROADMAP.md`
 
 ### v3.1 Audit Düzeltmeleri (Phases 22–27) — AKTİF
 
-- [ ] **Phase 22: Async Infrastructure** — Event loop ve bağlantı havuzu sağlığı
-- [ ] **Phase 23: Security Hardening** — Endpoint auth, CORS, hata sanitizasyonu
-- [ ] **Phase 24: Data Reliability** — KAP sembol kapsamı, datetime doğruluğu, cache sınırları
-- [ ] **Phase 25: Business Logic Correctness** — Skor tutarlılığı, screener validasyonu, volatilite
-- [ ] **Phase 26: Frontend Quality** — Hata görünürlüğü, tip güvenliği, form validasyonu
-- [ ] **Phase 27: Infrastructure Upgrade** — Python 3.12, health endpoint, structured logging
+- [x] **Phase 22: Async Infrastructure** — Event loop ve bağlantı havuzu sağlığı ✅
+- [x] **Phase 23: Security Hardening** — Endpoint auth, CORS, hata sanitizasyonu ✅
+- [x] **Phase 24: Data Reliability** — KAP sembol kapsamı, datetime doğruluğu, cache sınırları ✅
+- [x] **Phase 25: Business Logic Correctness** — Skor tutarlılığı, screener validasyonu, volatilite ✅
+- [x] **Phase 26: Frontend Quality** — Hata görünürlüğü, tip güvenliği, form validasyonu ✅
+- [x] **Phase 27: Infrastructure Upgrade** — Python 3.12, health endpoint, structured logging ✅
 
 ## Phase Details
 
@@ -63,7 +63,11 @@ Full details: `.planning/milestones/v3.0-ROADMAP.md`
   2. API route'larının hiçbirinde `AsyncSessionLocal()` doğrudan çağrısı yok; tüm DB erişimi `Depends(get_db)` üzerinden geçiyor.
   3. 14 scheduler job aynı anda tetiklenmiyor; ardışık başlatma ile thundering herd gözlemlenmiyor.
   4. Uygulama başlatıldığında bir `asyncio.create_task()` hatası oluşursa servis sessizce kırık başlamıyor; hata log'da görünüyor ve health durumuna yansıyor.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 22-01-PLAN.md — Sleep fix (data_collector, macro_news) + session migration (stocks, portfolio_v2, macro, admin) to Depends(get_db)
+- [ ] 22-02-PLAN.md — Scheduler job staggering with start_date offsets + asyncio startup task error tracking
 
 ### Phase 23: Security Hardening
 **Goal**: Tüm mutasyon endpoint'leri kimlik doğrulaması gerektiriyor ve API response'ları iç hata detaylarını sızdırmıyor.
@@ -125,12 +129,12 @@ Full details: `.planning/milestones/v3.0-ROADMAP.md`
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 22. Async Infrastructure | 0/? | Not started | - |
-| 23. Security Hardening | 0/? | Not started | - |
-| 24. Data Reliability | 0/? | Not started | - |
-| 25. Business Logic Correctness | 0/? | Not started | - |
-| 26. Frontend Quality | 0/? | Not started | - |
-| 27. Infrastructure Upgrade | 0/? | Not started | - |
+| 22. Async Infrastructure | 2/2 | Complete | 2026-04-29 |
+| 23. Security Hardening | 1/1 | Complete | 2026-04-28 |
+| 24. Data Reliability | 1/1 | Complete | 2026-04-28 |
+| 25. Business Logic Correctness | 1/1 | Complete | 2026-04-28 |
+| 26. Frontend Quality | 1/1 | Complete | 2026-04-28 |
+| 27. Infrastructure Upgrade | 1/1 | Complete | 2026-04-29 |
 
 ## Kuzey Yıldızı
 

@@ -21,9 +21,10 @@ async def get_intelligence_overview(limit: int = 10):
             "feed": [],
             "scenarios": [],
             "source_summary": {},
+            "horizon_summary": {},
             "priority_mode": "kap_first",
             "primary_source": "KAP",
-            "error": str(e),
+            "error": "Piyasa akışı alınamadı",
         }
 
 
@@ -49,8 +50,8 @@ async def get_correlation_matrix(window_days: int = 30):
         return result
 
     except Exception as e:
-        logger.error(f"Korelasyon matrisi hatası: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Korelasyon matrisi hatası: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Korelasyon matrisi hesaplanamadı")
 
 
 @router.get("/correlation/crisis")
@@ -82,8 +83,8 @@ async def get_crisis_mode_status():
         }
 
     except Exception as e:
-        logger.error(f"Kriz modu hatası: {e}")
-        return {"error": str(e)}
+        logger.error(f"Kriz modu hatası: {e}", exc_info=True)
+        return {"error": "Kriz modu hesaplanamadı"}
 
 
 @router.get("/correlation/diversification-advice")
@@ -100,8 +101,8 @@ async def get_diversification_advice():
         return recommendations
 
     except Exception as e:
-        logger.error(f"Diversifikasyon tavsiyesi hatası: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Diversifikasyon tavsiyesi hatası: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Diversifikasyon tavsiyesi alınamadı")
 
 
 @router.get("/correlation/low-correlation-pairs")
@@ -130,5 +131,5 @@ async def get_low_correlation_pairs(threshold: float = 0.3, limit: int = 20):
         }
 
     except Exception as e:
-        logger.error(f"Düşük korelasyon çiftleri hatası: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Düşük korelasyon çiftleri hatası: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Korelasyon çiftleri hesaplanamadı")

@@ -2,12 +2,14 @@ from __future__ import annotations
 
 """Admin domain router — sağlık kontrolü, manuel tarama tetikleyicileri, dashboard."""
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timezone
 from sqlalchemy import select, func, and_
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
-from app.core.database import AsyncSessionLocal
+from app.core.database import get_db
+from app.core.security import verify_api_key
 from app.data.official_sources import OFFICIAL_SOURCE_CATALOG, get_official_source_map
 from app.models.stock import Stock
 from app.models.news import NewsItem
@@ -236,7 +238,7 @@ def _build_catalog_source_item(
     source_runtime: Dict[str, Any],
     ledger_snapshot: Dict[str, Dict[str, Any]],
 ) -> Dict[str, Any]:
-    runtime = source_runtime.get(item["key"], {})
+    runtime = {} if item["ingest_status"] == "planned" else source_runtime.get(item["key"], {})
     health_payload = _build_runtime_only_source_health(
         item["key"],
         runtime,
@@ -464,7 +466,7 @@ def _build_source_health_dashboard_payload(limit: int = 40) -> Dict[str, Any]:
 
 
 @router.get("/health")
-async def health_check():
+async def health_check(db: AsyncSession = Depends(get_db)):
     """Sağlık kontrolü + veri tazeliği özeti."""
     source_runtime = get_all_source_health()
     ledger_snapshot = get_source_health_ledger_snapshot(
@@ -476,80 +478,79 @@ async def health_check():
         per_source_limit=5,
     )
 
-    async with AsyncSessionLocal() as db:
-        stock_count = (
-            await db.execute(select(func.count(Stock.id)).where(Stock.is_active))
-        ).scalar() or 0
+    stock_count = (
+        await db.execute(select(func.count(Stock.id)).where(Stock.is_active))
+    ).scalar() or 0
 
-        kap_last = (
-            await db.execute(
-                select(func.max(NewsItem.created_at)).where(NewsItem.source == "KAP")
-            )
-        ).scalar_one_or_none()
-        borsa_last = (
-            await db.execute(
-                select(func.max(NewsItem.created_at)).where(NewsItem.source == "Borsa İstanbul")
-            )
-        ).scalar_one_or_none()
-        hmb_last = (
-            await db.execute(
-                select(func.max(NewsItem.created_at)).where(NewsItem.source == "HMB")
-            )
-        ).scalar_one_or_none()
-        tcmb_last = (
-            await db.execute(
-                select(func.max(NewsItem.created_at)).where(NewsItem.source == "TCMB")
-            )
-        ).scalar_one_or_none()
-        tuik_last = (
-            await db.execute(
-                select(func.max(NewsItem.created_at)).where(NewsItem.source == "TUIK")
-            )
-        ).scalar_one_or_none()
-        mkk_last = (
-            await db.execute(
-                select(func.max(NewsItem.created_at)).where(NewsItem.source == "MKK")
-            )
-        ).scalar_one_or_none()
-        takasbank_last = (
-            await db.execute(
-                select(func.max(NewsItem.created_at)).where(NewsItem.source == "Takasbank")
-            )
-        ).scalar_one_or_none()
-        snapshot_last = (
-            await db.execute(select(func.max(PortfolioDailySnapshot.created_at)))
-        ).scalar_one_or_none()
+    kap_last = (
+        await db.execute(
+            select(func.max(NewsItem.created_at)).where(NewsItem.source == "KAP")
+        )
+    ).scalar_one_or_none()
+    borsa_last = (
+        await db.execute(
+            select(func.max(NewsItem.created_at)).where(NewsItem.source == "Borsa İstanbul")
+        )
+    ).scalar_one_or_none()
+    hmb_last = (
+        await db.execute(
+            select(func.max(NewsItem.created_at)).where(NewsItem.source == "HMB")
+        )
+    ).scalar_one_or_none()
+    tcmb_last = (
+        await db.execute(
+            select(func.max(NewsItem.created_at)).where(NewsItem.source == "TCMB")
+        )
+    ).scalar_one_or_none()
+    tuik_last = (
+        await db.execute(
+            select(func.max(NewsItem.created_at)).where(NewsItem.source == "TUIK")
+        )
+    ).scalar_one_or_none()
+    mkk_last = (
+        await db.execute(
+            select(func.max(NewsItem.created_at)).where(NewsItem.source == "MKK")
+        )
+    ).scalar_one_or_none()
+    takasbank_last = (
+        await db.execute(
+            select(func.max(NewsItem.created_at)).where(NewsItem.source == "Takasbank")
+        )
+    ).scalar_one_or_none()
+    snapshot_last = (
+        await db.execute(select(func.max(PortfolioDailySnapshot.created_at)))
+    ).scalar_one_or_none()
 
-        kap_count = (
-            await db.execute(select(func.count(NewsItem.id)).where(NewsItem.source == "KAP"))
-        ).scalar() or 0
-        borsa_count = (
-            await db.execute(select(func.count(NewsItem.id)).where(NewsItem.source == "Borsa İstanbul"))
-        ).scalar() or 0
-        hmb_count = (
-            await db.execute(select(func.count(NewsItem.id)).where(NewsItem.source == "HMB"))
-        ).scalar() or 0
-        tcmb_count = (
-            await db.execute(select(func.count(NewsItem.id)).where(NewsItem.source == "TCMB"))
-        ).scalar() or 0
-        tuik_count = (
-            await db.execute(select(func.count(NewsItem.id)).where(NewsItem.source == "TUIK"))
-        ).scalar() or 0
-        mkk_count = (
-            await db.execute(select(func.count(NewsItem.id)).where(NewsItem.source == "MKK"))
-        ).scalar() or 0
-        takasbank_count = (
-            await db.execute(select(func.count(NewsItem.id)).where(NewsItem.source == "Takasbank"))
-        ).scalar() or 0
-        bist_datastore_last = (
-            await db.execute(select(func.max(BistDatastoreFileSnapshot.created_at)))
-        ).scalar()
-        bist_datastore_count = (
-            await db.execute(select(func.count(BistDatastoreFileSnapshot.id)))
-        ).scalar() or 0
-        snapshot_count = (
-            await db.execute(select(func.count(PortfolioDailySnapshot.id)))
-        ).scalar() or 0
+    kap_count = (
+        await db.execute(select(func.count(NewsItem.id)).where(NewsItem.source == "KAP"))
+    ).scalar() or 0
+    borsa_count = (
+        await db.execute(select(func.count(NewsItem.id)).where(NewsItem.source == "Borsa İstanbul"))
+    ).scalar() or 0
+    hmb_count = (
+        await db.execute(select(func.count(NewsItem.id)).where(NewsItem.source == "HMB"))
+    ).scalar() or 0
+    tcmb_count = (
+        await db.execute(select(func.count(NewsItem.id)).where(NewsItem.source == "TCMB"))
+    ).scalar() or 0
+    tuik_count = (
+        await db.execute(select(func.count(NewsItem.id)).where(NewsItem.source == "TUIK"))
+    ).scalar() or 0
+    mkk_count = (
+        await db.execute(select(func.count(NewsItem.id)).where(NewsItem.source == "MKK"))
+    ).scalar() or 0
+    takasbank_count = (
+        await db.execute(select(func.count(NewsItem.id)).where(NewsItem.source == "Takasbank"))
+    ).scalar() or 0
+    bist_datastore_last = (
+        await db.execute(select(func.max(BistDatastoreFileSnapshot.created_at)))
+    ).scalar()
+    bist_datastore_count = (
+        await db.execute(select(func.count(BistDatastoreFileSnapshot.id)))
+    ).scalar() or 0
+    snapshot_count = (
+        await db.execute(select(func.count(PortfolioDailySnapshot.id)))
+    ).scalar() or 0
 
     def with_runtime(source_key: str, payload: Dict) -> Dict:
         runtime = source_runtime.get(source_key, {})
@@ -624,13 +625,15 @@ async def health_check():
         "records": snapshot_count,
     }
 
-    if sources["kap"]["status"] == "stale" and sources["kap"].get("last_successful_fetch"):
-        kap_success_at = _parse_runtime_ts(sources["kap"]["last_successful_fetch"])
-        if kap_success_at:
-            sources["kap"].update(_age_status(kap_success_at, warn_after_hours=12))
-            sources["kap"] = _apply_attention_signal(
-                sources["kap"],
-                source_key="kap",
+    for source_key, source in list(sources.items()):
+        if source.get("status") != "stale" or not source.get("last_successful_fetch"):
+            continue
+        success_at = _parse_runtime_ts(source["last_successful_fetch"])
+        if success_at:
+            source.update(_age_status(success_at, warn_after_hours=_source_warn_after_hours(source_key)))
+            sources[source_key] = _apply_attention_signal(
+                source,
+                source_key=source_key,
                 ingest_status="active",
                 scan_mode="scheduler+manual",
             )
@@ -651,11 +654,14 @@ async def health_check():
     if sources["kap"]["status"] == "stale":
         overall_status = "degraded"
 
+    canonical_symbols = settings.BIST100_SYMBOLS
+
     return {
         "status": overall_status,
         "stocks_in_db": stock_count,
-        "canonical_universe_count": len(settings.BIST100_SYMBOLS),
-        "universe_sync": stock_count == len(settings.BIST100_SYMBOLS),
+        "canonical_universe_count": len(canonical_symbols),
+        "universe_sync": stock_count == len(canonical_symbols),
+        "universe_scope": "BIST100",
         "official_source_count": len(OFFICIAL_SOURCE_CATALOG),
         "active_official_source_count": sum(1 for item in OFFICIAL_SOURCE_CATALOG if item["ingest_status"] == "active"),
         "sources": sources,
@@ -692,7 +698,7 @@ async def get_source_health_history_endpoint(source_key: Optional[str] = None, l
 
 
 @router.post("/sources/scan/{source_key}")
-async def trigger_source_scan(source_key: str):
+async def trigger_source_scan(source_key: str, _: None = Depends(verify_api_key)):
     """Aktif resmi kaynaklardan birini generic ingest registry üzerinden tetikle."""
     source = get_official_source_map().get(source_key)
     if not source:
@@ -942,6 +948,7 @@ async def backfill_bist_datastore_snapshot(
     category_code: str = "PPB",
     dataset_limit: int = 20,
     files_per_dataset: int = 5,
+    _: None = Depends(verify_api_key),
 ):
     """Veri Store dosya metadata katmanını kalıcı snapshot olarak doldur."""
     from app.services.bist_datastore_archive import persist_bist_datastore_snapshot
@@ -964,6 +971,7 @@ async def archive_bist_datastore_latest_files(
     product_type_id: Optional[str] = None,
     limit: int = 5,
     overwrite: bool = False,
+    _: None = Depends(verify_api_key),
 ):
     """Son Veri Store snapshot'indaki dosyalari runtime arsivine indir."""
     from app.services.bist_datastore_file_archive import archive_latest_bist_datastore_files
@@ -1072,7 +1080,7 @@ async def get_takasbank_announcements(limit: int = 10):
 
 
 @router.post("/kap/scan")
-async def trigger_kap_scan():
+async def trigger_kap_scan(_: None = Depends(verify_api_key)):
     """KAP taramasını manuel tetikle."""
     from app.services.kap_parser import run_kap_scan
 
@@ -1086,56 +1094,55 @@ async def trigger_kap_scan():
 
 
 @router.get("/dashboard")
-async def get_dashboard():
+async def get_dashboard(db: AsyncSession = Depends(get_db)):
     """Ana dashboard verileri — hızlı özet."""
-    async with AsyncSessionLocal() as db:
-        # Top 5 Alım & Top 5 Satım
-        top_buy_result = await db.execute(
-            select(Stock)
-            .where(and_(Stock.is_active, Stock.overall_score.isnot(None)))
-            .order_by(Stock.overall_score.desc())
-            .limit(5)
-        )
-        top_buy = top_buy_result.scalars().all()
+    # Top 5 Alım & Top 5 Satım
+    top_buy_result = await db.execute(
+        select(Stock)
+        .where(and_(Stock.is_active, Stock.overall_score.isnot(None)))
+        .order_by(Stock.overall_score.desc())
+        .limit(5)
+    )
+    top_buy = top_buy_result.scalars().all()
 
-        top_sell_result = await db.execute(
-            select(Stock)
-            .where(and_(Stock.is_active, Stock.overall_score.isnot(None)))
-            .order_by(Stock.overall_score.asc())
-            .limit(5)
-        )
-        top_sell = top_sell_result.scalars().all()
+    top_sell_result = await db.execute(
+        select(Stock)
+        .where(and_(Stock.is_active, Stock.overall_score.isnot(None)))
+        .order_by(Stock.overall_score.asc())
+        .limit(5)
+    )
+    top_sell = top_sell_result.scalars().all()
 
-        # En çok yükselen / düşen (günlük)
-        top_gainer_result = await db.execute(
-            select(Stock)
-            .where(and_(Stock.is_active, Stock.daily_change_pct.isnot(None)))
-            .order_by(Stock.daily_change_pct.desc())
-            .limit(5)
-        )
-        top_gainers = top_gainer_result.scalars().all()
+    # En çok yükselen / düşen (günlük)
+    top_gainer_result = await db.execute(
+        select(Stock)
+        .where(and_(Stock.is_active, Stock.daily_change_pct.isnot(None)))
+        .order_by(Stock.daily_change_pct.desc())
+        .limit(5)
+    )
+    top_gainers = top_gainer_result.scalars().all()
 
-        top_loser_result = await db.execute(
-            select(Stock)
-            .where(and_(Stock.is_active, Stock.daily_change_pct.isnot(None)))
-            .order_by(Stock.daily_change_pct.asc())
-            .limit(5)
-        )
-        top_losers = top_loser_result.scalars().all()
+    top_loser_result = await db.execute(
+        select(Stock)
+        .where(and_(Stock.is_active, Stock.daily_change_pct.isnot(None)))
+        .order_by(Stock.daily_change_pct.asc())
+        .limit(5)
+    )
+    top_losers = top_loser_result.scalars().all()
 
-        # İstatistikler
-        stats_result = await db.execute(
-            select(
-                func.count(Stock.id),
-                func.avg(Stock.overall_score),
-                func.count().filter(Stock.recommendation == "GÜÇLÜ AL"),
-                func.count().filter(Stock.recommendation == "AL"),
-                func.count().filter(Stock.recommendation == "TUT"),
-                func.count().filter(Stock.recommendation == "SAT"),
-                func.count().filter(Stock.recommendation == "GÜÇLÜ SAT"),
-            ).where(Stock.is_active)
-        )
-        stats = stats_result.fetchone()
+    # İstatistikler
+    stats_result = await db.execute(
+        select(
+            func.count(Stock.id),
+            func.avg(Stock.overall_score),
+            func.count().filter(Stock.recommendation == "GÜÇLÜ AL"),
+            func.count().filter(Stock.recommendation == "AL"),
+            func.count().filter(Stock.recommendation == "TUT"),
+            func.count().filter(Stock.recommendation == "SAT"),
+            func.count().filter(Stock.recommendation == "GÜÇLÜ SAT"),
+        ).where(Stock.is_active)
+    )
+    stats = stats_result.fetchone()
 
     def stock_to_dict(s):
         return {

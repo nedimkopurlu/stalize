@@ -6,12 +6,14 @@ import logging
 import re
 import time
 import requests
-import yfinance as yf
-from fastapi import APIRouter, HTTPException, Query
+from bs4 import BeautifulSoup
+from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
-from app.core.database import AsyncSessionLocal
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import get_db
+from app.core.security import verify_api_key
 from app.models.news import NewsItem
 from app.models.price import CommodityPrice
 from app.models.stock import Stock
@@ -21,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.post("/macro/tcmb/scan")
-async def trigger_tcmb_scan():
+async def trigger_tcmb_scan(_: None = Depends(verify_api_key)):
     """TCMB makro veri taramasını manuel tetikle."""
     from app.services.tcmb_adapter import run_tcmb_scan
 
@@ -36,7 +38,7 @@ async def trigger_tcmb_scan():
 
 
 @router.post("/macro/tuik/scan")
-async def trigger_tuik_scan():
+async def trigger_tuik_scan(_: None = Depends(verify_api_key)):
     """TUIK ekonomik veri taramasını manuel tetikle."""
     from app.services.tuik_adapter import run_tuik_scan
 
@@ -51,65 +53,51 @@ async def trigger_tuik_scan():
 
 
 @router.get("/macro/events")
-async def get_macro_events(limit: int = 20, days: int = 7):
+async def get_macro_events(
+    limit: int = 20,
+    days: int = 7,
+    db: AsyncSession = Depends(get_db),
+):
     """Son N gündeki makro olayları getir (KAP, TCMB, TUIK haber akışı)."""
-    async with AsyncSessionLocal() as db:
-        cutoff_time = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff_time = datetime.now(timezone.utc) - timedelta(days=days)
 
-        result = await db.execute(
-            select(NewsItem, Stock)
-            .join(Stock, NewsItem.stock_id == Stock.id)
-            .filter(
-                NewsItem.published_at >= cutoff_time,
-                NewsItem.category.in_(["macro", "company"])
-            )
-            .order_by(NewsItem.published_at.desc())
-            .limit(limit)
+    result = await db.execute(
+        select(NewsItem, Stock)
+        .outerjoin(Stock, NewsItem.stock_id == Stock.id)
+        .filter(
+            NewsItem.published_at >= cutoff_time,
+            NewsItem.category.in_(["macro", "company"])
         )
+        .order_by(NewsItem.published_at.desc())
+        .limit(limit)
+    )
 
-        events = []
-        for news, stock in result.all():
-            events.append({
-                "id": news.id,
-                "title": news.title,
-                "summary": news.summary,
-                "source": news.source,
-                "symbol": stock.symbol,
-                "sentiment_score": news.sentiment_score,
-                "sentiment_label": news.sentiment_label,
-                "importance_score": news.importance_score,
-                "published_at": news.published_at.isoformat(),
-                "category": news.category,
-            })
+    events = []
+    for news, stock in result.all():
+        events.append({
+            "id": news.id,
+            "title": news.title,
+            "summary": news.summary,
+            "source": news.source,
+            "symbol": stock.symbol if stock else None,
+            "sentiment_score": news.sentiment_score,
+            "sentiment_label": news.sentiment_label,
+            "importance_score": news.importance_score,
+            "published_at": news.published_at.isoformat(),
+            "category": news.category,
+        })
 
-        return {
-            "events": events,
-            "total": len(events),
-            "filtered_by_days": days,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
+    return {
+        "events": events,
+        "total": len(events),
+        "filtered_by_days": days,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 # Module-level simple cache (sufficient for single-worker FastAPI)
 _indicators_cache: dict = {}
 _indicators_cache_ttl = 60  # seconds
-
-
-async def _fetch_last_close(symbol: str) -> Optional[float]:
-    loop = asyncio.get_event_loop()
-
-    def _sync_fetch():
-        try:
-            ticker = yf.Ticker(symbol)
-            hist = ticker.history(period="5d", interval="1d", auto_adjust=True)
-            if hist is None or hist.empty:
-                return None
-            close = hist["Close"].dropna()
-            return float(close.iloc[-1]) if not close.empty else None
-        except Exception:
-            return None
-
-    return await loop.run_in_executor(None, _sync_fetch)
 
 
 async def _fetch_last_close_with_date(symbol: str) -> Tuple[Optional[float], Optional[str]]:
@@ -144,6 +132,75 @@ async def _fetch_last_close_with_date(symbol: str) -> Tuple[Optional[float], Opt
     return await loop.run_in_executor(None, _sync_fetch)
 
 
+def _parse_tr_market_number(value: str) -> Optional[float]:
+    try:
+        return float(value.strip().replace(".", "").replace(",", "."))
+    except (AttributeError, ValueError):
+        return None
+
+
+def _parse_market_timestamp(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+        if parsed.tzinfo is None:
+            return parsed.replace(tzinfo=timezone.utc)
+        return parsed
+    except ValueError:
+        pass
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def _is_newer_reading(candidate_as_of: Optional[str], current_as_of: Optional[str]) -> bool:
+    candidate_dt = _parse_market_timestamp(candidate_as_of)
+    current_dt = _parse_market_timestamp(current_as_of)
+    if candidate_dt is None:
+        return False
+    if current_dt is None:
+        return True
+    return candidate_dt > current_dt
+
+
+async def _fetch_bloomberght_bist100() -> Tuple[Optional[float], Optional[str]]:
+    """Fetch BIST100 from BloombergHT/Foreks as a live fallback when Yahoo lags."""
+    loop = asyncio.get_event_loop()
+
+    def _sync_fetch():
+        try:
+            response = requests.get(
+                "https://www.bloomberght.com/borsa/endeks/bist-100",
+                timeout=20,
+                headers={"User-Agent": "Mozilla/5.0"},
+            )
+            response.raise_for_status()
+            text = BeautifulSoup(response.text, "html.parser").get_text(" ", strip=True)
+            pattern = re.compile(
+                r"BIST\s+100\s+ENDEKS[İI].{0,80}?XU100.{0,80}?([0-9.]+,[0-9]{2}).{0,300}?Güncelleme:\s*([0-9]{2}/[0-9]{2}/[0-9]{4}\s+[0-9]{2}:[0-9]{2}:[0-9]{2})",
+                re.IGNORECASE,
+            )
+            match = pattern.search(text)
+            if not match:
+                return None, None
+
+            value = _parse_tr_market_number(match.group(1))
+            if value is None:
+                return None, None
+
+            as_of = datetime.strptime(match.group(2), "%d/%m/%Y %H:%M:%S").replace(
+                tzinfo=timezone(timedelta(hours=3))
+            )
+            return value, as_of.isoformat()
+        except Exception as exc:
+            logger.warning("BloombergHT BIST100 fallback failed: %s", exc)
+            return None, None
+
+    return await loop.run_in_executor(None, _sync_fetch)
+
+
 def _extract_percentage(text: str) -> Optional[float]:
     if not text:
         return None
@@ -162,18 +219,17 @@ def _extract_percentage(text: str) -> Optional[float]:
         return None
 
 
-async def _latest_macro_reading(source: str, title_prefix: str) -> Tuple[Optional[float], Optional[str]]:
-    async with AsyncSessionLocal() as db:
-        result = await db.execute(
-            select(NewsItem)
-            .where(
-                NewsItem.source == source,
-                NewsItem.title.ilike(f"{title_prefix}%"),
-            )
-            .order_by(NewsItem.published_at.desc(), NewsItem.id.desc())
-            .limit(1)
+async def _latest_macro_reading(db: AsyncSession, source: str, title_prefix: str) -> Tuple[Optional[float], Optional[str]]:
+    result = await db.execute(
+        select(NewsItem)
+        .where(
+            NewsItem.source == source,
+            NewsItem.title.ilike(f"{title_prefix}%"),
         )
-        item = result.scalar_one_or_none()
+        .order_by(NewsItem.published_at.desc(), NewsItem.id.desc())
+        .limit(1)
+    )
+    item = result.scalar_one_or_none()
 
     if not item:
         return None, None
@@ -183,15 +239,14 @@ async def _latest_macro_reading(source: str, title_prefix: str) -> Tuple[Optiona
     return value, as_of
 
 
-async def _latest_market_reading(symbol: str) -> Tuple[Optional[float], Optional[str]]:
-    async with AsyncSessionLocal() as db:
-        result = await db.execute(
-            select(CommodityPrice)
-            .where(CommodityPrice.symbol == symbol)
-            .order_by(CommodityPrice.date.desc(), CommodityPrice.id.desc())
-            .limit(1)
-        )
-        item = result.scalar_one_or_none()
+async def _latest_market_reading(db: AsyncSession, symbol: str) -> Tuple[Optional[float], Optional[str]]:
+    result = await db.execute(
+        select(CommodityPrice)
+        .where(CommodityPrice.symbol == symbol)
+        .order_by(CommodityPrice.date.desc(), CommodityPrice.id.desc())
+        .limit(1)
+    )
+    item = result.scalar_one_or_none()
 
     if not item:
         return None, None
@@ -214,7 +269,7 @@ def _market_reading_is_stale(as_of: Optional[str], max_age_days: int = 2) -> boo
 
 
 @router.get("/macro/indicators")
-async def get_macro_indicators():
+async def get_macro_indicators(db: AsyncSession = Depends(get_db)):
     """
     Live macro göstergeleri: USD/TRY, altın (TRY), BIST100 endeksi.
     Faiz ve enflasyon en son TCMB/TUIK kayıtlarından okunur. 60 saniyelik önbellek.
@@ -226,11 +281,11 @@ async def get_macro_indicators():
         return _indicators_cache["data"]
 
     try:
-        (usdtry, usdtry_as_of), (gold_usd, gold_as_of), (bist100, bist100_as_of) = await asyncio.gather(
-            _latest_market_reading("USDTRY=X"),
-            _latest_market_reading("GC=F"),
-            _latest_market_reading("XU100.IS"),
-        )
+        # AsyncSession aynı anda birden fazla sorguyu güvenli çalıştırmaz.
+        # Bu yüzden DB okumalarını sıralı, dış canlı HTTP fallback'lerini paralel tutuyoruz.
+        usdtry, usdtry_as_of = await _latest_market_reading(db, "USDTRY=X")
+        gold_usd, gold_as_of = await _latest_market_reading(db, "GC=F")
+        bist100, bist100_as_of = await _latest_market_reading(db, "XU100.IS")
 
         live_needed = (
             usdtry is None
@@ -238,7 +293,7 @@ async def get_macro_indicators():
             or bist100 is None
             or _market_reading_is_stale(usdtry_as_of, max_age_days=2)
             or _market_reading_is_stale(gold_as_of, max_age_days=2)
-            or _market_reading_is_stale(bist100_as_of, max_age_days=4)
+            or _market_reading_is_stale(bist100_as_of, max_age_days=1)
         )
 
         if live_needed:
@@ -251,14 +306,18 @@ async def get_macro_indicators():
                 usdtry, usdtry_as_of = live_usdtry, live_usdtry_as_of
             if live_gold_usd is not None and (_market_reading_is_stale(gold_as_of, max_age_days=2) or gold_usd is None):
                 gold_usd, gold_as_of = live_gold_usd, live_gold_as_of
-            if live_bist100 is not None and (_market_reading_is_stale(bist100_as_of, max_age_days=4) or bist100 is None):
+            if live_bist100 is not None and (_market_reading_is_stale(bist100_as_of, max_age_days=1) or bist100 is None):
                 bist100, bist100_as_of = live_bist100, live_bist100_as_of
+
+        live_bist100_foreks, live_bist100_foreks_as_of = await _fetch_bloomberght_bist100()
+        if live_bist100_foreks is not None and _is_newer_reading(live_bist100_foreks_as_of, bist100_as_of):
+            bist100, bist100_as_of = live_bist100_foreks, live_bist100_foreks_as_of
 
         # Convert gold USD/oz → TRY/gram  (1 troy oz = 31.1035 g)
         gold_try = (gold_usd * usdtry / 31.1035) if (gold_usd and usdtry) else None
 
-        interest_rate, interest_rate_as_of = await _latest_macro_reading("TCMB", "TCMB Politika Faiz Oranı")
-        inflation_rate, inflation_rate_as_of = await _latest_macro_reading("TUIK", "TUIK TÜFE Enflasyon")
+        interest_rate, interest_rate_as_of = await _latest_macro_reading(db, "TCMB", "TCMB Politika Faiz Oranı")
+        inflation_rate, inflation_rate_as_of = await _latest_macro_reading(db, "TUIK", "TUIK TÜFE Enflasyon")
 
         result = {
             "usdtry": round(usdtry, 4) if usdtry else None,
@@ -267,6 +326,7 @@ async def get_macro_indicators():
             "usdtry_as_of": usdtry_as_of,
             "gold_try_as_of": gold_as_of,
             "bist100_as_of": bist100_as_of,
+            "bist100_source": "BloombergHT/Foreks" if live_bist100_foreks is not None and bist100 == live_bist100_foreks else "Yahoo Finance",
             "interest_rate": round(interest_rate, 2) if interest_rate is not None else None,
             "inflation_rate": round(inflation_rate, 2) if inflation_rate is not None else None,
             "interest_rate_as_of": interest_rate_as_of,
@@ -279,5 +339,5 @@ async def get_macro_indicators():
         return result
 
     except Exception as exc:
-        logger.error(f"Macro indicators fetch failed: {exc}")
-        raise HTTPException(status_code=503, detail=f"Makro veri alınamadı: {exc}")
+        logger.error(f"Macro indicators fetch failed: {exc}", exc_info=True)
+        raise HTTPException(status_code=503, detail="Makro göstergeler alınamadı")

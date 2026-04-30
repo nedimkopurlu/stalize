@@ -43,8 +43,10 @@ export default function WatchlistPage() {
       // Preserve watchlist order
       const ordered = syms.map(sym => watchlistStocks.find(s => s.symbol === sym)).filter(Boolean) as StockSummary[];
       setStocks(ordered);
-    } catch {
+      setError('');
+    } catch (err) {
       setStocks([]);
+      setError(err instanceof Error ? err.message : 'İzleme listesi verileri alınamadı');
     } finally {
       setLoading(false);
     }
@@ -66,6 +68,7 @@ export default function WatchlistPage() {
   }
 
   function removeSymbol(sym: string) {
+    if (!window.confirm(`${sym} izleme listesinden çıkarılsın mı?`)) return;
     const newSymbols = symbols.filter(s => s !== sym);
     setSymbols(newSymbols);
     saveWatchlist(newSymbols);
@@ -97,6 +100,12 @@ export default function WatchlistPage() {
           <button className="btn btn-primary btn-sm" onClick={addSymbol}>Ekle</button>
           {error && <span style={{ color: 'var(--red-500)', fontSize: '0.82rem' }}>{error}</span>}
         </div>
+
+        {error && (
+          <div className="glass-card" style={{ marginBottom: 16, color: 'var(--red-500)' }}>
+            {error}
+          </div>
+        )}
 
         {symbols.length === 0 ? (
           <TerminalEmpty>

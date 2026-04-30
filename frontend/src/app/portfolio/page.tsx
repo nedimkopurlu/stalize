@@ -64,6 +64,10 @@ export default function PortfolioPage() {
 
   async function submitPosition(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const entryPrice = Number(form.entry_price);
+    const quantity = Number(form.quantity);
+    if (entryPrice <= 0) { setError('Alış fiyatı 0\'dan büyük olmalı'); return; }
+    if (quantity <= 0) { setError('Adet 0\'dan büyük olmalı'); return; }
     setSaving(true);
     setError(null);
     try {
@@ -86,6 +90,7 @@ export default function PortfolioPage() {
   }
 
   async function closePosition(positionId: number) {
+    if (!window.confirm('Bu pozisyonu kapatmak istediğinizden emin misiniz?')) return;
     setSaving(true);
     setError(null);
     try {
@@ -189,7 +194,7 @@ export default function PortfolioPage() {
                     <tr key={pos.id}>
                       <td style={{ fontWeight: 800 }}>{pos.symbol}</td>
                       <td>{formatCurrency(pos.entry_price)}</td>
-                      <td>{formatCurrency(pos.current_price)}</td>
+                      <td>{formatCurrency(pos.current_price)}{pos.partial && <span title="Fiyat alınamadı" style={{ marginLeft: 4, color: 'var(--amber-400)', fontSize: '0.75rem' }}>~</span>}</td>
                       <td>{pos.quantity}</td>
                       <td style={{ fontWeight: 800, color: (pos.pnl_pct ?? 0) >= 0 ? 'var(--green-400)' : 'var(--red-400)' }}>
                         {formatPercent(pos.pnl_pct)}

@@ -5,7 +5,7 @@ Fetches related news and calculates sentiment scores.
 import logging
 import yfinance as yf
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.models.stock import Stock
 
@@ -74,7 +74,7 @@ class SentimentAnalysisEngine:
             smoothed_score = (average_sentiment * 0.6) + (current_score * 0.4)
             
             stock.sentiment_score = smoothed_score
-            stock.last_data_update = datetime.now()
+            stock.last_data_update = datetime.now(timezone.utc)
             
             await db.commit()
             

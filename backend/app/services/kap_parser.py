@@ -10,10 +10,12 @@ Kaynaklar:
 """
 
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Union
 
 import feedparser  # hard import — missing feedparser raises ModuleNotFoundError at module load
+import requests
 from sqlalchemy import select
 
 from app.core.config import settings
@@ -39,6 +41,7 @@ class KAPParser:
     
     def __init__(self):
         self.rss_url = settings.KAP_RSS_URL
+        self.api_url = settings.KAP_DISCLOSURE_API_URL
         self.scan_interval = settings.KAP_SCAN_INTERVAL_MIN
         self.max_age_hours = settings.KAP_MAX_AGE_HOURS
 
@@ -48,69 +51,161 @@ class KAPParser:
         
     async def fetch_latest_announcements(self) -> List[Dict]:
         """
-        KAP RSS feed'inden en yeni bildirimleri çek.
-        
-        Returns:
-            [
-                {
-                    "title": "XYZ Şirketi Temettü Dağıtımı",
-                    "link": "https://www.kap.org.tr/...",
-                    "published": "2026-04-15T10:30:00Z",
-                    "symbol": "XYZ",
-                    "event_type": "dividend",
-                    "content_summary": "..."
-                }
-            ]
+        KAP canlı bildirim akışından en yeni bildirimleri çek.
+
+        Önce KAP'ın güncel disclosure API'si kullanılır; API geçici olarak
+        erişilemezse eski RSS yolu yalnızca yedek olarak denenir.
         """
-        logger.info("🔴 KAP RSS feed taranıyor...")
+        logger.info("🔴 KAP canlı bildirim akışı taranıyor...")
 
         try:
-            # RSS'i parse et
-            feed = feedparser.parse(self.rss_url)
-            announcements = []
-            
-            for entry in feed.entries[:50]:  # Son 50 haber
-                try:
-                    pub_date = self._parse_date(entry.get('published', ''))
-                    
-                    # Çok eski haberler atla
-                    if pub_date and (datetime.now(pub_date.tzinfo) - pub_date) > timedelta(hours=self.max_age_hours):
-                        continue
-                    
-                    # Hisse sembolünü çıkar
-                    symbols = self._extract_symbols(entry.get('title', '') + ' ' + entry.get('summary', ''))
-                    
-                    for symbol in symbols:
-                        announcement = {
-                            "title": entry.get('title', 'No Title'),
-                            "link": entry.get('link', ''),
-                            "published": pub_date.isoformat() if pub_date else datetime.now().isoformat(),
-                            "symbol": symbol,
-                            "event_type": self._classify_event(entry.get('title', '')),
-                            "content_summary": entry.get('summary', '')[:500],  # İlk 500 char
-                            "source": "KAP",
-                        }
-                        announcements.append(announcement)
-                
-                except Exception as e:
-                    logger.warning(f"KAP haber parse hatası: {e}")
-                    continue
-            
-            logger.info(f"✅ {len(announcements)} KAP bildirimi bulundu")
-            record_source_success(
-                "kap",
-                detail={"fetched_count": len(announcements), "rss_url": self.rss_url},
-            )
-            return announcements
-            
-        except Exception as e:
-            logger.warning(f"KAP RSS geçici olarak erişilemiyor: {e}. Boş liste döndürülüyor; bir sonraki taramada tekrar deneyecek.")
-            record_source_failure(
-                "kap",
-                str(e),
-                detail={"rss_url": self.rss_url},
-            )
+            announcements = self._fetch_disclosure_api_announcements()
+            source_method = "disclosure_api"
+        except Exception as api_error:
+            logger.warning(f"KAP API geçici olarak erişilemiyor: {api_error}. RSS yedeği deneniyor.")
+            try:
+                announcements = self._fetch_rss_announcements()
+                source_method = "rss"
+            except Exception as rss_error:
+                logger.warning(f"KAP RSS yedeği de erişilemiyor: {rss_error}. Boş liste döndürülüyor.")
+                record_source_failure(
+                    "kap",
+                    f"api={api_error}; rss={rss_error}",
+                    detail={"api_url": self.api_url, "rss_url": self.rss_url},
+                )
+                return []
+
+        logger.info(f"✅ {len(announcements)} KAP bildirimi bulundu")
+        record_source_success(
+            "kap",
+            detail={
+                "fetched_count": len(announcements),
+                "source_method": source_method,
+                "api_url": self.api_url,
+                "rss_url": self.rss_url,
+            },
+        )
+        return announcements
+
+    def _fetch_disclosure_api_announcements(self) -> List[Dict]:
+        """KAP'ın güncel bildirim sorgu API'sinden duyuruları al."""
+        now = datetime.now(timezone.utc)
+        payload = {
+            "fromDate": (now - timedelta(hours=self.max_age_hours)).date().isoformat(),
+            "toDate": now.date().isoformat(),
+            "memberType": "IGS",
+            "mkkMemberOidList": [],
+            "inactiveMkkMemberOidList": [],
+            "disclosureClass": "",
+            "subjectList": [],
+            "isLate": "",
+            "mainSector": "",
+            "sector": "",
+            "subSector": "",
+            "marketOid": "",
+            "index": "",
+            "bdkReview": "",
+            "bdkMemberOidList": [],
+            "year": "",
+            "term": "",
+            "ruleType": "",
+            "period": "",
+            "fromSrc": False,
+            "srcCategory": "",
+            "disclosureIndexList": [],
+        }
+        response = requests.post(
+            self.api_url,
+            json=payload,
+            timeout=20,
+            headers={
+                "Accept": "application/json,text/plain,*/*",
+                "Accept-Language": "tr",
+                "Content-Type": "application/json",
+                "Origin": "https://www.kap.org.tr",
+                "Referer": "https://www.kap.org.tr/tr/bildirim-sorgu",
+                "User-Agent": "Mozilla/5.0",
+            },
+        )
+        if response.status_code != 200:
+            raise RuntimeError(f"KAP disclosure API HTTP {response.status_code}")
+
+        rows = response.json()
+        if not isinstance(rows, list):
+            raise RuntimeError("KAP disclosure API beklenmeyen JSON döndürdü")
+
+        announcements: List[Dict] = []
+        for row in rows[:200]:
+            announcements.extend(self._convert_disclosure_row(row))
+        return announcements
+
+    def _convert_disclosure_row(self, row: Dict) -> List[Dict]:
+        """KAP API satırını sistemin kullandığı hisse bazlı bildirim formatına çevir."""
+        published = self._parse_date(str(row.get("publishDate") or ""))
+        if published and (datetime.now(published.tzinfo) - published) > timedelta(hours=self.max_age_hours):
             return []
+
+        subject = str(row.get("subject") or "").strip()
+        summary = str(row.get("summary") or "").strip()
+        company_title = str(row.get("kapTitle") or "").strip()
+        disclosure_index = row.get("disclosureIndex")
+        stock_codes = str(row.get("stockCodes") or row.get("relatedStocks") or "")
+        symbols = self._extract_symbols(" ".join([stock_codes, subject, summary, company_title]))
+        if not symbols:
+            return []
+
+        title = subject or summary or "KAP Bildirimi"
+        if stock_codes:
+            title = f"{stock_codes} - {title}"
+        content_summary = summary or company_title
+        link = f"https://www.kap.org.tr/tr/Bildirim/{disclosure_index}" if disclosure_index else "https://www.kap.org.tr/tr/bildirim-sorgu"
+        event_type = self._classify_event(f"{title} {summary} {row.get('disclosureClass') or ''}")
+
+        return [
+            {
+                "title": title,
+                "link": link,
+                "published": published.isoformat() if published else datetime.now(timezone.utc).isoformat(),
+                "symbol": symbol,
+                "event_type": event_type,
+                "content_summary": content_summary[:500],
+                "source": "KAP",
+            }
+            for symbol in symbols
+        ]
+
+    def _fetch_rss_announcements(self) -> List[Dict]:
+        """Eski RSS yolu çalışırsa yedek olarak kullan."""
+        feed = feedparser.parse(self.rss_url)
+        status = getattr(feed, "status", None)
+        if status and int(status) >= 400:
+            raise RuntimeError(f"KAP RSS HTTP {status}")
+        if getattr(feed, "bozo", False) and not getattr(feed, "entries", []):
+            raise RuntimeError(str(getattr(feed, "bozo_exception", "KAP RSS parse error")))
+
+        announcements = []
+        for entry in feed.entries[:50]:
+            try:
+                pub_date = self._parse_date(entry.get("published", ""))
+                if pub_date and (datetime.now(pub_date.tzinfo) - pub_date) > timedelta(hours=self.max_age_hours):
+                    continue
+
+                symbols = self._extract_symbols(entry.get("title", "") + " " + entry.get("summary", ""))
+                for symbol in symbols:
+                    announcements.append({
+                        "title": entry.get("title", "No Title"),
+                        "link": entry.get("link", ""),
+                        "published": pub_date.isoformat() if pub_date else datetime.now(timezone.utc).isoformat(),
+                        "symbol": symbol,
+                        "event_type": self._classify_event(entry.get("title", "")),
+                        "content_summary": entry.get("summary", "")[:500],
+                        "source": "KAP",
+                    })
+            except Exception as e:
+                logger.warning(f"KAP haber parse hatası: {e}")
+                continue
+
+        return announcements
 
     async def store_announcements(self, announcements: List[Dict]) -> int:
         """
@@ -124,11 +219,11 @@ class KAPParser:
             
             for ann in announcements:
                 try:
-                    # Duplikasyon kontrol
+                    # Duplikasyon kontrol — (source, url) çifti yeterli
                     result = await db.execute(
                         select(NewsItem).where(
-                            (NewsItem.url == ann['link']) |
-                            (NewsItem.title == ann['title'])
+                            (NewsItem.source == "KAP") &
+                            (NewsItem.url == ann['link'])
                         )
                     )
                     if result.scalar_one_or_none():
@@ -186,6 +281,10 @@ class KAPParser:
             return parsedate_to_datetime(date_str)
         except Exception:
             try:
+                if "." in date_str and ":" in date_str:
+                    return datetime.strptime(date_str, "%d.%m.%Y %H:%M:%S").replace(
+                        tzinfo=timezone(timedelta(hours=3))
+                    )
                 return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
             except Exception:
                 return None
@@ -200,8 +299,9 @@ class KAPParser:
         symbols = []
         text_upper = text.upper()
         
-        for symbol in settings.BIST100_SYMBOLS:
-            if symbol in text_upper:
+        for symbol in settings.BIST_FULL_SYMBOLS:
+            pattern = rf"(?<![A-Z0-9]){re.escape(symbol)}(?![A-Z0-9])"
+            if re.search(pattern, text_upper):
                 symbols.append(symbol)
         
         return list(set(symbols))  # Duplikasyon kaldır
@@ -228,7 +328,7 @@ class KAPParser:
         if any(w in title_lower for w in ["geri alim", "pay geri alim", "share buyback", "buyback"]):
             return "buyback"
 
-        if any(w in title_lower for w in ["finansal sonuc", "donem sonucu", "bilanco", "earnings", "results"]):
+        if any(w in title_lower for w in ["finansal sonuc", "finansal rapor", "donem sonucu", "bilanco", "earnings", "results"]):
             return "earnings"
 
         if any(w in title_lower for w in ["yatirim", "kapasite artis", "tesis", "fabrika", "yatirim tesvik", "investment"]):

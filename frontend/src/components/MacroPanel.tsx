@@ -74,7 +74,8 @@ export default function MacroPanel({ indicators, loading }: MacroPanelProps) {
         const rawValue = indicators[cfg.key];
         const value = typeof rawValue === 'number' ? rawValue : null;
         const asOfKey = `${cfg.key}_as_of` as keyof MacroIndicators;
-        const asOfValue = typeof indicators[asOfKey] === 'string' ? indicators[asOfKey] as string : null;
+        const rawAsOf = indicators[asOfKey];
+        const asOfValue = typeof rawAsOf === 'string' ? rawAsOf : null;
 
         return (
           <div key={cfg.key} className={styles.indicatorCard}>

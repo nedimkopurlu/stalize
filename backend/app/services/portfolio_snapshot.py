@@ -15,14 +15,30 @@ import yfinance as yf
 from sqlalchemy import select
 
 from app.core.database import AsyncSessionLocal
+from app.models.stock import Stock
 from app.models.portfolio_v2 import PortfolioPosition, PortfolioDailySnapshot
+from app.services.data_collector import get_yahoo_chart_history
 from app.services.source_health import record_source_failure, record_source_success
 
 logger = logging.getLogger(__name__)
 
 
 async def _fetch_close_price(yahoo_symbol: str) -> Optional[float]:
-    """yfinance'den son kapanış fiyatını çek — async (run_in_executor)."""
+    """Fetch latest real close/last price with DB and Yahoo chart fallback before yfinance."""
+    if yahoo_symbol.endswith(".IS"):
+        symbol = yahoo_symbol[:-3]
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(select(Stock.current_price).where(Stock.symbol == symbol, Stock.is_active))
+            db_price = result.scalar_one_or_none()
+            if db_price is not None:
+                return float(db_price)
+
+    chart = await get_yahoo_chart_history(yahoo_symbol, period="5d")
+    if chart is not None and not chart.empty:
+        close = chart["Close"].dropna()
+        if not close.empty:
+            return float(close.iloc[-1])
+
     loop = asyncio.get_event_loop()
 
     def _sync_fetch():

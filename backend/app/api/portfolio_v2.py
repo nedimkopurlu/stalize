@@ -1,42 +1,50 @@
 """Model portföy API router — MPRT-03, MPRT-05"""
 import logging
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional, List
-import asyncio
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel
 from sqlalchemy import select, desc
-import yfinance as yf
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import AsyncSessionLocal
+from app.core.database import get_db
+from app.core.security import verify_api_key
 from app.models.portfolio_v2 import PortfolioPosition, PortfolioDailySnapshot, PortfolioChangeLog
+from app.models.stock import Stock
+from app.models.price import CommodityPrice
+from app.services.data_collector import get_yahoo_chart_history
 from app.services.portfolio_snapshot import _fetch_close_price
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-async def _fetch_benchmark_history(days: int) -> dict[str, float]:
+async def _fetch_benchmark_history(days: int, db: AsyncSession) -> dict[str, float]:
     """BIST100 kapanış serisini date->close map olarak getir."""
-    loop = asyncio.get_event_loop()
+    start = date.today() - timedelta(days=days + 10)
+    result = await db.execute(
+        select(CommodityPrice)
+        .where(CommodityPrice.symbol == "XU100.IS", CommodityPrice.date >= start)
+        .order_by(CommodityPrice.date.asc())
+    )
+    rows = result.scalars().all()
+    if rows:
+        return {row.date.isoformat(): float(row.close) for row in rows if row.close is not None}
 
-    def _sync_fetch():
-        try:
-            data = yf.download("XU100.IS", period=f"{max(days + 10, 30)}d", interval="1d", progress=False)
-            if data is None or data.empty:
-                return {}
-            close = data["Close"]
-            output: dict[str, float] = {}
-            for idx, value in close.dropna().items():
-                date_key = idx.date().isoformat() if hasattr(idx, "date") else str(idx).split(" ")[0]
-                output[date_key] = float(value)
-            return output
-        except Exception as exc:
-            logger.warning(f"BIST100 benchmark çekilemedi: {exc}")
-            return {}
+    fallback_period = "1mo" if days <= 30 else "3mo" if days <= 90 else "1y"
+    data = await get_yahoo_chart_history("XU100.IS", period=fallback_period)
+    if data is None or data.empty:
+        return {}
 
-    return await loop.run_in_executor(None, _sync_fetch)
+    output: dict[str, float] = {}
+    for idx, row in data.iterrows():
+        close = row.get("Close")
+        if close is None:
+            continue
+        date_key = idx.date().isoformat() if hasattr(idx, "date") else str(idx).split(" ")[0]
+        output[date_key] = float(close)
+    return output
 
 
 # ─── Pydantic Request Modelleri ────────────────────────────────────────────
@@ -58,19 +66,41 @@ class ChangeLogCreate(BaseModel):
     reason: Optional[str] = None
 
 
+def _normalize_symbol(symbol: str) -> str:
+    return symbol.strip().upper().removesuffix(".IS")
+
+
+def _validate_positive_number(value: Optional[float], field_name: str, required: bool = False) -> None:
+    if value is None:
+        if required:
+            raise HTTPException(status_code=422, detail=f"{field_name} zorunludur")
+        return
+    if value <= 0:
+        raise HTTPException(status_code=422, detail=f"{field_name} pozitif olmalıdır")
+
+
+async def _ensure_active_stock(symbol: str, db: AsyncSession) -> Stock:
+    result = await db.execute(
+        select(Stock).where(Stock.symbol == symbol, Stock.is_active == True)  # noqa: E712
+    )
+    stock = result.scalar_one_or_none()
+    if stock is None:
+        raise HTTPException(status_code=404, detail=f"Aktif hisse bulunamadı: {symbol}")
+    return stock
+
+
 # ─── Endpoint 1: GET /portfolio/positions ──────────────────────────────────
 
 @router.get("/portfolio/positions")
-async def get_positions():
+async def get_positions(db: AsyncSession = Depends(get_db)):
     """
     Aktif pozisyonları gerçek yfinance fiyatıyla döner.
     Fiyat çekilemezse current_price=None, pnl_pct=None döner — hata fırlatmaz.
     """
-    async with AsyncSessionLocal() as db:
-        result = await db.execute(
-            select(PortfolioPosition).where(PortfolioPosition.is_active == True)  # noqa: E712
-        )
-        positions = result.scalars().all()
+    result = await db.execute(
+        select(PortfolioPosition).where(PortfolioPosition.is_active == True)  # noqa: E712
+    )
+    positions = result.scalars().all()
 
     output = []
     for pos in positions:
@@ -92,6 +122,7 @@ async def get_positions():
             "rationale": pos.rationale,
             "current_price": current_price,
             "pnl_pct": pnl_pct,
+            "partial": current_price is None,
         })
 
     logger.info(f"GET /portfolio/positions — {len(output)} aktif pozisyon döndü.")
@@ -101,23 +132,25 @@ async def get_positions():
 # ─── Endpoint 2: GET /portfolio/history ────────────────────────────────────
 
 @router.get("/portfolio/history")
-async def get_history(days: int = Query(90, ge=1, le=365)):
+async def get_history(
+    days: int = Query(90, ge=1, le=365),
+    db: AsyncSession = Depends(get_db),
+):
     """Son N günün snapshot geçmişi + benchmark + risk özeti."""
-    async with AsyncSessionLocal() as db:
-        result = await db.execute(
-            select(PortfolioDailySnapshot)
-            .order_by(desc(PortfolioDailySnapshot.date))
-            .limit(days)
-        )
-        snapshots = result.scalars().all()
+    result = await db.execute(
+        select(PortfolioDailySnapshot)
+        .order_by(desc(PortfolioDailySnapshot.date))
+        .limit(days)
+    )
+    snapshots = result.scalars().all()
 
-        positions_result = await db.execute(
-            select(PortfolioPosition).where(PortfolioPosition.is_active == True)  # noqa: E712
-        )
-        positions = positions_result.scalars().all()
+    positions_result = await db.execute(
+        select(PortfolioPosition).where(PortfolioPosition.is_active == True)  # noqa: E712
+    )
+    positions = positions_result.scalars().all()
 
     snapshot_rows = list(reversed(snapshots))
-    benchmark_map = await _fetch_benchmark_history(days)
+    benchmark_map = await _fetch_benchmark_history(days, db)
 
     portfolio_series = []
     benchmark_series = []
@@ -204,37 +237,45 @@ async def get_history(days: int = Query(90, ge=1, le=365)):
 # ─── Endpoint 3: POST /portfolio/positions ─────────────────────────────────
 
 @router.post("/portfolio/positions", status_code=201)
-async def add_position(body: PositionCreate):
+async def add_position(
+    body: PositionCreate,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(verify_api_key),
+):
     """
     Yeni pozisyon ekle + change_log'a ADD kaydı yaz.
     Sistem otomatik pozisyon açmaz — bu endpoint manuel çağrı içindir.
     """
-    symbol = body.symbol.upper()
+    symbol = _normalize_symbol(body.symbol)
+    _validate_positive_number(body.entry_price, "entry_price", required=True)
+    _validate_positive_number(body.quantity, "quantity", required=True)
+    _validate_positive_number(body.stop_loss, "stop_loss")
+    _validate_positive_number(body.target_price, "target_price")
+    await _ensure_active_stock(symbol, db)
 
-    async with AsyncSessionLocal() as db:
-        pos = PortfolioPosition(
-            symbol=symbol,
-            entry_price=body.entry_price,
-            quantity=body.quantity,
-            entry_date=body.entry_date,
-            stop_loss=body.stop_loss,
-            target_price=body.target_price,
-            rationale=body.rationale,
-            is_active=True,
-        )
-        db.add(pos)
-        await db.flush()  # id oluşsun
+    pos = PortfolioPosition(
+        symbol=symbol,
+        entry_price=body.entry_price,
+        quantity=body.quantity,
+        entry_date=body.entry_date,
+        stop_loss=body.stop_loss,
+        target_price=body.target_price,
+        rationale=body.rationale,
+        is_active=True,
+    )
+    db.add(pos)
+    await db.flush()  # id oluşsun
 
-        log_entry = PortfolioChangeLog(
-            date=datetime.now(timezone.utc).date(),
-            action="ADD",
-            symbol=symbol,
-            reason=body.rationale,
-        )
-        db.add(log_entry)
-        await db.commit()
+    log_entry = PortfolioChangeLog(
+        date=datetime.now(timezone.utc).date(),
+        action="ADD",
+        symbol=symbol,
+        reason=body.rationale,
+    )
+    db.add(log_entry)
+    await db.commit()
 
-        pos_id = pos.id
+    pos_id = pos.id
 
     logger.info(f"POST /portfolio/positions — {symbol} eklendi (id={pos_id}).")
     return {"id": pos_id, "symbol": symbol, "status": "added"}
@@ -243,30 +284,33 @@ async def add_position(body: PositionCreate):
 # ─── Endpoint 4: DELETE /portfolio/positions/{position_id} ─────────────────
 
 @router.delete("/portfolio/positions/{position_id}")
-async def close_position(position_id: int):
+async def close_position(
+    position_id: int,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(verify_api_key),
+):
     """
     Pozisyonu kapat (soft delete — is_active=False).
     change_log'a REMOVE kaydı yazar.
     """
-    async with AsyncSessionLocal() as db:
-        result = await db.execute(
-            select(PortfolioPosition).where(PortfolioPosition.id == position_id)
-        )
-        pos = result.scalar_one_or_none()
-        if not pos:
-            raise HTTPException(status_code=404, detail=f"Pozisyon bulunamadı: id={position_id}")
+    result = await db.execute(
+        select(PortfolioPosition).where(PortfolioPosition.id == position_id)
+    )
+    pos = result.scalar_one_or_none()
+    if not pos:
+        raise HTTPException(status_code=404, detail=f"Pozisyon bulunamadı: id={position_id}")
 
-        pos.is_active = False
-        symbol = pos.symbol
+    pos.is_active = False
+    symbol = pos.symbol
 
-        log_entry = PortfolioChangeLog(
-            date=datetime.now(timezone.utc).date(),
-            action="REMOVE",
-            symbol=symbol,
-            reason=None,
-        )
-        db.add(log_entry)
-        await db.commit()
+    log_entry = PortfolioChangeLog(
+        date=datetime.now(timezone.utc).date(),
+        action="REMOVE",
+        symbol=symbol,
+        reason=None,
+    )
+    db.add(log_entry)
+    await db.commit()
 
     logger.info(f"DELETE /portfolio/positions/{position_id} — {symbol} kapatıldı.")
     return {"status": "closed", "symbol": symbol}
@@ -275,7 +319,11 @@ async def close_position(position_id: int):
 # ─── Endpoint 5: POST /portfolio/change-log ────────────────────────────────
 
 @router.post("/portfolio/change-log", status_code=201)
-async def add_change_log(body: ChangeLogCreate):
+async def add_change_log(
+    body: ChangeLogCreate,
+    db: AsyncSession = Depends(get_db),
+    _: None = Depends(verify_api_key),
+):
     """
     Doğrudan change_log girişi oluştur.
     action "ADD" veya "REMOVE" dışında bir değerse 422 döner.
@@ -285,17 +333,18 @@ async def add_change_log(body: ChangeLogCreate):
             status_code=422,
             detail=f"Geçersiz action: '{body.action}'. Sadece 'ADD' veya 'REMOVE' kabul edilir."
         )
+    symbol = _normalize_symbol(body.symbol)
+    await _ensure_active_stock(symbol, db)
 
-    async with AsyncSessionLocal() as db:
-        log_entry = PortfolioChangeLog(
-            date=body.date,
-            action=body.action,
-            symbol=body.symbol.upper(),
-            reason=body.reason,
-        )
-        db.add(log_entry)
-        await db.commit()
-        log_id = log_entry.id
+    log_entry = PortfolioChangeLog(
+        date=body.date,
+        action=body.action,
+        symbol=symbol,
+        reason=body.reason,
+    )
+    db.add(log_entry)
+    await db.commit()
+    log_id = log_entry.id
 
     logger.info(f"POST /portfolio/change-log — {body.action} {body.symbol} (id={log_id}).")
     return {"id": log_id, "status": "logged"}

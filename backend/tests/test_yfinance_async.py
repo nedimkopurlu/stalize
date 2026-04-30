@@ -12,6 +12,7 @@ All tests use pytest.mark.asyncio (asyncio_mode=auto in pytest.ini handles this)
 """
 import asyncio
 import threading
+from datetime import datetime, timezone
 import pytest
 import pandas as pd
 import diskcache
@@ -122,7 +123,7 @@ async def test_macro_indicators_uses_executor():
     recorded_thread_name: list[str] = []
 
     # Build a minimal Yahoo Finance JSON response
-    _ts = 1745568000  # 2026-04-25
+    _ts = int(datetime.now(timezone.utc).timestamp())
     _stub_payload = {
         "chart": {
             "result": [{
@@ -141,7 +142,7 @@ async def test_macro_indicators_uses_executor():
         recorded_thread_name.append(threading.current_thread().name)
         return _StubResponse()
 
-    async def stub_latest_market_reading(symbol: str):
+    async def stub_latest_market_reading(_db, symbol: str):
         return None, None
 
     # Reset the 60s TTL cache so the endpoint does a fresh fetch
@@ -160,8 +161,9 @@ async def test_macro_indicators_uses_executor():
     )
 
     # Assert thread offload: HTTP call must NOT run on MainThread
-    assert len(recorded_thread_name) == 3, (
-        f"requests.get should be called once per symbol (3 total), got: {recorded_thread_name}"
+    assert len(recorded_thread_name) in {3, 4}, (
+        "requests.get should be called once per Yahoo symbol plus optional live BIST100 fallback "
+        f"(3 or 4 total), got: {recorded_thread_name}"
     )
     assert all(name != "MainThread" for name in recorded_thread_name), (
         f"requests.get ran on main thread: {recorded_thread_name!r}. "

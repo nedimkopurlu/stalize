@@ -17,7 +17,6 @@ from app.models.news import NewsItem
 from app.models.stock import Stock
 from app.services.external_news_rss import external_news_rss_collector
 from app.services.kap_parser import kap_parser
-from app.services.macro_news import macro_news_collector
 
 logger = logging.getLogger(__name__)
 
@@ -178,15 +177,14 @@ class MarketIntelligenceService:
         return feed[:limit]
 
     async def get_unified_feed(self, limit: int = 20) -> List[Dict]:
-        macro_feed, kap_feed, official_feed, external_rss_feed = await asyncio.gather(
-            macro_news_collector.fetch_real_events(),
+        kap_feed, official_feed, external_rss_feed = await asyncio.gather(
             kap_parser.get_recent_feed(limit=limit),
             self.get_official_feed(limit=limit),
             external_news_rss_collector.fetch_market_news(limit=limit),
         )
         merged = [
             item
-            for item in [*kap_feed, *official_feed, *external_rss_feed, *macro_feed]
+            for item in [*kap_feed, *official_feed, *external_rss_feed]
             if self._is_fresh_enough(item)
         ]
 

@@ -27,7 +27,11 @@ class Settings(BaseSettings):
     # Application
     APP_NAME: str = "Stalize"
     APP_VERSION: str = "1.4.0"  # Teknik + temel + haber/olay analizi
-    DEBUG: bool = True
+    DEBUG: bool = False
+
+    # Security
+    API_KEY: Optional[str] = None
+    ENVIRONMENT: str = "development"
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://localhost:5432/stockanalist"
@@ -41,10 +45,12 @@ class Settings(BaseSettings):
     YFINANCE_CACHE_TTL: int = 3600  # 1 hour cache
     DATA_UPDATE_INTERVAL_HOURS: int = 6  # Update every 6 hours
     NEWS_UPDATE_INTERVAL_HOURS: int = 2  # Update news every 2 hours
+    RUN_FULL_INITIAL_LOAD_ON_STARTUP: bool = False  # Heavy 5y backfill should be explicit, not every API boot.
 
     # KAP (Kamuyu Aydınlatma Platformu) — 1. Öncelikli Kaynak
     KAP_RSS_URL: str = "https://www.kap.org.tr/tr/rss/bildirimler"
     KAP_ALT_RSS_URL: str = "https://www.kap.org.tr/en/rss"  # Yedek
+    KAP_DISCLOSURE_API_URL: str = "https://www.kap.org.tr/tr/api/disclosure/members/byCriteria"
     KAP_SCAN_INTERVAL_MIN: int = 5  # Her 5 dakikada bir tara
     KAP_MAX_AGE_HOURS: int = 48    # 48 saatten eski haberleri atla
 
