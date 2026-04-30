@@ -1093,6 +1093,53 @@ async def trigger_kap_scan(_: None = Depends(verify_api_key)):
     }
 
 
+@router.post("/refresh-data")
+async def trigger_full_refresh():
+    """
+    Tam veri tazeleme: fiyatlar → teknik analiz → skorlama.
+    Veritabanı boşsa veya fiyatlar eksikse ilk çalıştırma için kullanılır.
+    API anahtarı gerektirmez — Railway'den manuel tetiklenebilir.
+    """
+    from app.services.data_collector import data_collector
+    from app.services.technical import technical_engine
+    from app.services.scoring import scoring_engine
+
+    results: dict = {}
+    start_time = datetime.now(timezone.utc)
+
+    # 1. Canlı fiyatlar
+    try:
+        price_count = await data_collector.collect_live_bist_quotes()
+        results["prices"] = {"status": "ok", "updated": price_count}
+    except Exception as exc:
+        logger.error("refresh-data: fiyat güncelleme hatası: %s", exc, exc_info=True)
+        results["prices"] = {"status": "error", "detail": str(exc)}
+
+    # 2. Teknik analiz
+    try:
+        tech_results = await technical_engine.analyze_all()
+        results["technical"] = {"status": "ok", "analyzed": len(tech_results)}
+    except Exception as exc:
+        logger.error("refresh-data: teknik analiz hatası: %s", exc, exc_info=True)
+        results["technical"] = {"status": "error", "detail": str(exc)}
+
+    # 3. Skor güncelleme
+    try:
+        updated = await scoring_engine.update_all_scores()
+        results["scoring"] = {"status": "ok", "updated": updated}
+    except Exception as exc:
+        logger.error("refresh-data: skor güncelleme hatası: %s", exc, exc_info=True)
+        results["scoring"] = {"status": "error", "detail": str(exc)}
+
+    elapsed = round((datetime.now(timezone.utc) - start_time).total_seconds(), 1)
+    return {
+        "status": "completed",
+        "elapsed_seconds": elapsed,
+        "results": results,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 @router.get("/dashboard")
 async def get_dashboard(db: AsyncSession = Depends(get_db)):
     """Ana dashboard verileri — hızlı özet."""
