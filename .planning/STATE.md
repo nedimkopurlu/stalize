@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Kişisel Yatırım Asistanı
-status: planning
-last_updated: "2026-05-04T00:00:00.000Z"
+status: unknown
+last_updated: "2026-05-04T20:33:32.702Z"
 progress:
-  total_phases: 6
-  completed_phases: 0
-  total_plans: 14
-  completed_plans: 0
+  total_phases: 12
+  completed_phases: 1
+  total_plans: 5
+  completed_plans: 8
 ---
 
 # Project State
@@ -23,13 +23,8 @@ See: `.planning/PROJECT.md` (updated 2026-05-04)
 
 ## Current Position
 
-**Active phase:** Phase 28 — Veri Altyapısı (ready to plan)
-**Active plan:** None
-**Status:** Ready to plan
-
-```
-Progress: ░░░░░░░░░░░░░░░░░░░░ 0/6 phases (v4.0)
-```
+Phase: 28 (Veri Altyapısı) — EXECUTING
+Plan: 2 of 3
 
 ## v4.0 Phases
 
@@ -49,6 +44,7 @@ Progress: ░░░░░░░░░░░░░░░░░░░░ 0/6 phase
 | Requirements | 25/25 | 23/23 mapped |
 | Started | 2026-04-28 | 2026-05-04 |
 | Completed | 2026-04-29 | — |
+| Phase 28-veri-altyap-s P01 | 5 | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -59,6 +55,9 @@ Progress: ░░░░░░░░░░░░░░░░░░░░ 0/6 phase
 - Giriş yok — kişisel araç, tek kullanıcı, sürtünmeyi azaltır
 - Model portföy özerk — AI kendi kararlarını verir, kullanıcı karşılaştırır
 - Kripto yok — odak dışı, v1 için gereksiz
+- [28-01] Session-scoped app_client in conftest.py avoids APScheduler + asyncpg event loop collision across test modules using TestClient
+- [28-01] xfail(strict=False) for endpoint stubs in Plans 28-02/03 — tests collect cleanly, XPASS non-fatal when local DB has data
+- [28-01] FOREX_PAIRS uses Yahoo Finance ticker as key (USDTRY=X), human label as value (USD/TRY) — consistent with downstream endpoint response shape
 
 ### Known Constraints
 
@@ -73,7 +72,7 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-04 — v4.0 roadmap oluşturuldu. 23/23 gereksinim 6 faza eşlendi.
+**Last session:** 2026-05-04T20:33:32.698Z
 **Next action:** `/gsd:plan-phase 28`
 
 ---
