@@ -71,35 +71,39 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DASH-01 | TBD | Pending |
-| DASH-02 | TBD | Pending |
-| DASH-03 | TBD | Pending |
-| DASH-04 | TBD | Pending |
-| DISC-01 | TBD | Pending |
-| DISC-02 | TBD | Pending |
-| DISC-03 | TBD | Pending |
-| STCK-01 | TBD | Pending |
-| STCK-02 | TBD | Pending |
-| STCK-03 | TBD | Pending |
-| STCK-04 | TBD | Pending |
-| STCK-05 | TBD | Pending |
-| STCK-06 | TBD | Pending |
-| NEWS-01 | TBD | Pending |
-| PORT-01 | TBD | Pending |
-| PORT-02 | TBD | Pending |
-| PORT-03 | TBD | Pending |
-| PORT-04 | TBD | Pending |
-| PORT-05 | TBD | Pending |
-| MODEL-01 | TBD | Pending |
-| MODEL-02 | TBD | Pending |
-| MODEL-03 | TBD | Pending |
-| MODEL-04 | TBD | Pending |
+| DASH-01 | Phase 28 | Pending |
+| DASH-02 | Phase 28 | Pending |
+| DASH-03 | Phase 28 | Pending |
+| DASH-04 | Phase 29 | Pending |
+| DISC-01 | Phase 30 | Pending |
+| DISC-02 | Phase 30 | Pending |
+| DISC-03 | Phase 30 | Pending |
+| STCK-01 | Phase 30 | Pending |
+| STCK-02 | Phase 30 | Pending |
+| STCK-03 | Phase 30 | Pending |
+| STCK-04 | Phase 30 | Pending |
+| STCK-05 | Phase 30 | Pending |
+| STCK-06 | Phase 30 | Pending |
+| NEWS-01 | Phase 31 | Pending |
+| PORT-01 | Phase 32 | Pending |
+| PORT-02 | Phase 32 | Pending |
+| PORT-03 | Phase 32 | Pending |
+| PORT-04 | Phase 32 | Pending |
+| PORT-05 | Phase 32 | Pending |
+| MODEL-01 | Phase 33 | Pending |
+| MODEL-02 | Phase 33 | Pending |
+| MODEL-03 | Phase 33 | Pending |
+| MODEL-04 | Phase 33 | Pending |
 
 **Coverage:**
 - v1 requirements: 23 total
-- Mapped to phases: TBD (roadmapper will assign)
-- Unmapped: 23 pending roadmap
+- Mapped to phases: 23/23 ✓
+- Unmapped: 0
+
+**Phase mapping notes:**
+- DASH-01, DASH-02, DASH-03 are mapped to Phase 28 (Veri Altyapısı) because they require the data pipeline to exist before Phase 29 (Dashboard) can render them. Phase 29 consumes the data; Phase 28 produces it.
+- DASH-04 is mapped to Phase 29 (Dashboard) because it depends on Phase 32 portföy data; its UI home is the dashboard screen.
 
 ---
 *Requirements defined: 2026-05-04*
-*Last updated: 2026-05-04 after initial definition*
+*Last updated: 2026-05-04 — traceability assigned by roadmapper (v4.0, Phases 28–33)*
