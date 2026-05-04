@@ -174,6 +174,8 @@ class Settings(BaseSettings):
         "eur_try": "EURTRY=X",
         "gbp_try": "GBPTRY=X",
         "cny_try": "CNYTRY=X",
+        "jpy_try": "JPYTRY=X",
+        "chf_try": "CHFTRY=X",
         "dxy": "DX-Y.NYB",
     }
 
