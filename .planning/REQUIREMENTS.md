@@ -1,98 +1,105 @@
-# Requirements: Stalize v3.1 — Audit Düzeltmeleri
+# Requirements: Yatırım Asistanı
 
-**Tanımlandı:** 2026-04-28
-**Core Value:** Gerçek ve denetlenebilir veriyle çalışan, tüm Borsa İstanbul'u kapsayan yatırım araştırma ve portföy takip platformu.
+**Defined:** 2026-05-04
+**Core Value:** Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıklamayla cevap vermek — karar kullanıcıda, anlayış asistanda.
 
-## v3.1 Gereksinimleri
+## v1 Requirements
 
-### ASYNC — Async & Concurrency
+### Dashboard
 
-- [ ] **ASYNC-01**: `time.sleep()` → `await asyncio.sleep()` — yfinance retry sırasında event loop donmuyor, diğer request'ler etkilenmiyor
-- [ ] **ASYNC-02**: Tüm API route'ları `Depends(get_db)` kullanıyor; `AsyncSessionLocal()` doğrudan çağırılmıyor — bağlantı havuzu yönetiliyor
-- [ ] **ASYNC-03**: 14 scheduler job 5dk aralıklarla staggered; hiçbiri eş zamanlı thundering herd oluşturmuyor
-- [ ] **ASYNC-04**: Startup `asyncio.create_task()` hataları uygulamayı sessizce kırık başlatmıyor; hata loglanıp servis health durumunu etkiliyor
+- [ ] **DASH-01**: Kullanıcı BIST100 endeks özetini görür (günlük değişim, hacim)
+- [ ] **DASH-02**: Kullanıcı 5-10 döviz çiftini takip eder (USD/TRY, EUR/TRY, GBP/TRY vb.)
+- [ ] **DASH-03**: Kullanıcı altın fiyatlarını takip eder (gram, ons, çeyrek, yarım, tam)
+- [ ] **DASH-04**: Kullanıcı portföy özetini görür (toplam değer, günlük değişim)
 
-### SEC — Güvenlik
+### Keşif & Tarama
 
-- [ ] **SEC-01**: Tüm POST/DELETE endpoint'leri API key dependency gerektiriyor; kimlik doğrulamasız mutasyon mümkün değil
-- [ ] **SEC-02**: CORS `allow_origins` kısıtlı (wildcard yok); `allow_credentials` ile birlikte CSRF vektörü kapalı
-- [ ] **SEC-03**: API response'ları ham `str(e)` döndürmüyor; istemciye generic hata mesajı, detay server log'a yazılıyor
-- [ ] **SEC-04**: `DEBUG=False` varsayılan; SQL echo production'da kapalı; env var override mümkün
+- [ ] **DISC-01**: Kullanıcı BIST100 hisselerini temel + teknik skora göre filtreler ve sıralar
+- [ ] **DISC-02**: Kullanıcı "bugün ilginç hisseler" listesini görür (yüksek skor = öne çıkar)
+- [ ] **DISC-03**: Kullanıcı bir hisseye tıklayıp detay sayfasına gider
 
-### DATA — Veri Güvenilirliği
+### Hisse Detay
 
-- [ ] **DATA-01**: KAP symbol extraction `BIST_FULL_SYMBOLS` kullanıyor — BIST250+ şirket haberleri sisteme giriyor
-- [ ] **DATA-02**: `datetime.now(timezone.utc)` data_collector'da zorunlu; naive datetime UTC karşılaştırmayı kırmıyor
-- [ ] **DATA-03**: yfinance empty dönüş ile ağ hatası ayırt ediliyor; başarısız semboller `SourceHealthRun` tablosuna yazılıyor
-- [ ] **DATA-04**: Diskcache dizin boyutu sınırlı; Railway ortamında unbounded büyüme önleniyor
-- [ ] **DATA-05**: `NewsItem(source, url)` unique constraint DB seviyesinde; duplicate KAP bildirimleri sessizce çoğalmıyor
+- [ ] **STCK-01**: Kullanıcı hissenin fiyat grafiğini görür (7g, 1ay, 3ay, 1y)
+- [ ] **STCK-02**: Kullanıcı temel metrikleri görür (F/K, PD/DD, net kar, bilanço büyümesi) — her metriğin yanında ne anlama geldiğini açıklayan tooltip/açıklama
+- [ ] **STCK-03**: Kullanıcı teknik göstergeleri görür (RSI, MACD, hareketli ortalamalar) — yanında açıklama
+- [ ] **STCK-04**: Kullanıcı "Analiz Et" butonuna basınca AI o hisseye özel Türkçe analiz üretir (on-demand)
+- [ ] **STCK-05**: Kullanıcı hissenin KAP açıklamalarını görür
+- [ ] **STCK-06**: Kullanıcı hissenin basın haberlerini görür
 
-### LOGIC — İş Mantığı Doğruluğu
+### Haberler
 
-- [ ] **LOGIC-01**: `calculate_overall_score()` ve `get_contextual_score_breakdown()` aynı ağırlıkları kullanıyor; API aynı hisse için çelişkili öneri dönmüyor
-- [ ] **LOGIC-02**: Screener `pe_ratio_min > pe_ratio_max` gibi geçersiz aralıkları HTTP 400 ile reddediyor; sessiz boş sonuç yok
-- [ ] **LOGIC-03**: ATR volatilite teknik skorda bileşen olarak entegre; yüksek volatiliteli hisse düşük volatiliteli hisseyle eşit skor almıyor
-- [ ] **LOGIC-04**: Portfolio P&L response, yfinance'tan fiyat alınamayan pozisyonları `partial: true` flag ile işaretliyor
+- [ ] **NEWS-01**: Kullanıcı tüm BIST haberlerini tek sayfada görür (KAP + basın, tarih sıralı)
 
-### FE — Frontend Kalitesi
+### Portföy
 
-- [ ] **FE-01**: Tüm sayfalarda boş `catch(() => {})` kaldırıldı; hata durumunda kullanıcı hata UI'ı görüyor
-- [ ] **FE-02**: `MacroPanel` unsafe type assertion düzeltildi; `asOfKey` casting güvenli
-- [ ] **FE-03**: Screener sayfası ham `fetch()` yerine `api.ts` helper kullanıyor; hata durumu gösteriliyor
-- [ ] **FE-04**: Portfolio formu client-side validation yapıyor (`entry_price > 0`, `quantity > 0`)
-- [ ] **FE-05**: Yıkıcı aksiyonlar (pozisyon kapat, watchlist'ten çıkar) onay dialogu gösteriyor
+- [ ] **PORT-01**: Kullanıcı alım işlemi girer (hisse, lot, fiyat, tarih)
+- [ ] **PORT-02**: Kullanıcı satım işlemi girer
+- [ ] **PORT-03**: Kullanıcı açık pozisyonlarını ve kâr/zararını görür (TL ve % olarak)
+- [ ] **PORT-04**: Kullanıcı portföy performansını BIST100 endeksiyle karşılaştırır
+- [ ] **PORT-05**: Kullanıcı izleme listesine (watchlist) hisse ekler/çıkarır
 
-### INFRA — Altyapı
+### Model Portföy
 
-- [ ] **INFRA-01**: Python 3.9 (EOL) → 3.12 yükseltmesi; tüm bağımlılıklar 3.12-compatible
-- [ ] **INFRA-02**: `/health` endpoint DB bağlantısını test ediyor; DB düşükse healthcheck başarısız dönüyor
-- [ ] **INFRA-03**: Emoji'siz, parse edilebilir structured logging; kritik job hataları log'da izlenebilir
+- [ ] **MODEL-01**: Asistan haftalık model portföy oluşturur (BIST100 evreni, tamamen özerk)
+- [ ] **MODEL-02**: Her alım/satım kararı gerekçesiyle birlikte tarihli olarak kaydedilir
+- [ ] **MODEL-03**: Kullanıcı model portföyün tüm geçmişini görür (hangi tarihte ne alındı/satıldı, neden)
+- [ ] **MODEL-04**: Kullanıcı kendi portföyünün performansını model portföyle karşılaştırır
 
-## Kapsam Dışı
+## v2 Requirements
 
-| Özellik | Neden |
-|---------|-------|
-| OAuth / kullanıcı sistemi | Kişisel kullanım; API key yeterli |
-| Glassmorphism CSS kaldırma | Kullanıcı mevcut tasarımı onayladı |
-| Watchlist backend persistence | localStorage v3.1 için yeterli |
-| Otomatik BIST universe güncelleme | Statik liste yılda 1-2 güncelleme yeterli |
-| Test coverage arttırma | Mevcut test suite korunuyor; yeni test eklenmeyecek |
+### Genişleme
+
+- BIST100 dışı hisseler (BIST250 vb.)
+- Teknik alarm/bildirim (fiyat seviyeleri, gösterge sinyalleri)
+- Portföy analitikleri (sektör dağılımı, risk analizi)
+- Kripto para takibi
+- Çoklu portföy (gerçek vs. deneme portföyü)
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Kripto para | Odak dışı, veri karmaşıklığı ekler — v2+ |
+| Bildirimler/alarmlar | Kullanıcı istemedi |
+| Authentication / kullanıcı hesabı | Kişisel araç, tek kullanıcı |
+| Otomatik alım-satım | Karar her zaman kullanıcıda |
+| BIST100 dışı hisseler | v1 için likit evren yeterli |
+| Native mobil uygulama | Web-first, responsive yeterli |
 
 ## Traceability
 
-| Gereksinim | Faz | Durum |
-|------------|-----|-------|
-| ASYNC-01 | Phase 22 | Bekliyor |
-| ASYNC-02 | Phase 22 | Bekliyor |
-| ASYNC-03 | Phase 22 | Bekliyor |
-| ASYNC-04 | Phase 22 | Bekliyor |
-| SEC-01 | Phase 23 | Bekliyor |
-| SEC-02 | Phase 23 | Bekliyor |
-| SEC-03 | Phase 23 | Bekliyor |
-| SEC-04 | Phase 23 | Bekliyor |
-| DATA-01 | Phase 24 | Bekliyor |
-| DATA-02 | Phase 24 | Bekliyor |
-| DATA-03 | Phase 24 | Bekliyor |
-| DATA-04 | Phase 24 | Bekliyor |
-| DATA-05 | Phase 24 | Bekliyor |
-| LOGIC-01 | Phase 25 | Bekliyor |
-| LOGIC-02 | Phase 25 | Bekliyor |
-| LOGIC-03 | Phase 25 | Bekliyor |
-| LOGIC-04 | Phase 25 | Bekliyor |
-| FE-01 | Phase 26 | Bekliyor |
-| FE-02 | Phase 26 | Bekliyor |
-| FE-03 | Phase 26 | Bekliyor |
-| FE-04 | Phase 26 | Bekliyor |
-| FE-05 | Phase 26 | Bekliyor |
-| INFRA-01 | Phase 27 | Bekliyor |
-| INFRA-02 | Phase 27 | Bekliyor |
-| INFRA-03 | Phase 27 | Bekliyor |
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| DASH-01 | TBD | Pending |
+| DASH-02 | TBD | Pending |
+| DASH-03 | TBD | Pending |
+| DASH-04 | TBD | Pending |
+| DISC-01 | TBD | Pending |
+| DISC-02 | TBD | Pending |
+| DISC-03 | TBD | Pending |
+| STCK-01 | TBD | Pending |
+| STCK-02 | TBD | Pending |
+| STCK-03 | TBD | Pending |
+| STCK-04 | TBD | Pending |
+| STCK-05 | TBD | Pending |
+| STCK-06 | TBD | Pending |
+| NEWS-01 | TBD | Pending |
+| PORT-01 | TBD | Pending |
+| PORT-02 | TBD | Pending |
+| PORT-03 | TBD | Pending |
+| PORT-04 | TBD | Pending |
+| PORT-05 | TBD | Pending |
+| MODEL-01 | TBD | Pending |
+| MODEL-02 | TBD | Pending |
+| MODEL-03 | TBD | Pending |
+| MODEL-04 | TBD | Pending |
 
-**Kapsam:**
-- v3.1 gereksinimleri: 25 toplam
-- Faza atanan: 25
-- Atamasız: 0 ✓
+**Coverage:**
+- v1 requirements: 23 total
+- Mapped to phases: TBD (roadmapper will assign)
+- Unmapped: 23 pending roadmap
 
 ---
-*Gereksinimler tanımlandı: 2026-04-28*
-*Son güncelleme: 2026-04-28 — v3.1 Audit Düzeltmeleri milestone başlatıldı*
+*Requirements defined: 2026-05-04*
+*Last updated: 2026-05-04 after initial definition*
