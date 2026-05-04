@@ -2,6 +2,20 @@
 import asyncio
 import pytest
 from unittest.mock import MagicMock
+from fastapi.testclient import TestClient
+
+
+@pytest.fixture(scope="session")
+def app_client():
+    """Session-scoped TestClient shared across all test modules.
+
+    A single TestClient start/stop per pytest session avoids the APScheduler
+    + asyncpg event-loop collision that occurs when two test modules each create
+    their own TestClient instances sequentially.
+    """
+    from app.main import app
+    with TestClient(app) as c:
+        yield c
 
 
 @pytest.fixture(scope="session")
