@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import models as _models  # noqa: F401
 from app.core.config import settings
 from app.core import database
-from app.api import stocks, macro, intelligence, admin, portfolio_v2, model_portfolio
+from app.api import stocks, macro, intelligence, admin, portfolio_v2, model_portfolio, market
 from app.services.portfolio_snapshot import take_daily_snapshot
 from app.services.data_collector import data_collector
 
@@ -390,6 +390,7 @@ app.include_router(intelligence.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(portfolio_v2.router, prefix="/api")
 app.include_router(model_portfolio.router, prefix="/api")
+app.include_router(market.router, prefix="/api")
 
 
 @app.get("/")
