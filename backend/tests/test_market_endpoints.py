@@ -344,3 +344,42 @@ def test_opportunities_endpoint_rejects_limit_over_50(client):
 def test_opportunities_endpoint_rejects_limit_zero(client):
     r = client.get("/api/market/opportunities?limit=0")
     assert r.status_code == 422  # Query(ge=1)
+
+
+# ─── PHASE 28 INTEGRATION SMOKE TEST ───
+
+
+def test_phase_28_all_endpoints_registered(client):
+    """Phase 28 wiring smoke test: all four /market/* endpoints exist and reach handler.
+    Empty DB → bist100/gold return 503 (no data); forex/opportunities return 200 with empty lists."""
+    from app.main import app
+    from app.core.database import get_db
+
+    async def _empty_db():
+        db = MagicMock()
+        async def _execute(stmt):
+            return _FakeResult([])
+        db.execute = _execute
+        yield db
+
+    app.dependency_overrides[get_db] = _empty_db
+    try:
+        from app.api.market import _market_cache
+        _market_cache.clear()
+
+        r1 = client.get("/api/market/bist100")
+        assert r1.status_code == 503  # no data → 503
+
+        r2 = client.get("/api/market/forex")
+        assert r2.status_code == 200
+        assert r2.json()["pairs"] == []  # all symbols missing → empty list
+
+        r3 = client.get("/api/market/gold")
+        assert r3.status_code == 503  # GC=F or USDTRY=X missing
+
+        r4 = client.get("/api/market/opportunities")
+        assert r4.status_code == 200
+        assert r4.json()["stocks"] == []
+        assert r4.json()["count"] == 0
+    finally:
+        app.dependency_overrides.pop(get_db, None)
