@@ -171,7 +171,7 @@ Plans:
 
 Plans:
 - [x] 28-01-PLAN.md — Foundation: market.py router skeleton + JPY/CHF forex config + RED test scaffolds
-- [ ] 28-02-PLAN.md — /market/bist100, /market/forex, /market/gold endpoints (DASH-01, DASH-02, DASH-03)
+- [x] 28-02-PLAN.md — /market/bist100, /market/forex, /market/gold endpoints (DASH-01, DASH-02, DASH-03)
 - [ ] 28-03-PLAN.md — /market/opportunities + DISC-01 verification (DISC-01, DISC-02)
 
 ### Phase 29: Dashboard
@@ -264,7 +264,7 @@ Phases execute in numeric order: 28 → 29 → 30 → 31 → 32 → 33
 | 25. Business Logic Correctness | v3.1 | 1/1 | Complete | 2026-04-28 |
 | 26. Frontend Quality | v3.1 | 1/1 | Complete | 2026-04-28 |
 | 27. Infrastructure Upgrade | v3.1 | 1/1 | Complete | 2026-04-29 |
-| 28. Veri Altyapısı | v4.0 | 1/3 | In Progress|  |
+| 28. Veri Altyapısı | v4.0 | 2/3 | In Progress|  |
 | 29. Dashboard | v4.0 | 0/2 | Not started | - |
 | 30. Keşif & Hisse Detay | v4.0 | 0/3 | Not started | - |
 | 31. Haberler | v4.0 | 0/1 | Not started | - |

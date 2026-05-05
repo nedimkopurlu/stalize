@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Kişisel Yatırım Asistanı
 status: unknown
-last_updated: "2026-05-04T20:33:32.702Z"
+last_updated: "2026-05-05T16:31:43.274Z"
 progress:
   total_phases: 12
   completed_phases: 1
   total_plans: 5
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-04)
 ## Current Position
 
 Phase: 28 (Veri Altyapısı) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## v4.0 Phases
 
@@ -45,6 +45,7 @@ Plan: 2 of 3
 | Started | 2026-04-28 | 2026-05-04 |
 | Completed | 2026-04-29 | — |
 | Phase 28-veri-altyap-s P01 | 5 | 3 tasks | 6 files |
+| Phase 28-veri-altyap-s P02 | 3 | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -58,6 +59,9 @@ Plan: 2 of 3
 - [28-01] Session-scoped app_client in conftest.py avoids APScheduler + asyncpg event loop collision across test modules using TestClient
 - [28-01] xfail(strict=False) for endpoint stubs in Plans 28-02/03 — tests collect cleanly, XPASS non-fatal when local DB has data
 - [28-01] FOREX_PAIRS uses Yahoo Finance ticker as key (USDTRY=X), human label as value (USD/TRY) — consistent with downstream endpoint response shape
+- [28-02] Compute change_pct from last 2 CommodityPrice rows — not from change_pct column (often NULL, Pitfall 6)
+- [28-02] Volume=0 masked to None for BIST100 index — index volume is unreliable (Pitfall 1)
+- [28-02] _latest_close_and_date is local helper in market.py — avoids cross-router coupling with macro.py
 
 ### Known Constraints
 
@@ -72,7 +76,7 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-04T20:33:32.698Z
-**Next action:** `/gsd:plan-phase 28`
+**Last session:** 2026-05-05T16:30:42Z
+**Next action:** Execute 28-03 (market opportunities endpoint)
 
 ---
