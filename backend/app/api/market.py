@@ -159,6 +159,53 @@ async def _latest_close_and_date(db: AsyncSession, symbol: str) -> Tuple[Optiona
     return float(row.close), row.date.isoformat()
 
 
+@router.get("/market/opportunities")
+async def get_opportunities(
+    limit: int = Query(20, ge=1, le=50, description="Top N stocks by overall_score"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """DISC-02: 'Bugün ilginç hisseler' — BIST100 evreninde overall_score'a göre top N.
+
+    Filters:
+      - is_bist100 == True
+      - is_active == True
+      - overall_score IS NOT NULL  (Pitfall 3: stocks with NULL scores excluded)
+
+    Ordered by overall_score DESC. No JOIN to Fundamental — score is denormalized
+    on Stock by ScoringEngine.update_all_scores(); that is the source of truth.
+    """
+    # Note: opportunities are highly dynamic — we do NOT cache this endpoint to ensure
+    # freshness immediately after scoring_engine.update_all_scores() runs.
+    result = await db.execute(
+        select(Stock)
+        .where(Stock.is_bist100 == True)
+        .where(Stock.is_active == True)
+        .where(Stock.overall_score.isnot(None))
+        .order_by(Stock.overall_score.desc())
+        .limit(limit)
+    )
+    stocks = result.scalars().all()
+
+    return {
+        "stocks": [
+            {
+                "symbol": s.symbol,
+                "name": s.name,
+                "sector": s.sector,
+                "current_price": s.current_price,
+                "daily_change_pct": s.daily_change_pct,
+                "overall_score": s.overall_score,
+                "fundamental_score": s.fundamental_score,
+                "technical_score": s.technical_score,
+                "recommendation": s.recommendation,
+            }
+            for s in stocks
+        ],
+        "count": len(stocks),
+        "as_of": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 @router.get("/market/gold")
 async def get_gold_prices(db: AsyncSession = Depends(get_db)) -> dict:
     """DASH-03: Beş altın formu — gram, ons, çeyrek, yarım, tam (TRY).
