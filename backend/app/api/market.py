@@ -48,3 +48,149 @@ async def market_health() -> dict:
         "router": "market",
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+
+
+@router.get("/market/bist100")
+async def get_bist100_summary(db: AsyncSession = Depends(get_db)) -> dict:
+    """DASH-01: BIST100 endeks özeti — değer, günlük değişim, hacim.
+
+    Strategy:
+    1. Read latest 2 CommodityPrice rows where symbol='XU100.IS'.
+    2. Compute daily_change_pct from last 2 closes; None if only 1 row.
+    3. Volume: report None if 0 / NaN (XU100 index volume often unreliable — Pitfall 1).
+    4. Returns 503 if no rows exist (do not fabricate values).
+    """
+    cache_key = "bist100"
+    cached = _market_cache.get(cache_key)
+    if cached and (datetime.now(timezone.utc).timestamp() - cached["ts"]) < _market_cache_ttl:
+        return cached["data"]
+
+    result = await db.execute(
+        select(CommodityPrice)
+        .where(CommodityPrice.symbol == "XU100.IS")
+        .order_by(CommodityPrice.date.desc())
+        .limit(2)
+    )
+    rows = result.scalars().all()
+    if not rows:
+        raise HTTPException(status_code=503, detail="BIST100 verisi yok")
+
+    today = rows[0]
+    yesterday = rows[1] if len(rows) > 1 else None
+
+    change_pct: Optional[float] = None
+    if yesterday and yesterday.close and today.close is not None:
+        change_pct = (today.close - yesterday.close) / yesterday.close * 100
+
+    # Pitfall 1: index volume often 0/NaN — surface as None, do not fabricate
+    volume_val: Optional[float] = None
+    if today.volume is not None and today.volume > 0:
+        volume_val = float(today.volume)
+
+    data = {
+        "value": round(float(today.close), 2) if today.close is not None else None,
+        "daily_change_pct": round(change_pct, 2) if change_pct is not None else None,
+        "volume": volume_val,
+        "as_of": today.date.isoformat(),
+    }
+    _market_cache[cache_key] = {"ts": datetime.now(timezone.utc).timestamp(), "data": data}
+    return data
+
+
+@router.get("/market/forex")
+async def get_forex_rates(db: AsyncSession = Depends(get_db)) -> dict:
+    """DASH-02: 5-10 forex çifti — kur ve günlük değişim.
+
+    Iterates FOREX_PAIRS and reads the latest 2 CommodityPrice rows per symbol.
+    Computes daily_change_pct from those two rows (Pitfall 6: do NOT trust
+    CommodityPrice.change_pct field — it is often NULL).
+    Pairs with no DB rows are silently skipped; pairs with 1 row report
+    daily_change_pct=None but are still included.
+    """
+    cache_key = "forex"
+    cached = _market_cache.get(cache_key)
+    if cached and (datetime.now(timezone.utc).timestamp() - cached["ts"]) < _market_cache_ttl:
+        return cached["data"]
+
+    pairs_out = []
+    for symbol, name in FOREX_PAIRS.items():
+        res = await db.execute(
+            select(CommodityPrice)
+            .where(CommodityPrice.symbol == symbol)
+            .order_by(CommodityPrice.date.desc())
+            .limit(2)
+        )
+        rows = res.scalars().all()
+        if not rows:
+            continue
+        today = rows[0]
+        yesterday = rows[1] if len(rows) > 1 else None
+        change_pct: Optional[float] = None
+        if yesterday and yesterday.close and today.close is not None:
+            change_pct = (today.close - yesterday.close) / yesterday.close * 100
+        pairs_out.append({
+            "symbol": symbol,
+            "name": name,
+            "rate": round(float(today.close), 4) if today.close is not None else None,
+            "daily_change_pct": round(change_pct, 2) if change_pct is not None else None,
+            "as_of": today.date.isoformat(),
+        })
+
+    data = {
+        "pairs": pairs_out,
+        "count": len(pairs_out),
+        "as_of": datetime.now(timezone.utc).isoformat(),
+    }
+    _market_cache[cache_key] = {"ts": datetime.now(timezone.utc).timestamp(), "data": data}
+    return data
+
+
+async def _latest_close_and_date(db: AsyncSession, symbol: str) -> Tuple[Optional[float], Optional[str]]:
+    """Local helper: latest CommodityPrice (close, ISO date) for a symbol."""
+    res = await db.execute(
+        select(CommodityPrice)
+        .where(CommodityPrice.symbol == symbol)
+        .order_by(CommodityPrice.date.desc())
+        .limit(1)
+    )
+    row = res.scalars().first()
+    if row is None or row.close is None:
+        return None, None
+    return float(row.close), row.date.isoformat()
+
+
+@router.get("/market/gold")
+async def get_gold_prices(db: AsyncSession = Depends(get_db)) -> dict:
+    """DASH-03: Beş altın formu — gram, ons, çeyrek, yarım, tam (TRY).
+
+    Formula: gram_try = gold_usd_per_oz * usdtry / 31.1035
+    Each coin form = gram_try * GOLD_COIN_WEIGHTS[form].
+    Coin weights are nominal 22-karat values (Pitfall 2).
+    Returns 503 if either GC=F or USDTRY=X is missing.
+    """
+    cache_key = "gold"
+    cached = _market_cache.get(cache_key)
+    if cached and (datetime.now(timezone.utc).timestamp() - cached["ts"]) < _market_cache_ttl:
+        return cached["data"]
+
+    gold_usd, gold_as_of = await _latest_close_and_date(db, "GC=F")
+    usdtry, _usdtry_as_of = await _latest_close_and_date(db, "USDTRY=X")
+
+    if gold_usd is None or usdtry is None:
+        raise HTTPException(status_code=503, detail="Altın verisi yok")
+
+    gram_try = gold_usd * usdtry / 31.1035
+
+    forms = {
+        form: round(gram_try * weight, 2)
+        for form, weight in GOLD_COIN_WEIGHTS.items()
+    }
+
+    data = {
+        "forms": forms,
+        "gold_usd_per_oz": round(gold_usd, 2),
+        "usdtry": round(usdtry, 4),
+        "as_of": gold_as_of,
+    }
+    _market_cache[cache_key] = {"ts": datetime.now(timezone.utc).timestamp(), "data": data}
+    return data
