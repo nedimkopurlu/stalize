@@ -54,21 +54,19 @@ Source: globals.css `.card` (24px), `.gap-*` utility classes, CONTEXT.md D-04/D-
 
 | Role | Size | Weight | Line Height | Font | Usage |
 |------|------|--------|-------------|------|-------|
-| Display | 28px (1.75rem) | 800 | 1.2 | monospace (`var(--font-mono)`) | BIST100 endeks değeri |
+| Display | 28px (1.75rem) | 700 | 1.2 | monospace (`var(--font-mono)`) | BIST100 endeks değeri |
 | Heading | 20px (1.25rem) | 700 | 1.3 | body stack | Section headers ("Döviz", "Altın", "Portföy") |
 | Body | 16px (1rem) | 400 | 1.6 | body stack | Widget labels, placeholder text |
-| Label | 14px (0.875rem) | 600 | 1.4 | body stack | Döviz çifti adı, altın tipi adı, miktarlar |
-| Mono-value | 14px (0.875rem) | 700 | 1.0 | monospace | Tüm sayısal fiyat değerleri (forex, gold prices) |
-| Meta | 12px (0.75rem) | 700 | 1.0 | body stack, uppercase, letter-spacing: 0.05em | Widget eyebrow labels, hacim etiketi |
-| Change | 14px (0.875rem) | 700 | 1.0 | monospace | % değişim değerleri — renk ile birlikte |
+| Label / Mono-value / Change / Meta | 14px (0.875rem) | 700 | 1.0 | body stack or monospace (see Usage) | Döviz çifti adı, altın tipi adı, tüm sayısal fiyat değerleri, % değişim değerleri; Meta labels additionally use `text-transform: uppercase; letter-spacing: 0.05em` (hacim etiketi, widget eyebrow labels) |
 
 Rules:
 - Tüm sayısal değerler (fiyat, hacim, yüzde) `font-family: var(--font-mono), monospace` kullanır.
-- BIST100 günlük değişim yüzdesi: 28px display size, bold, yeşil/kırmızı renk.
-- Hacim: 12px meta, `--text-muted` rengi.
-- Portföy placeholder metni: 14px body, `--text-secondary`.
+- BIST100 günlük değişim yüzdesi: 28px display size, weight 700, yeşil/kırmızı renk.
+- Hacim etiketi: 14px, weight 700, `--text-muted` rengi, uppercase, letter-spacing 0.05em.
+- Portföy placeholder metni: 14px body weight 400, `--text-secondary`.
+- Font weight scale: exactly 2 weights — 400 (body/placeholder text) and 700 (all emphasis, headings, labels, values, display).
 
-Source: globals.css `.statValue` (1.75rem/800), `.signalCard strong` (1.45rem), `.heroMetric strong` (1.35rem); adapted down for widget cells.
+Source: globals.css `.statValue` (1.75rem), `.signalCard strong`, `.heroMetric strong`; adapted down for widget cells.
 
 ---
 
@@ -149,7 +147,7 @@ Fiyat birimi: "₺" prefix, formatPrice() ile 2 ondalık basamak (tr-TR locale, 
 - İlk yükleme: `useEffect` ile sayfa mount'ta `Promise.allSettled([bist100, forex, gold])` çağrısı
 - Her endpoint bağımsız state: `bist100State`, `forexState`, `goldState` — biri başarısız diğerleri etkilenmez
 - `setInterval(refresh, 30_000)` + `return () => clearInterval(id)` cleanup
-- Görsel gösterge: widget header sağında küçük "son güncelleme: HH:MM:SS" veya "30s" countdown text — `--accent-cyan` rengi, 12px mono
+- Görsel gösterge: widget header sağında küçük "son güncelleme: HH:MM:SS" veya "30s" countdown text — `--accent-cyan` rengi, 14px mono, uppercase, letter-spacing 0.05em
 - Yenileme sırasında widgetlar DOM'dan kaldırılmaz; mevcut veri yerinde kalır (no flash/unmount)
 
 ### Loading State
@@ -232,15 +230,15 @@ Yeni sınıflar (en az gereken set):
 | Sınıf | Amaç |
 |-------|------|
 | `.bist100Banner` | Full-width flex container; BIST100 değerlerini yatayda hizalar |
-| `.bist100Value` | Endeks değeri — display büyük mono |
-| `.bist100Change` | % değişim — display büyük, yeşil/kırmızı (koşullu) |
-| `.bist100Meta` | Hacim etiketi + değer — sağ taraf |
+| `.bist100Value` | Endeks değeri — display büyük mono, weight 700 |
+| `.bist100Change` | % değişim — display büyük, weight 700, yeşil/kırmızı (koşullu) |
+| `.bist100Meta` | Hacim etiketi + değer — sağ taraf; 14px uppercase letter-spacing 0.05em |
 | `.marketGrid` | 2-column grid; forex + altın yan yana |
 | `.widgetHeader` | Widget card başlığı — `justify-content: space-between` |
 | `.widgetTitle` | Heading 20px/700 |
-| `.widgetRefreshHint` | "Otomatik yenileme: Xs" — sağ üst, accent-cyan, 12px |
+| `.widgetRefreshHint` | "Otomatik yenileme: Xs" — sağ üst, accent-cyan, 14px mono uppercase letter-spacing 0.05em |
 | `.pairRow` | Forex/altın her satır — flex, space-between |
-| `.pairLabel` | Döviz/altın adı — 14px/600 |
+| `.pairLabel` | Döviz/altın adı — 14px/700 |
 | `.pairPrice` | Fiyat — 14px mono/700 |
 | `.portfolioPlaceholder` | Boş durum kartı — dashed border |
 
