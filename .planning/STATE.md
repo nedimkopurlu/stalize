@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Kişisel Yatırım Asistanı
 status: unknown
-last_updated: "2026-05-05T16:31:43.274Z"
+last_updated: "2026-05-05T16:37:45.117Z"
 progress:
   total_phases: 12
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -23,8 +23,8 @@ See: `.planning/PROJECT.md` (updated 2026-05-04)
 
 ## Current Position
 
-Phase: 28 (Veri Altyapısı) — EXECUTING
-Plan: 3 of 3
+Phase: 28 (Veri Altyapısı) — COMPLETE
+Plan: 3 of 3 (all complete)
 
 ## v4.0 Phases
 
@@ -46,6 +46,7 @@ Plan: 3 of 3
 | Completed | 2026-04-29 | — |
 | Phase 28-veri-altyap-s P01 | 5 | 3 tasks | 6 files |
 | Phase 28-veri-altyap-s P02 | 3 | 3 tasks | 2 files |
+| Phase 28-veri-altyap-s P03 | 220 | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -62,6 +63,9 @@ Plan: 3 of 3
 - [28-02] Compute change_pct from last 2 CommodityPrice rows — not from change_pct column (often NULL, Pitfall 6)
 - [28-02] Volume=0 masked to None for BIST100 index — index volume is unreliable (Pitfall 1)
 - [28-02] _latest_close_and_date is local helper in market.py — avoids cross-router coupling with macro.py
+- [28-03] No cache on /market/opportunities — score freshness critical, endpoint reflects latest ScoringEngine run immediately
+- [28-03] overall_score IS NOT NULL guard ensures unscored stocks excluded from opportunities list (Pitfall 3 honored)
+- [28-03] Mock-based deterministic DISC-01 test: pre-sort list in test data since SQL ORDER BY cannot be enforced in MagicMock
 
 ### Known Constraints
 
@@ -76,7 +80,7 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-05T16:30:42Z
-**Next action:** Execute 28-03 (market opportunities endpoint)
+**Last session:** 2026-05-05T16:37:00Z
+**Next action:** Execute Phase 29 (Dashboard)
 
 ---

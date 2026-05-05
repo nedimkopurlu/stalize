@@ -14,8 +14,8 @@
 
 ### Keşif & Tarama
 
-- [ ] **DISC-01**: Kullanıcı BIST100 hisselerini temel + teknik skora göre filtreler ve sıralar
-- [ ] **DISC-02**: Kullanıcı "bugün ilginç hisseler" listesini görür (yüksek skor = öne çıkar)
+- [x] **DISC-01**: Kullanıcı BIST100 hisselerini temel + teknik skora göre filtreler ve sıralar
+- [x] **DISC-02**: Kullanıcı "bugün ilginç hisseler" listesini görür (yüksek skor = öne çıkar)
 - [ ] **DISC-03**: Kullanıcı bir hisseye tıklayıp detay sayfasına gider
 
 ### Hisse Detay
@@ -75,8 +75,8 @@
 | DASH-02 | Phase 28 | Complete |
 | DASH-03 | Phase 28 | Complete |
 | DASH-04 | Phase 29 | Pending |
-| DISC-01 | Phase 30 | Pending |
-| DISC-02 | Phase 30 | Pending |
+| DISC-01 | Phase 30 | Complete |
+| DISC-02 | Phase 30 | Complete |
 | DISC-03 | Phase 30 | Pending |
 | STCK-01 | Phase 30 | Pending |
 | STCK-02 | Phase 30 | Pending |
