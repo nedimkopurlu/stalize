@@ -183,11 +183,11 @@ Plans:
   2. Kullanıcı 5-10 döviz çiftini (USD/TRY, EUR/TRY, GBP/TRY dahil) canlı fiyatlarıyla görür
   3. Kullanıcı altın fiyatlarını (gram, ons, çeyrek, yarım, tam) görür
   4. Kullanıcı portföyünün toplam değerini ve günlük değişimini özet olarak görür (portföy boşsa boş durum gösterir)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 29-01: Dashboard sayfası — BIST100, döviz, altın widget'ları (Türkçe, responsive)
-- [ ] 29-02: Portföy özet widget'ı (Phase 32 portföy verisine bağlanır; başlangıçta boş durum)
+- [ ] 29-01-PLAN.md — api.ts market endpoints + page.tsx/page.module.css rewrite (BIST100 banner, Döviz, Altın widgets, 30s auto-refresh)
+- [ ] 29-02-PLAN.md — Portfolio placeholder per UI-SPEC (Henüz portföy eklenmedi) + browser smoke checkpoint
 
 ### Phase 30: Keşif & Hisse Detay
 **Goal**: Kullanıcı yüksek fırsatlı hisseleri keşfeder, detay sayfasında tüm metrikleri Türkçe açıklamalarıyla görür ve talep üzerine AI analizi alır.
