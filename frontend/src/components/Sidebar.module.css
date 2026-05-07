@@ -1,3 +1,4 @@
+/* ── Mobile bar ─────────────────────────────────── */
 .mobileBar {
   position: fixed;
   top: 0;
@@ -11,7 +12,7 @@
   background: color-mix(in srgb, var(--bg-primary) 88%, transparent);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border-bottom: 1px solid rgba(198, 255, 221, 0.09);
+  border-bottom: 1px solid var(--border-primary);
   z-index: 70;
 }
 
@@ -26,12 +27,13 @@
   height: 42px;
   border-radius: 12px;
   border: 1px solid var(--border-primary);
-  background: var(--bg-surface);
+  background: var(--bg-elevated);
   display: inline-flex;
   flex-direction: column;
   justify-content: center;
   gap: 4px;
   padding: 0 10px;
+  cursor: pointer;
 }
 
 .mobileToggle span {
@@ -47,8 +49,10 @@
   background: rgba(0, 0, 0, 0.52);
   border: 0;
   z-index: 55;
+  cursor: pointer;
 }
 
+/* ── Sidebar shell ──────────────────────────────── */
 .sidebar {
   position: fixed;
   top: 0;
@@ -59,17 +63,19 @@
   border-right: 1px solid var(--border-primary);
   display: flex;
   flex-direction: column;
+  padding: 22px 16px;
   z-index: 50;
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
-/* ── Logo ──────────────────────────────────────── */
+/* ── Logo ───────────────────────────────────────── */
 .logo {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 22px 22px;
-  border-bottom: 1px solid var(--border-primary);
+  margin-bottom: 28px;
+  flex-shrink: 0;
 }
 
 .logoIcon {
@@ -80,149 +86,129 @@
 }
 
 .logoText {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   color: var(--text-primary);
+  line-height: 1.2;
 }
 
 .logoSub {
   font-size: 0.65rem;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
-/* ── Navigation ────────────────────────────────── */
+/* ── Navigation ─────────────────────────────────── */
 .nav {
   flex: 1;
-  padding: 18px 12px;
-}
-
-.navLabel {
-  font-size: 0.65rem;
-  font-family: var(--font-mono), monospace;
-  font-weight: 800;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  padding: 0 12px;
-  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .navItem {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 12px;
-  padding: 11px 12px;
-  border: 1px solid transparent;
-  border-radius: 18px;
-  color: var(--text-secondary);
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.875rem;
-  font-weight: 700;
-  position: relative;
-  transition: all 200ms ease;
-  margin-bottom: 8px;
-  background: var(--bg-panel-soft);
+  font-size: 13.5px;
+  font-weight: 500;
+  background: transparent;
+  transition: background 160ms ease, color 160ms ease;
 }
 
 .navItem:hover {
+  background: var(--bg-elevated);
   color: var(--text-primary);
-  background: var(--bg-surface);
-  border-color: var(--border-primary);
 }
 
 .navItem.active {
-  color: var(--accent);
   background: var(--accent-soft);
-  border-color: rgba(245, 158, 11, 0.20);
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .navIcon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border: 1px solid var(--border-primary);
-  border-radius: 9px;
-  color: var(--text-primary);
-  font-family: var(--font-mono), monospace;
-  font-size: 0.66rem;
-  font-weight: 900;
-  letter-spacing: 0.03em;
-  background: color-mix(in srgb, var(--bg-primary) 42%, var(--bg-surface));
   flex-shrink: 0;
+  width: 17px;
+  height: 17px;
 }
 
-.navTextWrap {
+.navLabel {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.navText {
-  color: inherit;
-}
-
-.navNote {
-  color: var(--text-muted);
-  font-size: 0.72rem;
-  font-weight: 500;
-}
-
-.activeIndicator {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 6px;
-  height: 6px;
-  background: var(--accent);
-  border-radius: 999px;
 }
 
 /* ── Bottom ─────────────────────────────────────── */
 .bottom {
-  padding: 16px;
-  border-top: 1px solid var(--border-primary);
-  display: grid;
-  gap: 12px;
-}
-
-.statusCard {
+  margin-top: auto;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px;
-  background: var(--bg-panel-soft);
-  border: 1px solid var(--border-primary);
-  border-radius: 18px;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-top: 16px;
 }
 
-.statusTitle {
-  font-size: 0.8rem;
-  font-weight: 700;
+/* AI Asistan card */
+.aiCard {
+  background: var(--bg-elevated);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aiCardLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.aiCardTitle {
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-primary);
+  margin-bottom: 8px;
 }
 
-.statusSub {
-  font-size: 0.74rem;
-  color: var(--text-secondary);
+.upgradeBtn {
+  display: block;
+  width: 100%;
+  background: #f59e0b;
+  color: #0d0e10;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: opacity 150ms ease;
 }
 
-.themeCard {
+.upgradeBtn:hover {
+  opacity: 0.88;
+}
+
+/* Theme toggle row */
+.themeRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px;
-  background: var(--bg-panel-soft);
-  border: 1px solid var(--border-primary);
-  border-radius: 18px;
+  justify-content: center;
+  padding: 4px 0;
 }
 
 /* ── Mobile ─────────────────────────────────────── */

@@ -90,12 +90,19 @@
   margin-bottom: 12px;
 }
 
-.heroMain {
+.heroCardTop {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.heroMain {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-top: 6px;
 }
 
 .heroValue {
@@ -109,10 +116,63 @@
 }
 
 .heroChange {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
-  margin-top: 6px;
   font-variant-numeric: tabular-nums;
+}
+
+.periodTabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-elevated);
+  padding: 3px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.periodTab {
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.12s;
+}
+
+.periodTabActive {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.heroChart {
+  margin-bottom: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.chartSkeleton {
+  height: 160px;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+}
+
+.heroStats {
+  display: flex;
+  gap: 20px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  flex-wrap: wrap;
+}
+
+.heroStats strong {
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 .heroMeta {
@@ -127,24 +187,59 @@
 }
 
 /* Portfolio card */
+.portfolioValue {
+  font-family: var(--font-fraunces, Georgia, serif);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.portfolioDay {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent-green);
+  margin-bottom: 16px;
+}
+
 .portfolioContent {
   display: flex;
   align-items: center;
   gap: 18px;
+}
+
+.portfolioLegend {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.portfolioEmpty {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 6px;
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
 }
 
-.portfolioSub {
-  font-size: 12.5px;
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legendName {
+  flex: 1;
   color: var(--text-muted);
-  line-height: 1.5;
+}
+
+.legendPct {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
 }
 
 /* ── AI signal banner ────────────────────────────────── */

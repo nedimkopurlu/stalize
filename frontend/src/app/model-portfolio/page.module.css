@@ -1,27 +1,21 @@
-/* ── Design Tokens ─────────────────────────────────────────── */
-/* --bg-secondary: #16181c
-   --bg-elevated: #1c1f24
-   --border-primary: rgba(255,255,255,0.06)
-   --accent: #f59e0b
-   --accent-soft: rgba(245,158,11,0.14)
-   --on-accent: #0d0e10
-   --text-primary: #f5f5f7
-   --text-muted: #8b8d93
-   --text-dim: #5a5e68
-   --accent-green: #10b981
-   --accent-red: #ef4444
+/* ── Design Token Reference ──────────────────────────────────
+   --bg-surface, --bg-elevated, --border-primary
+   --text-primary, --text-muted
+   --accent (#f59e0b), --accent-soft, --on-accent
+   --accent-green (#10b981), --accent-red (#ef4444)
+   --font-fraunces
 */
 
-/* ── Page Layout ────────────────────────────────────────────── */
+/* ── Page Layout ─────────────────────────────────────────────── */
 .page {
   max-width: 1200px;
   margin: 0 auto;
   padding: 40px 28px 80px;
   display: grid;
-  gap: 32px;
+  gap: 40px;
 }
 
-/* ── Page Header ────────────────────────────────────────────── */
+/* ── Page Header ─────────────────────────────────────────────── */
 .header {
   display: grid;
   gap: 8px;
@@ -47,366 +41,338 @@
 .subtitle {
   font-size: 14px;
   color: var(--text-muted, #8b8d93);
-  line-height: 1.6;
+  line-height: 1.65;
   margin: 0;
+  max-width: 600px;
 }
 
-/* ── Error Banner ───────────────────────────────────────────── */
-.errorBanner {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.25);
-  border-radius: 10px;
-  padding: 12px 16px;
-  font-size: 13px;
-  color: #ef4444;
+/* ── Strategy Grid ───────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
 }
 
-/* ── Hero Card ──────────────────────────────────────────────── */
-.heroCard {
+/* ── Strategy Card ───────────────────────────────────────────── */
+.card {
   background: var(--bg-elevated, #1c1f24);
-  border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
-  border-radius: 14px;
+  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.06));
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+}
+
+/* Card header: icon + tag */
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.iconCircle {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  font-style: normal;
+}
+
+.tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+
+/* Card name */
+.cardName {
+  font-family: var(--font-fraunces, 'Fraunces', Georgia, serif);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-primary, #f5f5f7);
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Card description */
+.cardDesc {
+  font-size: 12.5px;
+  color: var(--text-muted, #8b8d93);
+  line-height: 1.65;
+  margin: 0;
+  min-height: 56px;
+}
+
+/* ── Stats Row ───────────────────────────────────────────────── */
+.statsRow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-top: 1px solid var(--border-primary, rgba(255, 255, 255, 0.06));
+  border-bottom: 1px solid var(--border-primary, rgba(255, 255, 255, 0.06));
+  padding: 12px 0;
+  margin: 0 -2px;
+}
+
+.statItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 0 4px;
+}
+
+.statValue {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  font-size: 10px;
+  color: var(--text-muted, #8b8d93);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.statDivider {
+  width: 1px;
+  height: 28px;
+  background: var(--border-primary, rgba(255, 255, 255, 0.06));
+  flex-shrink: 0;
+}
+
+/* ── Holdings Chips ──────────────────────────────────────────── */
+.holdingsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 28px;
+}
+
+.holdingChip {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
+  color: var(--text-primary, #f5f5f7);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 3px 8px;
+  text-decoration: none;
+  transition: background 0.12s ease, border-color 0.12s ease;
+  white-space: nowrap;
+}
+
+.holdingChip:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.holdingChipMuted {
+  font-size: 11.5px;
+  color: var(--text-muted, #8b8d93);
+  font-style: italic;
+  padding: 3px 0;
+}
+
+/* ── Card Action Buttons ─────────────────────────────────────── */
+.cardActions {
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.btnGhost {
+  flex: 1;
+  padding: 9px 0;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.1));
+  background: transparent;
+  color: var(--text-primary, #f5f5f7);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+  letter-spacing: 0.01em;
+}
+
+.btnGhost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.btnAccent {
+  flex: 1;
+  padding: 9px 0;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.12s ease, transform 0.1s ease;
+  letter-spacing: 0.01em;
+}
+
+.btnAccent:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+/* ── AI Weekly Portfolio Section ─────────────────────────────── */
+.aiSection {
+  background: var(--bg-elevated, #1c1f24);
+  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.06));
+  border-radius: 16px;
   padding: 28px 32px;
   display: grid;
   gap: 20px;
 }
 
-.heroWeek {
-  font-size: 12.5px;
-  color: var(--text-muted, #8b8d93);
-  font-weight: 500;
-  letter-spacing: 0.02em;
-}
-
-.heroMetrics {
+.aiSectionHeader {
   display: flex;
-  align-items: center;
-  gap: 32px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
-.heroMain {
-  display: flex;
-  flex-direction: column;
+.aiSectionMeta {
+  display: grid;
   gap: 4px;
 }
 
-.heroReturn {
-  font-size: 40px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.02em;
-}
-
-.heroLabel {
-  font-size: 11px;
-  color: var(--text-muted, #8b8d93);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 500;
-}
-
-.heroDivider {
-  width: 1px;
-  height: 40px;
-  background: var(--border-primary, rgba(255,255,255,0.06));
-  flex-shrink: 0;
-}
-
-.heroStat {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.heroStatValue {
-  font-size: 20px;
+.aiSectionTitle {
+  font-family: var(--font-fraunces, 'Fraunces', Georgia, serif);
+  font-size: 22px;
   font-weight: 700;
   color: var(--text-primary, #f5f5f7);
-  line-height: 1;
+  margin: 0;
+  line-height: 1.2;
 }
 
-.heroStatLabel {
-  font-size: 11px;
-  color: var(--text-muted, #8b8d93);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.weekBadge {
+  font-size: 12px;
   font-weight: 500;
-}
-
-.statusBadge {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 3px 10px;
+  color: var(--text-muted, #8b8d93);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 20px;
-  background: rgba(245, 158, 11, 0.14);
-  color: var(--accent, #f59e0b);
-  border: 1px solid rgba(245, 158, 11, 0.25);
-}
-
-.statusBadge[data-status="active"] {
-  background: rgba(16, 185, 129, 0.12);
-  color: var(--accent-green, #10b981);
-  border-color: rgba(16, 185, 129, 0.25);
-}
-
-.statusBadge[data-status="closed"] {
-  background: rgba(139, 141, 147, 0.12);
-  color: var(--text-muted, #8b8d93);
-  border-color: rgba(139, 141, 147, 0.2);
-}
-
-/* ── Holdings Table ─────────────────────────────────────────── */
-.tableSection {
-  background: var(--bg-elevated, #1c1f24);
-  border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-.tableHeader {
-  display: grid;
-  grid-template-columns: 40px 80px 1fr 120px 140px 90px 90px 110px 60px;
-  gap: 0;
-  padding: 10px 20px;
-  background: var(--bg-secondary, #16181c);
-  border-bottom: 1px solid var(--border-primary, rgba(255,255,255,0.06));
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--text-dim, #5a5e68);
-}
-
-.tableColSira   { text-align: center; }
-.tableColSymbol { text-align: left; }
-.tableColName   { text-align: left; }
-.tableColSector { text-align: left; }
-.tableColWeight { text-align: left; }
-.tableColPrice  { text-align: right; }
-.tableColReturn { text-align: right; }
-.tableColScore  { text-align: center; }
-
-/* ── Holding Rows ───────────────────────────────────────────── */
-.holdingsList {
-  display: grid;
-}
-
-.holdingRow {
-  display: grid;
-  grid-template-columns: 40px 80px 1fr 120px 140px 90px 90px 110px 60px;
-  align-items: center;
-  gap: 0;
-  padding: 13px 20px;
-  border-bottom: 1px solid var(--border-primary, rgba(255,255,255,0.06));
-  text-decoration: none;
-  color: inherit;
-  cursor: pointer;
-  transition: background 0.12s ease;
-}
-
-.holdingRow:last-child {
-  border-bottom: none;
-}
-
-.holdingRow:hover {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.rank {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-dim, #5a5e68);
-  text-align: center;
-}
-
-.symbol {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary, #f5f5f7);
-  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
-}
-
-.name {
-  font-size: 12.5px;
-  color: var(--text-muted, #8b8d93);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  padding: 4px 12px;
   white-space: nowrap;
-  padding-right: 12px;
+  align-self: center;
 }
 
-.sector {
-  font-size: 11.5px;
-  color: var(--text-muted, #8b8d93);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.allocation {
+/* AI Holdings chips grid */
+.aiHoldings {
   display: flex;
-  align-items: center;
-}
-
-.allocationWrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.allocationBar {
-  flex: 1;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 2px;
-  overflow: hidden;
-  min-width: 40px;
-  max-width: 80px;
-}
-
-.allocationFill {
-  height: 100%;
-  background: var(--accent, #f59e0b);
-  border-radius: 2px;
-  transition: width 0.3s ease;
-}
-
-.allocationLabel {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary, #f5f5f7);
-  white-space: nowrap;
-  min-width: 36px;
-}
-
-.price {
-  font-size: 12.5px;
-  color: var(--text-primary, #f5f5f7);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.weeklyReturn {
-  font-size: 13px;
-  font-weight: 700;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.score {
-  font-size: 12.5px;
-  font-weight: 700;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
-/* ── Empty State ────────────────────────────────────────────── */
-.emptyState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  padding: 64px 24px;
-}
-
-.emptyText {
-  font-size: 14px;
-  color: var(--text-muted, #8b8d93);
-  text-align: center;
-  margin: 0;
-}
-
-.generateBtn {
-  background: var(--accent, #f59e0b);
-  color: var(--on-accent, #0d0e10);
-  border: none;
-  border-radius: 8px;
-  padding: 10px 28px;
-  font-size: 13.5px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.15s ease, transform 0.1s ease;
-  letter-spacing: 0.02em;
-}
-
-.generateBtn:hover:not(:disabled) {
-  opacity: 0.88;
-  transform: translateY(-1px);
-}
-
-.generateBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ── Generation Notes ───────────────────────────────────────── */
-.notesSection {
-  display: grid;
-  gap: 12px;
-}
-
-.notesSectionTitle {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted, #8b8d93);
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.notesCard {
-  background: var(--bg-elevated, #1c1f24);
-  border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
-  border-radius: 10px;
-  padding: 18px 20px;
-  display: grid;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
-.notesRule {
-  font-size: 13px;
-  color: var(--text-primary, #f5f5f7);
-  margin: 0;
-  line-height: 1.6;
+.aiHoldingCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 10px 16px;
+  text-decoration: none;
+  transition: background 0.12s ease, border-color 0.12s ease;
+  min-width: 72px;
 }
 
-.notesItem {
+.aiHoldingCard:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.aiHoldingSymbol {
   font-size: 12.5px;
-  color: var(--text-muted, #8b8d93);
-  margin: 0;
-  line-height: 1.6;
-}
-
-.notesKey {
-  font-weight: 600;
+  font-weight: 700;
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
   color: var(--text-primary, #f5f5f7);
 }
 
-/* ── Skeleton ───────────────────────────────────────────────── */
-.skeletonTable {
-  width: 100%;
-  border-collapse: collapse;
+.aiHoldingAlloc {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent, #f59e0b);
+  font-variant-numeric: tabular-nums;
 }
 
-.skeletonRow td {
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--border-primary, rgba(255,255,255,0.06));
+.aiHoldingReturn {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
-.skeletonCell {
-  display: block;
-  height: 14px;
-  border-radius: 4px;
+/* AI Section stats bar */
+.aiStats {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-primary, rgba(255, 255, 255, 0.06));
+}
+
+.aiStat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.aiStatLabel {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-muted, #8b8d93);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.aiStatValue {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #f5f5f7);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* Skeleton & states */
+.aiSkeleton {
+  display: flex;
+  gap: 10px;
+}
+
+.aiSkeletonChip {
+  width: 72px;
+  height: 62px;
+  border-radius: 10px;
   background: linear-gradient(
     90deg,
-    rgba(255,255,255,0.04) 0%,
-    rgba(255,255,255,0.08) 50%,
-    rgba(255,255,255,0.04) 100%
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
@@ -417,63 +383,52 @@
   100% { background-position: -200% 0; }
 }
 
-/* ── Responsive ─────────────────────────────────────────────── */
-@media (max-width: 960px) {
+.aiError {
+  font-size: 13px;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.aiEmpty {
+  font-size: 13.5px;
+  color: var(--text-muted, #8b8d93);
+  margin: 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
   .page {
     padding: 24px 16px 60px;
-    gap: 24px;
+    gap: 28px;
   }
 
   .title {
     font-size: 26px;
   }
 
-  .heroMetrics {
-    gap: 20px;
-  }
-
-  .heroReturn {
-    font-size: 30px;
-  }
-
-  .tableHeader,
-  .holdingRow {
-    grid-template-columns: 36px 70px 1fr 90px 90px 70px 70px 90px 50px;
-    font-size: 10px;
-  }
-}
-
-@media (max-width: 680px) {
-  .tableHeader {
-    display: none;
-  }
-
-  .holdingRow {
-    grid-template-columns: 32px 64px 1fr 70px 60px;
-    padding: 12px 14px;
-  }
-
-  .allocation,
-  .sector,
-  .weeklyReturn { display: none; }
-
-  .name {
-    display: none;
-  }
-
-  .score {
-    display: none;
-  }
-
-  .heroCard {
-    padding: 20px 18px;
-  }
-
-  .heroMetrics {
+  .grid {
+    grid-template-columns: 1fr;
     gap: 16px;
   }
 
-  .heroDivider {
-    display: none;
+  .aiSection {
+    padding: 20px 18px;
+  }
+
+  .aiSectionTitle {
+    font-size: 18px;
+  }
+
+  .statsRow {
+    gap: 0;
   }
 }

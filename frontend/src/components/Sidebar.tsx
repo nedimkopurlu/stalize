@@ -6,13 +6,70 @@ import Link from 'next/link';
 import styles from './Sidebar.module.css';
 import ThemeToggle from './ThemeToggle';
 
+// ── SVG Icons ──────────────────────────────────────
+function IconGrid() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" />
+    </svg>
+  );
+}
+
+function IconBriefcase() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2" />
+      <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+    </svg>
+  );
+}
+
+function IconStar() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
+
+function IconLayers() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 2 7 12 12 22 7 12 2" />
+      <polyline points="2 17 12 22 22 17" />
+      <polyline points="2 12 12 17 22 12" />
+    </svg>
+  );
+}
+
+function IconSparkles() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" />
+      <path d="M5 18l.75 2.25L8 21l-2.25.75L5 24l-.75-2.25L2 21l2.25-.75L5 18z" />
+      <path d="M19 3l.75 2.25L22 6l-2.25.75L19 9l-.75-2.25L16 6l2.25-.75L19 3z" />
+    </svg>
+  );
+}
+
+function IconNewspaper() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
+      <path d="M18 14h-8" /><path d="M15 18h-5" /><path d="M10 6h8v4h-8V6Z" />
+    </svg>
+  );
+}
+
+// ── Nav Items ──────────────────────────────────────
 const NAV_ITEMS = [
-  { href: '/', label: 'Genel Bakış', short: '01', note: 'Piyasa özeti' },
-  { href: '/portfolio', label: 'Portföyüm', short: '02', note: 'Pozisyon ve performans' },
-  { href: '/watchlist', label: 'Takip Listem', short: '03', note: 'Takipteki hisseler' },
-  { href: '/stocks', label: 'Tüm Hisseler', short: '04', note: 'BIST hisse listesi' },
-  { href: '/model-portfolio', label: 'Model Portföyler', short: '05', note: 'AI hazır stratejiler' },
-  { href: '/intelligence', label: 'Haberler', short: '06', note: 'KAP ve piyasa haberleri' },
+  { href: '/',                 label: 'Genel Bakış',     Icon: IconGrid       },
+  { href: '/portfolio',        label: 'Portföyüm',       Icon: IconBriefcase  },
+  { href: '/watchlist',        label: 'Takip Listem',    Icon: IconStar       },
+  { href: '/stocks',           label: 'Tüm Hisseler',    Icon: IconLayers     },
+  { href: '/model-portfolio',  label: 'Model Portföyler',Icon: IconSparkles   },
+  { href: '/intelligence',     label: 'Haberler',        Icon: IconNewspaper  },
 ];
 
 export default function Sidebar() {
@@ -21,11 +78,12 @@ export default function Sidebar() {
 
   return (
     <>
+      {/* Mobile top bar */}
       <div className={styles.mobileBar}>
         <button
           type="button"
           className={styles.mobileToggle}
-          onClick={() => setMobileOpen((value) => !value)}
+          onClick={() => setMobileOpen((v) => !v)}
           aria-label="Menüyü aç"
           aria-expanded={mobileOpen}
         >
@@ -35,11 +93,17 @@ export default function Sidebar() {
         </button>
         <div className={styles.mobileBrand}>
           <div className={styles.logoText}>Stalize</div>
-          <div className={styles.logoSub}>BIST100 Çalışma Alanı</div>
+          <div className={styles.logoSub}>BIST Analiz</div>
         </div>
       </div>
 
-      {mobileOpen ? <button className={styles.overlay} aria-label="Menüyü kapat" onClick={() => setMobileOpen(false)} /> : null}
+      {mobileOpen && (
+        <button
+          className={styles.overlay}
+          aria-label="Menüyü kapat"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
 
       <aside className={`${styles.sidebar} ${mobileOpen ? styles.open : ''}`}>
         {/* Logo */}
@@ -60,29 +124,27 @@ export default function Sidebar() {
           </div>
           <div>
             <div className={styles.logoText}>Stalize</div>
-            <div className={styles.logoSub}>BIST Analiz Terminali</div>
+            <div className={styles.logoSub}>BIST Analiz</div>
           </div>
         </div>
 
         {/* Navigation */}
         <nav className={styles.nav}>
-            <div className={styles.navLabel}>Yatırım Terminali</div>
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href || 
-              (item.href !== '/' && pathname.startsWith(item.href));
+          {NAV_ITEMS.map(({ href, label, Icon }) => {
+            const isActive =
+              pathname === href ||
+              (href !== '/' && pathname.startsWith(href));
             return (
               <Link
-              key={item.href}
-              href={item.href}
-              className={`${styles.navItem} ${isActive ? styles.active : ''}`}
-              onClick={() => setMobileOpen(false)}
-            >
-                <span className={styles.navIcon}>{item.short}</span>
-                <span className={styles.navTextWrap}>
-                  <span className={styles.navText}>{item.label}</span>
-                  <span className={styles.navNote}>{item.note}</span>
+                key={href}
+                href={href}
+                className={`${styles.navItem} ${isActive ? styles.active : ''}`}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className={styles.navIcon}>
+                  <Icon />
                 </span>
-                {isActive && <span className={styles.activeIndicator} />}
+                <span className={styles.navLabel}>{label}</span>
               </Link>
             );
           })}
@@ -90,18 +152,15 @@ export default function Sidebar() {
 
         {/* Bottom section */}
         <div className={styles.bottom}>
-          <div className={styles.statusCard}>
-            <div className={styles.statusDot} />
-            <div>
-              <div className={styles.statusTitle}>Stalize</div>
-              <div className={styles.statusSub}>BIST analiz — kişisel yatırım asistanı</div>
-            </div>
+          {/* AI Asistan card */}
+          <div className={styles.aiCard}>
+            <div className={styles.aiCardLabel}>AI Asistan</div>
+            <div className={styles.aiCardTitle}>Sınırsız tahmin</div>
+            <button type="button" className={styles.upgradeBtn}>Yükselt</button>
           </div>
-          <div className={styles.themeCard}>
-            <div>
-              <div className={styles.statusTitle}>Tema</div>
-              <div className={styles.statusSub}>Görünümü buradan değiştir</div>
-            </div>
+
+          {/* Theme toggle row */}
+          <div className={styles.themeRow}>
             <ThemeToggle />
           </div>
         </div>

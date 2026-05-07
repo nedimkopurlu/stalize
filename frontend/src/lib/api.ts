@@ -726,6 +726,11 @@ export interface LowCorrelationPairsResponse {
   timestamp: string;
 }
 
+// ── BIST100 History Interface ──────────────────────────────
+
+export interface Bist100HistoryPoint { date: string; close: number; }
+export interface Bist100HistoryResponse { points: Bist100HistoryPoint[]; count: number; }
+
 // ── Market Interfaces (Phase 29) ───────────────────────────
 
 export interface MarketBist100Response {
@@ -952,6 +957,8 @@ export const api = {
   getMarketForex: () => apiFetch<MarketForexResponse>('/market/forex'),
 
   getMarketGold: () => apiFetch<MarketGoldResponse>('/market/gold'),
+
+  getMarketBist100History: (days = 30) => apiFetch<Bist100HistoryResponse>(`/market/bist100/history?days=${days}`),
 };
 
 export default api;

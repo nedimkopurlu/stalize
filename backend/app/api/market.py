@@ -206,6 +206,44 @@ async def get_opportunities(
     }
 
 
+@router.get("/market/bist100/history")
+async def get_bist100_history(
+    days: int = Query(30, ge=1, le=365, description="Son kaç günlük veri döndürülsün"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """BIST100 kapanış fiyatı geçmişi — tarih artan sırada, son `days` satır.
+
+    Reads CommodityPrice rows where symbol='XU100.IS', ordered ASC, limited to
+    the last `days` rows. Returns 503 if no data exists.
+    """
+    cache_key = f"bist100_history_{days}"
+    cached = _market_cache.get(cache_key)
+    if cached and (datetime.now(timezone.utc).timestamp() - cached["ts"]) < 300:
+        return cached["data"]
+
+    result = await db.execute(
+        select(CommodityPrice)
+        .where(CommodityPrice.symbol == "XU100.IS")
+        .order_by(CommodityPrice.date.desc())
+        .limit(days)
+    )
+    rows = result.scalars().all()
+    if not rows:
+        raise HTTPException(status_code=503, detail="BIST100 geçmişi yok")
+
+    # Reverse to ascending date order for chart consumption
+    rows_asc = list(reversed(rows))
+    points = [
+        {"date": row.date.isoformat(), "close": round(float(row.close), 2)}
+        for row in rows_asc
+        if row.close is not None
+    ]
+
+    data = {"points": points, "count": len(points)}
+    _market_cache[cache_key] = {"ts": datetime.now(timezone.utc).timestamp(), "data": data}
+    return data
+
+
 @router.get("/market/gold")
 async def get_gold_prices(db: AsyncSession = Depends(get_db)) -> dict:
     """DASH-03: Beş altın formu — gram, ons, çeyrek, yarım, tam (TRY).

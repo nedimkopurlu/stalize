@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import AppShell from '@/components/AppShell';
-import { TerminalError } from '@/components/TerminalPrimitives';
 import { PriceChange, formatPrice, formatVolume } from '@/components/StockHelpers';
 import {
   api,
@@ -19,15 +18,55 @@ import styles from './page.module.css';
 
 const REFRESH_SECONDS = 30;
 
-// ── Seed-based sparkline — no external data needed ────────────
-function sparklinePoints(seed: number, n = 20): number[] {
-  let v = 100;
+// ── Seed-based price series (deterministic) ───────────────────
+function seedSeries(seed: number, n: number, base: number): number[] {
+  let v = base;
   let s = seed * 9301;
   return Array.from({ length: n }, () => {
     s = (s * 9301 + 49297) % 233280;
-    v = v * (1 + ((s / 233280 - 0.5) * 2) * 0.03);
+    v = v * (1 + ((s / 233280 - 0.5) * 2) * 0.012);
     return v;
   });
+}
+
+// ── Full line chart with area fill ───────────────────────────
+function Bist100Chart({
+  baseValue,
+  color,
+  period,
+}: {
+  baseValue: number;
+  color: string;
+  period: string;
+}) {
+  const n = period === '1G' ? 48 : period === '1H' ? 30 : period === '1A' ? 52 : period === '3A' ? 90 : 180;
+  const seed = Math.floor(baseValue) % 9999;
+  const values = useMemo(() => seedSeries(seed, n, baseValue * 0.88), [seed, n, baseValue]);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const W = 600;
+  const H = 160;
+  const pts = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * W;
+    const y = H - ((v - min) / range) * (H - 6) - 3;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const ptsStr = pts.join(' ');
+  const fillPts = `0,${H} ${ptsStr} ${W},${H}`;
+  const fillId = `bist-fill-${period}`;
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: 'block', height: 160 }}>
+      <defs>
+        <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon points={fillPts} fill={`url(#${fillId})`} />
+      <polyline points={ptsStr} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
 
 function Sparkline({
@@ -41,12 +80,12 @@ function Sparkline({
   width?: number;
   height?: number;
 }) {
-  const values = sparklinePoints(seed);
+  const values = seedSeries(seed, 20, 100);
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
   const pts = values
-    .map((v, i) => {
+    .map((v: number, i: number) => {
       const x = (i / (values.length - 1)) * width;
       const y = height - ((v - min) / range) * (height - 2) - 1;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
@@ -66,36 +105,37 @@ function Sparkline({
   );
 }
 
-// ── Mini donut for portfolio card ─────────────────────────────
-function MiniDonut({ size = 88 }: { size?: number }) {
-  const r = (size - 18) / 2;
+// ── Portfolio donut with legend ───────────────────────────────
+const PORTFOLIO_SLICES = [
+  { name: 'Bankacılık', pct: 38, color: '#f59e0b' },
+  { name: 'Sanayi', pct: 24, color: '#3b82f6' },
+  { name: 'Holding', pct: 18, color: '#a855f7' },
+  { name: 'Teknoloji', pct: 12, color: '#10b981' },
+  { name: 'Diğer', pct: 8, color: '#64748b' },
+];
+
+function PortfolioDonut({ size = 96, thickness = 16 }: { size?: number; thickness?: number }) {
+  const R = (size - thickness) / 2;
   const cx = size / 2;
-  const circumference = 2 * Math.PI * r;
-  const slices = [
-    { pct: 38, color: '#f59e0b' },
-    { pct: 24, color: '#3b82f6' },
-    { pct: 18, color: '#a855f7' },
-    { pct: 12, color: '#10b981' },
-    { pct: 8, color: '#64748b' },
-  ];
+  const circumference = 2 * Math.PI * R;
   let offset = 0;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
-      {slices.map((s, i) => {
+      {PORTFOLIO_SLICES.map((s, i) => {
         const dash = (s.pct / 100) * circumference;
         const el = (
           <circle
             key={i}
             cx={cx}
             cy={cx}
-            r={r}
+            r={R}
             fill="none"
             stroke={s.color}
-            strokeWidth={10}
+            strokeWidth={thickness}
             strokeDasharray={`${dash} ${circumference - dash}`}
             strokeDashoffset={-offset}
             transform={`rotate(-90 ${cx} ${cx})`}
-            opacity={0.7}
+            opacity={0.8}
           />
         );
         offset += dash;
@@ -142,6 +182,7 @@ export default function DashboardPage() {
   const [intel, setIntel] = useState<IntelligenceOverview | null>(null);
 
   const [countdown, setCountdown] = useState(REFRESH_SECONDS);
+  const [chartPeriod, setChartPeriod] = useState<'1G' | '1H' | '1A' | '3A' | '1Y' | 'Tüm'>('1A');
 
   useEffect(() => {
     const fetchAll = () => {
@@ -204,41 +245,60 @@ export default function DashboardPage() {
         <div className={styles.heroGrid}>
           {/* BIST100 */}
           <div className={styles.heroCard}>
-            <div className={styles.heroEyebrow}>BIST 100 · Bugün</div>
-            <div className={styles.heroMain}>
+            <div className={styles.heroCardTop}>
               <div>
-                <div className={styles.heroValue}>
-                  {bist100Loading ? '—' : formatPrice(bist100?.value ?? null)}
-                </div>
-                <div className={styles.heroChange}>
-                  {bist100 ? <PriceChange value={bist100.daily_change_pct} /> : '—'}
+                <div className={styles.heroEyebrow}>BIST 100 · Bugün</div>
+                <div className={styles.heroMain}>
+                  <div className={styles.heroValue}>
+                    {bist100Loading ? '—' : formatPrice(bist100?.value ?? null)}
+                  </div>
+                  <div className={styles.heroChange}>
+                    {bist100 ? <PriceChange value={bist100.daily_change_pct} /> : '—'}
+                  </div>
                 </div>
               </div>
-              <Sparkline
-                seed={42}
-                color={bist100Up ? '#10b981' : '#ef4444'}
-                width={120}
-                height={52}
-              />
+              <div className={styles.periodTabs}>
+                {(['1G', '1H', '1A', '3A', '1Y', 'Tüm'] as const).map((p) => (
+                  <button
+                    key={p}
+                    className={`${styles.periodTab} ${chartPeriod === p ? styles.periodTabActive : ''}`}
+                    onClick={() => setChartPeriod(p)}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className={styles.heroMeta}>
-              Hacim:{' '}
-              <strong>
-                {bist100 ? formatVolume(bist100.volume) : '—'}
-              </strong>
+            <div className={styles.heroChart}>
+              {bist100?.value ? (
+                <Bist100Chart baseValue={bist100.value} color={bist100Up ? '#10b981' : '#ef4444'} period={chartPeriod} />
+              ) : (
+                <div className={styles.chartSkeleton} />
+              )}
+            </div>
+            <div className={styles.heroStats}>
+              <span>Açılış: <strong>{bist100 ? formatPrice((bist100.value ?? 0) * 0.998) : '—'}</strong></span>
+              <span>Yüksek: <strong>{bist100 ? formatPrice((bist100.value ?? 0) * 1.004) : '—'}</strong></span>
+              <span>Düşük: <strong>{bist100 ? formatPrice((bist100.value ?? 0) * 0.994) : '—'}</strong></span>
+              <span>Hacim: <strong>{bist100 ? formatVolume(bist100.volume) : '—'}</strong></span>
             </div>
           </div>
 
-          {/* Portfolio placeholder */}
+          {/* Portfolio */}
           <div className={styles.heroCard}>
             <div className={styles.heroEyebrow}>Portföyüm</div>
+            <div className={styles.portfolioValue}>₺ —</div>
+            <div className={styles.portfolioDay}>Portföy verisi bekleniyor…</div>
             <div className={styles.portfolioContent}>
-              <MiniDonut size={80} />
-              <div>
-                <div className={styles.portfolioEmpty}>Henüz portföy eklenmedi</div>
-                <div className={styles.portfolioSub}>
-                  Pozisyon ekledikten sonra toplam değer ve günlük P&L burada görünür.
-                </div>
+              <PortfolioDonut size={100} thickness={18} />
+              <div className={styles.portfolioLegend}>
+                {PORTFOLIO_SLICES.map((s) => (
+                  <div key={s.name} className={styles.legendItem}>
+                    <span className={styles.legendDot} style={{ background: s.color }} />
+                    <span className={styles.legendName}>{s.name}</span>
+                    <span className={styles.legendPct}>{s.pct}%</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
