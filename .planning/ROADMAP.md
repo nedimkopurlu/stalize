@@ -186,7 +186,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 29-01-PLAN.md — api.ts market endpoints + page.tsx/page.module.css rewrite (BIST100 banner, Döviz, Altın widgets, 30s auto-refresh)
+- [x] 29-01-PLAN.md — api.ts market endpoints + page.tsx/page.module.css rewrite (BIST100 banner, Döviz, Altın widgets, 30s auto-refresh)
 - [ ] 29-02-PLAN.md — Portfolio placeholder per UI-SPEC (Henüz portföy eklenmedi) + browser smoke checkpoint
 
 ### Phase 30: Keşif & Hisse Detay
@@ -265,7 +265,7 @@ Phases execute in numeric order: 28 → 29 → 30 → 31 → 32 → 33
 | 26. Frontend Quality | v3.1 | 1/1 | Complete | 2026-04-28 |
 | 27. Infrastructure Upgrade | v3.1 | 1/1 | Complete | 2026-04-29 |
 | 28. Veri Altyapısı | v4.0 | 3/3 | Complete    | 2026-05-05 |
-| 29. Dashboard | v4.0 | 0/2 | Not started | - |
+| 29. Dashboard | v4.0 | 1/2 | In Progress|  |
 | 30. Keşif & Hisse Detay | v4.0 | 0/3 | Not started | - |
 | 31. Haberler | v4.0 | 0/1 | Not started | - |
 | 32. Portföy | v4.0 | 0/3 | Not started | - |
