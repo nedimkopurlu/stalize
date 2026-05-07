@@ -1,30 +1,31 @@
 ---
 gsd_state_version: 1.0
-milestone: v4.0
-milestone_name: Kişisel Yatırım Asistanı
-status: unknown
-last_updated: "2026-05-07T17:22:01.547Z"
+milestone: v5.0
+milestone_name: LLM Entegrasyonlu Yatırım Asistanı
+status: defining_requirements
+last_updated: "2026-05-08T00:00:00.000Z"
 progress:
-  total_phases: 12
-  completed_phases: 3
-  total_plans: 7
-  completed_plans: 12
+  total_phases: 6
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-05-04)
+See: `.planning/PROJECT.md` (updated 2026-05-08)
 
 **Core value:** Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıklamayla cevap vermek — karar kullanıcıda, anlayış asistanda.
-**Current milestone:** v4.0 — Kişisel Yatırım Asistanı
-**Previous milestone:** v3.1 — Audit Düzeltmeleri (tamamlandı 2026-04-29)
+**Current milestone:** v5.0 — LLM Entegrasyonlu Yatırım Asistanı
+**Previous milestone:** v4.0 — Kişisel Yatırım Asistanı (Phases 28-29 tamamlandı; 30-33 v5.0'a taşındı)
 
 ## Current Position
 
-Phase: 30
-Plan: Not started
+Phase: Not started (defining requirements)
+Plan: —
+Status: Roadmap oluşturuluyor
 
 ## v4.0 Phases
 

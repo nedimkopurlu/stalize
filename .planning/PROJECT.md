@@ -57,20 +57,34 @@ Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıkl
 - Otomatik alım-satım — karar her zaman kullanıcıda
 - BIST100 dışı hisseler — v1 için likit evren yeterli
 
+## Current Milestone: v5.0 — LLM Entegrasyonlu Yatırım Asistanı
+
+**Goal:** Gemini 2.0 Flash ile LLM entegrasyonu ekle; prototype tasarımına tam uyum sağla; tüm eksik sayfaları (Keşif, Haberler, Portföy, Model Portföy) tamamla.
+
+**Target features:**
+- Gemini 2.0 Flash entegrasyonu (ücretsiz, on-demand hisse analizi + günlük piyasa özeti + model portföy gerekçeleri)
+- Frontend tasarım tutarsızlıkları giderilmesi (prototype'a tam uyum)
+- Keşif & Hisse Detay sayfası (skorlu liste + AI analizi)
+- Haberler sayfası (KAP + basın + günlük Gemini özeti)
+- Portföy sayfası (alım-satım, P&L, watchlist)
+- Model Portföy sayfası (özerk AI kararları + Türkçe gerekçe)
+
 ## Context
 
 - Mevcut stack: Next.js (frontend, Vercel), FastAPI (backend, Railway), PostgreSQL
-- Mevcut veri kaynağı: BloombergHT/Foreks API (BIST fiyatları)
-- AI: DeepSeek API (on-demand analiz için, verimli kullanılacak)
+- LLM: Gemini 2.0 Flash (Google) — ücretsiz tier, 15 req/min, 1500 req/gün, Türkçe mükemmel
+- Önceki LLM: DeepSeek (kaldırıldı v2.0'da) → Gemini ile yeniden ekleniyor
 - Kullanıcı tek kişi, Türkiye'de, BIST yatırımcısı
 - Öğrenme hedefi önemli — uygulama sadece veri değil, anlayış da üretmeli
+- Prototype Stalize tasarımı uygulandı (v4.0 Phase 29) — tutarsızlıklar giderilecek
 
 ## Constraints
 
-- **Verimlilik**: AI API çağrıları yalnızca kullanıcı "Analiz Et" dediğinde yapılır
+- **Verimlilik**: Gemini çağrıları yalnızca on-demand (kullanıcı "Analiz Et") veya günde bir otomatik özet için; gereksiz çağrı yok
 - **Kapsam**: BIST100 (100 hisse) — genişleme v2'ye bırakılır
 - **Platform**: Web-first, responsive — native app yok
 - **Dil**: Tamamen Türkçe
+- **LLM Ücretsiz**: Gemini 2.0 Flash free tier kullanılır; ücretli API'ye geçiş gerekmez
 
 ## Key Decisions
 
@@ -81,6 +95,8 @@ Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıkl
 | Kripto yok | Kullanıcı odağını dağıtır, v1 için gereksiz | — Pending |
 | Model portföy özerk | AI kendi kararlarını verir, kullanıcı karşılaştırır | — Pending |
 | Giriş yok | Kişisel araç, tek kullanıcı, sürtünmeyi azaltır | — Pending |
+| Gemini 2.0 Flash | Ücretsiz tier yeterli, Türkçe mükemmel, DeepSeek'in yerini alıyor | — Pending |
+| LLM güvenli fallback | Gemini quota dolsa endpoint hata değil placeholder döner | — Pending |
 
 ## Evolution
 
@@ -98,4 +114,4 @@ Bu döküman her fazda ve milestone sınırında güncellenir.
 3. Out of Scope'daki gerekçeler hâlâ geçerli mi?
 
 ---
-*Last updated: 2026-05-04 after initial questioning*
+*Last updated: 2026-05-08 after v5.0 milestone start — LLM entegrasyonu + frontend iyileştirme*
