@@ -1,0 +1,276 @@
+/* ── Tüm Hisseler Page ──────────────────────────────────── */
+
+.page {
+  padding: 32px 24px 64px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Header ── */
+
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+}
+
+.title {
+  font-family: var(--font-fraunces, serif);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 28px;
+  line-height: 1.15;
+}
+
+.titleCount {
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  font-weight: 400;
+  margin-left: 10px;
+}
+
+/* ── Toolbar ── */
+
+.toolbar {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.searchInput {
+  flex: 0 0 280px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  padding: 8px 14px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.searchInput::placeholder {
+  color: var(--text-dim);
+}
+
+.searchInput:focus {
+  border-color: var(--border-strong);
+}
+
+.pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pill {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 5px 12px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.pill:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.pillActive {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Error ── */
+
+.errorMsg {
+  color: #ef4444;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 12px 0;
+}
+
+/* ── Table ── */
+
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.th {
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border-primary);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 11px 14px;
+  text-align: left;
+  text-transform: uppercase;
+  user-select: none;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.th:hover {
+  color: var(--text-primary);
+}
+
+.thRight {
+  text-align: right;
+}
+
+.sortIconInactive {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  margin-left: 4px;
+  opacity: 0.5;
+}
+
+.sortIconActive {
+  color: var(--accent);
+  font-size: 0.7rem;
+  margin-left: 4px;
+}
+
+/* ── Rows ── */
+
+.row {
+  border-bottom: 1px solid var(--border-primary);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.td {
+  color: var(--text-primary);
+  padding: 11px 14px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.tdSymbol {
+  color: var(--accent);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 11px 14px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.tdName {
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  max-width: 200px;
+  overflow: hidden;
+  padding: 11px 14px;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.tdSector {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  max-width: 140px;
+  overflow: hidden;
+  padding: 11px 14px;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.tdRight {
+  text-align: right;
+}
+
+.mono {
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.tdSparkline {
+  padding: 8px 14px;
+  vertical-align: middle;
+}
+
+.tdStar {
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  padding: 11px 14px;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.tdStar:hover {
+  color: var(--accent);
+}
+
+/* ── Skeleton ── */
+
+.skeletonRow {
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.skeletonCell {
+  background: var(--bg-elevated);
+  border-radius: 4px;
+  height: 16px;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* ── Empty state ── */
+
+.emptyState {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  padding: 32px;
+  text-align: center;
+}
+
+/* ── Header spacing ── */
+
+.header {
+  margin-bottom: 4px;
+}

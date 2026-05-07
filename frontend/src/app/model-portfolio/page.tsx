@@ -1,48 +1,187 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import AppShell from '@/components/AppShell';
-import { TerminalEmpty, TerminalError, TerminalMetric, TerminalPageHeader, TerminalSection, TerminalShell } from '@/components/TerminalPrimitives';
-import terminalStyles from '@/components/terminal.module.css';
-import api, { ModelPortfolioCurrentResponse, ModelPortfolioHistoryResponse, PortfolioSnapshot } from '@/lib/api';
-import PerformanceCalendar from '@/components/PerformanceCalendar';
-import styles from './portfolio.module.css';
+import { formatPrice } from '@/components/StockHelpers';
+import api, {
+  ModelPortfolioCurrentResponse,
+  ModelPortfolioHolding,
+  ModelPortfolioWeekSummary,
+} from '@/lib/api';
+import styles from './page.module.css';
 
-function formatPercent(value: number | null | undefined) {
-  if (value === null || value === undefined) return '-';
-  return `%${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
+// ── Helpers ──────────────────────────────────────────────────
+
+function formatWeekRange(weekStart: string, weekEnd: string): string {
+  const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+  const start = new Date(weekStart).toLocaleDateString('tr-TR', opts);
+  const end = new Date(weekEnd).toLocaleDateString('tr-TR', opts);
+  return `${start} – ${end}`;
 }
 
-function formatCurrency(value: number | null | undefined) {
-  if (value === null || value === undefined) return '-';
-  return new Intl.NumberFormat('tr-TR', {
-    style: 'currency',
-    currency: 'TRY',
-    maximumFractionDigits: 2,
-  }).format(value);
+function formatPct(value: number | null | undefined, showPlus = true): string {
+  if (value === null || value === undefined) return '—';
+  const sign = value >= 0 && showPlus ? '+' : '';
+  return `${sign}${value.toFixed(2)}%`;
 }
+
+function scoreColor(score: number | null): string {
+  if (score === null) return 'var(--text-muted)';
+  if (score >= 70) return 'var(--accent-green)';
+  if (score >= 50) return 'var(--accent)';
+  return 'var(--accent-red)';
+}
+
+// ── Sub Components ──────────────────────────────────────────
+
+function SkeletonRow() {
+  return (
+    <tr className={styles.skeletonRow}>
+      {Array.from({ length: 9 }).map((_, i) => (
+        <td key={i}><span className={styles.skeletonCell} /></td>
+      ))}
+    </tr>
+  );
+}
+
+function HeroCard({ week }: { week: ModelPortfolioWeekSummary }) {
+  const portfolioReturn = week.portfolio_return_pct;
+  const benchmarkReturn = week.benchmark_return_pct;
+  const activeSpread = week.active_return_spread;
+  const isPositive = (portfolioReturn ?? 0) >= 0;
+
+  return (
+    <div className={styles.heroCard}>
+      <div className={styles.heroWeek}>
+        {formatWeekRange(week.week_start, week.week_end)}
+      </div>
+      <div className={styles.heroMetrics}>
+        <div className={styles.heroMain}>
+          <span
+            className={styles.heroReturn}
+            style={{ color: isPositive ? 'var(--accent-green)' : 'var(--accent-red)' }}
+          >
+            {formatPct(portfolioReturn)}
+          </span>
+          <span className={styles.heroLabel}>Portföy Getirisi</span>
+        </div>
+        <div className={styles.heroDivider} />
+        <div className={styles.heroStat}>
+          <span className={styles.heroStatValue}>{formatPct(benchmarkReturn)}</span>
+          <span className={styles.heroStatLabel}>BIST100</span>
+        </div>
+        <div className={styles.heroStat}>
+          <span
+            className={styles.heroStatValue}
+            style={{
+              color: (activeSpread ?? 0) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)',
+            }}
+          >
+            {formatPct(activeSpread)}
+          </span>
+          <span className={styles.heroStatLabel}>Aktif Getiri</span>
+        </div>
+        <div className={styles.heroStat}>
+          <span className={styles.statusBadge} data-status={week.status.toLowerCase()}>
+            {week.status}
+          </span>
+          <span className={styles.heroStatLabel}>Durum</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AllocationBar({ pct }: { pct: number }) {
+  return (
+    <div className={styles.allocationWrap}>
+      <div className={styles.allocationBar}>
+        <div className={styles.allocationFill} style={{ width: `${Math.min(pct * 5, 100)}%` }} />
+      </div>
+      <span className={styles.allocationLabel}>{pct.toFixed(1)}%</span>
+    </div>
+  );
+}
+
+function HoldingRow({ holding }: { holding: ModelPortfolioHolding }) {
+  const weeklyReturn = holding.weekly_return_pct ?? 0;
+  const isGreen = weeklyReturn >= 0;
+
+  return (
+    <Link href={`/stocks/${holding.symbol}`} className={styles.holdingRow}>
+      <span className={styles.rank}>{holding.rank}</span>
+      <span className={styles.symbol}>{holding.symbol}</span>
+      <span className={styles.name} title={holding.name ?? ''}>
+        {holding.name ?? '—'}
+      </span>
+      <span className={styles.sector}>{holding.sector ?? '—'}</span>
+      <span className={styles.allocation}>
+        <AllocationBar pct={holding.allocation_pct} />
+      </span>
+      <span className={styles.price}>{formatPrice(holding.entry_price)}</span>
+      <span className={styles.price}>{formatPrice(holding.current_price)}</span>
+      <span
+        className={styles.weeklyReturn}
+        style={{ color: isGreen ? 'var(--accent-green)' : 'var(--accent-red)' }}
+      >
+        {formatPct(holding.weekly_return_pct)}
+      </span>
+      <span className={styles.score} style={{ color: scoreColor(holding.overall_score) }}>
+        {holding.overall_score !== null ? holding.overall_score.toFixed(1) : '—'}
+      </span>
+    </Link>
+  );
+}
+
+function GenerationNotesCard({
+  data,
+}: {
+  data: NonNullable<ModelPortfolioCurrentResponse['generation_notes']>;
+}) {
+  return (
+    <div className={styles.notesCard}>
+      {data.selection_rule && (
+        <p className={styles.notesRule}>
+          <span className={styles.notesKey}>Seçim kuralı:</span> {data.selection_rule}
+        </p>
+      )}
+      {data.penalized_symbols.length > 0 && (
+        <p className={styles.notesItem}>
+          <span className={styles.notesKey}>Ceza uygulanan hisseler:</span>{' '}
+          {data.penalized_symbols.join(', ')}
+        </p>
+      )}
+      {data.previous_adjustment_mode && (
+        <p className={styles.notesItem}>
+          <span className={styles.notesKey}>Önceki mod:</span> {data.previous_adjustment_mode}
+        </p>
+      )}
+      {data.previous_review_summary && (
+        <p className={styles.notesItem}>{data.previous_review_summary}</p>
+      )}
+    </div>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────
 
 export default function ModelPortfolioPage() {
-  const [current, setCurrent] = useState<ModelPortfolioCurrentResponse | null>(null);
-  const [history, setHistory] = useState<ModelPortfolioHistoryResponse | null>(null);
+  const [data, setData] = useState<ModelPortfolioCurrentResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    void loadModelPortfolio();
+    void loadData();
   }, []);
 
-  async function loadModelPortfolio() {
+  async function loadData() {
     setLoading(true);
     setError(null);
     try {
-      const [currentResponse, historyResponse] = await Promise.all([
-        api.getCurrentModelPortfolio(),
-        api.getModelPortfolioHistory(12),
-      ]);
-      setCurrent(currentResponse);
-      setHistory(historyResponse);
+      const response = await api.getCurrentModelPortfolio();
+      setData(response);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Model portföy yüklenemedi');
     } finally {
@@ -50,283 +189,96 @@ export default function ModelPortfolioPage() {
     }
   }
 
-  async function regenerateModelPortfolio() {
+  async function handleGenerate() {
     setGenerating(true);
     setError(null);
     try {
-      const payload = await api.generateModelPortfolio(true);
-      setCurrent(payload);
-      const historyResponse = await api.getModelPortfolioHistory(12);
-      setHistory(historyResponse);
+      const response = await api.generateModelPortfolio(false);
+      setData(response);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Model portföy üretilemedi');
+      setError(err instanceof Error ? err.message : 'Model portföy oluşturulamadı');
     } finally {
       setGenerating(false);
     }
   }
 
-  const week = current?.week;
-  const holdings = current?.holdings ?? [];
-  const reviewNotes = week?.review_notes;
-  const nextWeekPlan = reviewNotes?.next_week_adjustments;
-  const changes = current?.changes;
-  const decisionBand = current?.decision_band;
-  const snapshots = (current?.snapshots ?? []).map<PortfolioSnapshot>((snapshot) => ({
-    date: snapshot.date,
-    total_value: snapshot.total_return_pct,
-    daily_pnl_pct: snapshot.daily_return_pct,
-    positions_json: snapshot.positions_json,
-  }));
+  const week = data?.week ?? null;
+  const holdings = data?.holdings ?? [];
+  const generationNotes = data?.generation_notes ?? null;
+  const hasPortfolio = holdings.length > 0;
 
   return (
     <AppShell>
-      <TerminalShell>
-        <TerminalPageHeader
-          title="Model Portföy"
-          description="Sistemin haftalık kurduğu portföyü, günlük performansı ve haftalık değerlendirme notlarıyla birlikte izle."
-          action={(
-            <>
-              <button className="btn btn-ghost" onClick={loadModelPortfolio} disabled={loading || generating}>
-                Yenile
-              </button>
-              <button className="btn btn-primary" onClick={regenerateModelPortfolio} disabled={generating}>
-                {generating ? 'Üretiliyor...' : 'Bu Haftayı Yeniden Kur'}
-              </button>
-            </>
-          )}
-        />
-        {error ? <TerminalError>{error}</TerminalError> : null}
+      <div className={styles.page}>
 
-        <div className={terminalStyles.metricGrid}>
-          <TerminalMetric label="Pozisyon Sayısı" value={current?.summary?.holding_count ?? 0} note="Bu haftaki model portföy" />
-          <TerminalMetric label="Haftalık Getiri" value={formatPercent(week?.portfolio_return_pct)} note="Portföy toplam getirisi" />
-          <TerminalMetric label="Günlük Değişim" value={formatPercent(week?.daily_return_pct)} note="Son günlük izleme" />
-          <TerminalMetric label="Benchmark" value={formatPercent(week?.benchmark_return_pct)} note={week?.benchmark_symbol ?? 'BIST100'} />
-          <TerminalMetric label="Aktif Fark" value={formatPercent(week?.active_return_spread)} note="Benchmark üzeri/altı" />
-          <TerminalMetric label="En İyi Hisse" value={current?.summary?.best_holding?.symbol ?? '-'} note={formatPercent(current?.summary?.best_holding?.weekly_return_pct)} />
-          <TerminalMetric label="En Zayıf Hisse" value={current?.summary?.worst_holding?.symbol ?? '-'} note={formatPercent(current?.summary?.worst_holding?.weekly_return_pct)} />
-          <TerminalMetric label="Strateji" value={week?.strategy_version ?? '-'} note="Haftalık seçim motoru" />
+        {/* ── Page Header ── */}
+        <div className={styles.header}>
+          <span className={styles.eyebrow}>AI · HAFTALIK SEÇİM</span>
+          <h1 className={styles.title}>Model Portföy</h1>
+          <p className={styles.subtitle}>
+            AI tarafından haftalık olarak güncellenen, temel ve teknik analize dayalı portföy.
+          </p>
         </div>
 
-        <TerminalSection title="Karar Bandı" description="Bu hafta model portföy neden böyle kuruldu?">
-          {decisionBand ? (
-            <div className={styles.decisionBand}>
-              <div className="card">
-                <strong>{decisionBand.headline}</strong>
-                <p className="text-secondary" style={{ marginTop: 10 }}>{decisionBand.focus}</p>
-              </div>
-              <div className="card">
-                {decisionBand.actions.length ? (
-                  <div className={styles.changeList}>
-                    {decisionBand.actions.map((item) => (
-                      <span key={item} className="text-secondary">{item}</span>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-secondary">Bu hafta için ek aksiyon notu oluşmadı.</span>
-                )}
-              </div>
+        {/* ── Error ── */}
+        {error && (
+          <div className={styles.errorBanner}>
+            {error}
+          </div>
+        )}
+
+        {/* ── Hero Summary Card ── */}
+        {!loading && week && <HeroCard week={week} />}
+
+        {/* ── Holdings Table ── */}
+        <div className={styles.tableSection}>
+          <div className={styles.tableHeader}>
+            <div className={styles.tableColSira}>Sıra</div>
+            <div className={styles.tableColSymbol}>Sembol</div>
+            <div className={styles.tableColName}>Şirket</div>
+            <div className={styles.tableColSector}>Sektör</div>
+            <div className={styles.tableColWeight}>Ağırlık</div>
+            <div className={styles.tableColPrice}>Giriş</div>
+            <div className={styles.tableColPrice}>Son Fiyat</div>
+            <div className={styles.tableColReturn}>Haftalık Getiri</div>
+            <div className={styles.tableColScore}>Skor</div>
+          </div>
+
+          {loading ? (
+            <table className={styles.skeletonTable}>
+              <tbody>
+                {Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)}
+              </tbody>
+            </table>
+          ) : hasPortfolio ? (
+            <div className={styles.holdingsList}>
+              {holdings.map((holding) => (
+                <HoldingRow key={holding.id} holding={holding} />
+              ))}
             </div>
           ) : (
-            <TerminalEmpty>Önceki hafta verisi biriktiğinde karar bandı burada oluşacak.</TerminalEmpty>
-          )}
-        </TerminalSection>
-
-        <TerminalSection title="Haftalık Değerlendirme" description="Sistem geçen haftadan ne öğrendi?">
-          {week?.review_summary ? (
-            <div className="card">
-              <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}>{week.review_summary}</p>
-              {reviewNotes?.poor_performers?.length ? (
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
-                  {reviewNotes.poor_performers.slice(0, 4).map((item) => (
-                    <span key={item.symbol} className="badge badge-red">
-                      {item.symbol} {formatPercent(item.return_pct)}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-              {reviewNotes?.factor_drag?.length ? (
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
-                  {reviewNotes.factor_drag.slice(0, 3).map((item) => (
-                    <span key={item.factor} className="badge">
-                      {item.label}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-              {nextWeekPlan ? (
-                <div style={{ display: 'grid', gap: 8, marginTop: 16 }}>
-                  <span className="text-secondary">
-                    Gelecek hafta mod: <strong style={{ color: 'var(--text-primary)' }}>{nextWeekPlan.review_mode}</strong>
-                  </span>
-                  {nextWeekPlan.penalized_symbols.length ? (
-                    <span className="text-secondary">
-                      Cezalı hisseler: <strong style={{ color: 'var(--text-primary)' }}>{nextWeekPlan.penalized_symbols.join(', ')}</strong>
-                    </span>
-                  ) : null}
-                  {Object.keys(nextWeekPlan.sector_caps).length ? (
-                    <span className="text-secondary">
-                      Sıkılaştırılan sektörler:{' '}
-                      <strong style={{ color: 'var(--text-primary)' }}>
-                        {Object.entries(nextWeekPlan.sector_caps).map(([sector, cap]) => `${sector} (${cap})`).join(', ')}
-                      </strong>
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <TerminalEmpty>Bu hafta için henüz değerlendirme notu oluşmadı.</TerminalEmpty>
-          )}
-        </TerminalSection>
-
-        <TerminalSection title="Haftalık Değişim Günlüğü" description="Geçen haftaya göre model portföy nasıl güncellendi?">
-          {changes ? (
-            <div className={styles.changeGrid}>
-              <div className="card">
-                <p className="text-secondary">{changes.summary}</p>
-              </div>
-              <div className="card">
-                <div className={styles.changeBlock}>
-                  <strong>Eklenenler</strong>
-                  {changes.added.length ? (
-                    <div className={styles.badgeRow}>
-                      {changes.added.map((symbol) => (
-                        <span key={symbol} className="badge badge-green">{symbol}</span>
-                      ))}
-                    </div>
-                  ) : <span className="text-secondary">Yeni hisse yok.</span>}
-                </div>
-                <div className={styles.changeBlock}>
-                  <strong>Çıkarılanlar</strong>
-                  {changes.removed.length ? (
-                    <div className={styles.badgeRow}>
-                      {changes.removed.map((symbol) => (
-                        <span key={symbol} className="badge badge-red">{symbol}</span>
-                      ))}
-                    </div>
-                  ) : <span className="text-secondary">Çıkan hisse yok.</span>}
-                </div>
-              </div>
-              <div className="card">
-                <div className={styles.changeBlock}>
-                  <strong>Ağırlığı Artanlar</strong>
-                  {changes.increased.length ? (
-                    <div className={styles.changeList}>
-                      {changes.increased.slice(0, 4).map((item) => (
-                        <span key={item.symbol} className="text-secondary">
-                          <strong style={{ color: 'var(--text-primary)' }}>{item.symbol}</strong> +%{item.delta_pct.toFixed(2)}
-                        </span>
-                      ))}
-                    </div>
-                  ) : <span className="text-secondary">Artan ağırlık yok.</span>}
-                </div>
-                <div className={styles.changeBlock}>
-                  <strong>Ağırlığı Azalanlar</strong>
-                  {changes.decreased.length ? (
-                    <div className={styles.changeList}>
-                      {changes.decreased.slice(0, 4).map((item) => (
-                        <span key={item.symbol} className="text-secondary">
-                          <strong style={{ color: 'var(--text-primary)' }}>{item.symbol}</strong> %{item.delta_pct.toFixed(2)}
-                        </span>
-                      ))}
-                    </div>
-                  ) : <span className="text-secondary">Azalan ağırlık yok.</span>}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <TerminalEmpty>Karşılaştırılacak önceki hafta oluştuğunda değişim günlüğü burada görünecek.</TerminalEmpty>
-          )}
-        </TerminalSection>
-
-        <TerminalSection title="Bu Haftaki Model Portföy" description="Sistemin otomatik seçtiği hisseler">
-          {holdings.length === 0 ? (
-            <TerminalEmpty>Henüz model portföy üretilmedi. “Bu Haftayı Yeniden Kur” ile ilk portföyü oluşturabilirsin.</TerminalEmpty>
-          ) : (
-            <div className={styles.tableWrap}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Sembol</th>
-                    <th>Ağırlık</th>
-                    <th>Giriş</th>
-                    <th>Güncel</th>
-                    <th>Haftalık</th>
-                    <th>Günlük</th>
-                    <th>Skor</th>
-                    <th>Gerekçe</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {holdings.map((holding) => (
-                    <tr key={holding.id}>
-                      <td style={{ fontWeight: 700 }}>{holding.rank}</td>
-                      <td>
-                        <div style={{ display: 'grid', gap: 2 }}>
-                          <strong>{holding.symbol}</strong>
-                          <span className="text-secondary">{holding.sector || '-'}</span>
-                        </div>
-                      </td>
-                      <td>%{holding.allocation_pct.toFixed(2)}</td>
-                      <td>{formatCurrency(holding.entry_price)}</td>
-                      <td>{formatCurrency(holding.current_price)}</td>
-                      <td style={{ fontWeight: 800, color: (holding.weekly_return_pct ?? 0) >= 0 ? 'var(--green-400)' : 'var(--red-400)' }}>
-                        {formatPercent(holding.weekly_return_pct)}
-                      </td>
-                      <td style={{ fontWeight: 800, color: (holding.daily_change_pct ?? 0) >= 0 ? 'var(--green-400)' : 'var(--red-400)' }}>
-                        {formatPercent(holding.daily_change_pct)}
-                      </td>
-                      <td>{holding.overall_score?.toFixed(1) ?? '-'}</td>
-                      <td className="text-secondary">{holding.rationale || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className={styles.emptyState}>
+              <p className={styles.emptyText}>Model portföy henüz oluşturulmadı.</p>
+              <button
+                className={styles.generateBtn}
+                onClick={handleGenerate}
+                disabled={generating}
+              >
+                {generating ? 'Oluşturuluyor...' : 'Oluştur'}
+              </button>
             </div>
           )}
-        </TerminalSection>
+        </div>
 
-        <TerminalSection title="Günlük Takip" description="Haftalık model portföyün günlük izleme yüzeyi">
-          <PerformanceCalendar snapshots={snapshots} />
-        </TerminalSection>
+        {/* ── Generation Notes ── */}
+        {!loading && generationNotes && (
+          <div className={styles.notesSection}>
+            <h2 className={styles.notesSectionTitle}>Oluşturma Notları</h2>
+            <GenerationNotesCard data={generationNotes} />
+          </div>
+        )}
 
-        <TerminalSection title="Geçmiş Haftalar" description="Her haftanın kapanış performansı">
-          {history?.weeks?.length ? (
-            <div className={styles.tableWrap}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Hafta</th>
-                    <th>Portföy</th>
-                    <th>Benchmark</th>
-                    <th>Fark</th>
-                    <th>Not</th>
-                    <th>Değişim</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.weeks.map((item) => (
-                    <tr key={item.id}>
-                      <td style={{ fontWeight: 700 }}>
-                        {new Date(item.week_start).toLocaleDateString('tr-TR')} - {new Date(item.week_end).toLocaleDateString('tr-TR')}
-                      </td>
-                      <td style={{ color: (item.portfolio_return_pct ?? 0) >= 0 ? 'var(--green-400)' : 'var(--red-400)' }}>{formatPercent(item.portfolio_return_pct)}</td>
-                      <td>{formatPercent(item.benchmark_return_pct)}</td>
-                      <td style={{ color: (item.active_return_spread ?? 0) >= 0 ? 'var(--green-400)' : 'var(--red-400)' }}>{formatPercent(item.active_return_spread)}</td>
-                      <td className="text-secondary">{item.review_summary || '-'}</td>
-                      <td className="text-secondary">{item.change_summary || '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <TerminalEmpty>Henüz geçmiş hafta kaydı yok.</TerminalEmpty>
-          )}
-        </TerminalSection>
-      </TerminalShell>
+      </div>
     </AppShell>
   );
 }

@@ -7,15 +7,12 @@ import styles from './Sidebar.module.css';
 import ThemeToggle from './ThemeToggle';
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Dashboard', short: '01', note: 'Genel görünüm' },
-  { href: '/stocks', label: 'Hisse Radarı', short: '02', note: 'Seçim ve filtreleme' },
-  { href: '/screener', label: 'Tarama', short: '03', note: 'Filtrele ve keşfet' },
-  { href: '/intelligence', label: 'Piyasa Akışı', short: '04', note: 'KAP ve etkili haberler' },
-  { href: '/sectors', label: 'Sektörler', short: '05', note: 'Sektör dağılımı' },
-  { href: '/rankings', label: 'Sıralama', short: '06', note: 'Liderlik tablosu' },
-  { href: '/model-portfolio', label: 'Model Portföy', short: '07', note: 'Sistemin haftalık seçimi' },
-  { href: '/watchlist', label: 'İzleme Listesi', short: '08', note: 'Takip ettiğin hisseler' },
-  { href: '/portfolio', label: 'Portföyüm', short: '09', note: 'Kişisel portföy yönetimi' },
+  { href: '/', label: 'Genel Bakış', short: '01', note: 'Piyasa özeti' },
+  { href: '/portfolio', label: 'Portföyüm', short: '02', note: 'Pozisyon ve performans' },
+  { href: '/watchlist', label: 'Takip Listem', short: '03', note: 'Takipteki hisseler' },
+  { href: '/stocks', label: 'Tüm Hisseler', short: '04', note: 'BIST hisse listesi' },
+  { href: '/model-portfolio', label: 'Model Portföyler', short: '05', note: 'AI hazır stratejiler' },
+  { href: '/intelligence', label: 'Haberler', short: '06', note: 'KAP ve piyasa haberleri' },
 ];
 
 export default function Sidebar() {
@@ -96,8 +93,8 @@ export default function Sidebar() {
           <div className={styles.statusCard}>
             <div className={styles.statusDot} />
             <div>
-              <div className={styles.statusTitle}>Odak</div>
-              <div className={styles.statusSub}>Hisse seçimi, tarama, model portföy ve kişisel takip</div>
+              <div className={styles.statusTitle}>Stalize</div>
+              <div className={styles.statusSub}>BIST analiz — kişisel yatırım asistanı</div>
             </div>
           </div>
           <div className={styles.themeCard}>
