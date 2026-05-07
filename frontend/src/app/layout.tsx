@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -23,7 +30,7 @@ export default function RootLayout({
     <html
       lang="tr"
       suppressHydrationWarning
-      className={inter.variable}
+      className={`${inter.variable} ${fraunces.variable}`}
       style={
         {
           '--font-display': '"Inter", "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif',

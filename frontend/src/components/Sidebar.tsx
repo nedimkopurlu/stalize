@@ -51,14 +51,14 @@ export default function Sidebar() {
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
               <defs>
                 <linearGradient id="logoGrad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#79f2b5" />
-                  <stop offset="0.55" stopColor="#38e8c6" />
-                  <stop offset="1" stopColor="#d6a84f" />
+                  <stop stopColor="#f59e0b" />
+                  <stop offset="0.55" stopColor="#ea580c" />
+                  <stop offset="1" stopColor="#f59e0b" />
                 </linearGradient>
               </defs>
               <rect width="28" height="28" rx="7" fill="url(#logoGrad)" opacity="0.15" />
               <path d="M7 20L11 12L15 16L21 8" stroke="url(#logoGrad)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="21" cy="8" r="2" fill="#22d3ee" />
+              <circle cx="21" cy="8" r="2" fill="#f59e0b" />
             </svg>
           </div>
           <div>
