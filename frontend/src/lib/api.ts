@@ -726,6 +726,42 @@ export interface LowCorrelationPairsResponse {
   timestamp: string;
 }
 
+// ── Market Interfaces (Phase 29) ───────────────────────────
+
+export interface MarketBist100Response {
+  value: number | null;
+  daily_change_pct: number | null;
+  volume: number | null;
+  as_of: string;
+}
+
+export interface ForexPair {
+  symbol: string;
+  name: string;
+  rate: number | null;
+  daily_change_pct: number | null;
+  as_of: string;
+}
+
+export interface MarketForexResponse {
+  pairs: ForexPair[];
+  count: number;
+  as_of: string;
+}
+
+export interface MarketGoldResponse {
+  forms: {
+    gram: number | null;
+    ons: number | null;
+    ceyrek: number | null;
+    yarim: number | null;
+    tam: number | null;
+  };
+  gold_usd_per_oz: number | null;
+  usdtry: number | null;
+  as_of: string | null;
+}
+
 // ── API Functions ──────────────────────────────────────────
 
 export const api = {
@@ -909,6 +945,13 @@ export const api = {
 
   getSparklineData: (symbol: string, days: number = 30) =>
     apiFetch<SparklineResponse>(`/stocks/sparkline?symbol=${encodeURIComponent(symbol)}&days=${days}`),
+
+  // ── Market Endpoints (Phase 29) ─────────────────────────
+  getMarketBist100: () => apiFetch<MarketBist100Response>('/market/bist100'),
+
+  getMarketForex: () => apiFetch<MarketForexResponse>('/market/forex'),
+
+  getMarketGold: () => apiFetch<MarketGoldResponse>('/market/gold'),
 };
 
 export default api;
