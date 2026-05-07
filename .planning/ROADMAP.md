@@ -5,7 +5,8 @@
 - ✅ **v2.0 Gerçek Veri Çekirdeği** — Phases 01–16 (shipped 2026-04-27)
 - ✅ **v3.0 Tüm Borsa + Kullanılabilir Platform** — Phases 17–21 (shipped 2026-04-28)
 - ✅ **v3.1 Audit Düzeltmeleri** — Phases 22–27 (shipped 2026-04-29)
-- 🚧 **v4.0 Kişisel Yatırım Asistanı** — Phases 28–33 (aktif)
+- ✅ **v4.0 Kişisel Yatırım Asistanı** — Phases 28–29 (completed); Phases 30–33 absorbed into v5.0
+- 🚧 **v5.0 LLM Entegrasyonlu Yatırım Asistanı** — Phases 34–39 (aktif)
 
 ## Phases
 
@@ -58,16 +59,26 @@ Full details: See Phase Details section (archived phases 22–27 inline above).
 
 </details>
 
-### v4.0 Kişisel Yatırım Asistanı (Phases 28–33) — AKTİF
-
-**Milestone Hedefi:** Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem Türkçe açıklamayla cevap veren, portföy takibi ve AI destekli model portföy karşılaştırması sunan kişisel yatırım asistanı.
+<details>
+<summary>✅ v4.0 Kişisel Yatırım Asistanı (Phases 28–29) — COMPLETED; Phases 30–33 absorbed into v5.0</summary>
 
 - [x] **Phase 28: Veri Altyapısı** — BIST100 odaklı fiyat, temel/teknik metrikler ve puanlama motorunun hazırlanması (completed 2026-05-05)
 - [x] **Phase 29: Dashboard** — BIST100 özeti, döviz, altın ve portföy özetinin tek ekranda görünmesi (completed 2026-05-07)
-- [ ] **Phase 30: Keşif & Hisse Detay** — Skorlu hisse listesi, fiyat grafiği, metrik açıklamaları ve on-demand AI analizi
-- [ ] **Phase 31: Haberler** — Tüm BIST haberlerinin tarih sıralı tek sayfada görünmesi
-- [ ] **Phase 32: Portföy** — Gerçek alım-satım girişi, kâr/zarar takibi ve izleme listesi
-- [ ] **Phase 33: Model Portföy** — Özerk haftalık model portföy, karar geçmişi ve kullanıcı karşılaştırması
+
+Phases 30–33 (Keşif, Haberler, Portföy, Model Portföy) planned in v4.0 but never executed — scope absorbed into v5.0 with Gemini LLM integration.
+
+</details>
+
+### v5.0 LLM Entegrasyonlu Yatırım Asistanı (Phases 34–39) — AKTİF
+
+**Milestone Hedefi:** Gemini 2.0 Flash ile LLM entegrasyonu ekle; prototype tasarımına tam uyum sağla; tüm eksik sayfaları (Keşif, Haberler, Portföy, Model Portföy) tamamla.
+
+- [ ] **Phase 34: Frontend Tasarım Düzeltmeleri** — Prototype audit sonrası bulunan 6 tasarım tutarsızlığı giderilir
+- [ ] **Phase 35: Gemini LLM Altyapısı** — Backend Gemini 2.0 Flash servis katmanı kurulur; quota aşımında graceful fallback çalışır
+- [ ] **Phase 36: Keşif & Hisse Detay + AI Analizi** — Skorlu hisse listesi, detay sayfası (metrik tooltipli), on-demand Gemini analizi
+- [ ] **Phase 37: Haberler + Günlük Piyasa Özeti** — KAP + basın birleşik haber akışı; her sabah otomatik Gemini piyasa özeti
+- [ ] **Phase 38: Portföy** — Alım-satım girişi, P&L takibi, BIST100 karşılaştırması, watchlist
+- [ ] **Phase 39: Model Portföy + AI Kararları** — Özerk haftalık model portföy; Gemini Türkçe gerekçe; karar geçmişi; kullanıcı karşılaştırması
 
 ## Phase Details
 
@@ -189,72 +200,104 @@ Plans:
 - [x] 29-01-PLAN.md — api.ts market endpoints + page.tsx/page.module.css rewrite (BIST100 banner, Döviz, Altın widgets, 30s auto-refresh)
 - [x] 29-02-PLAN.md — Portfolio placeholder per UI-SPEC (Henüz portföy eklenmedi) + browser smoke checkpoint
 
-### Phase 30: Keşif & Hisse Detay
-**Goal**: Kullanıcı yüksek fırsatlı hisseleri keşfeder, detay sayfasında tüm metrikleri Türkçe açıklamalarıyla görür ve talep üzerine AI analizi alır.
-**Depends on**: Phase 28
-**Requirements**: DISC-01, DISC-02, DISC-03, STCK-01, STCK-02, STCK-03, STCK-04, STCK-05, STCK-06
+### Phase 34: Frontend Tasarım Düzeltmeleri
+**Goal**: Kullanıcı prototype'a tam uyumlu bir arayüzle çalışır; 6 tespit edilen görsel tutarsızlık giderilir.
+**Depends on**: Phase 29
+**Requirements**: DESIGN-01, DESIGN-02, DESIGN-03, DESIGN-04, DESIGN-05, DESIGN-06
 **Success Criteria** (what must be TRUE):
-  1. Kullanıcı BIST100 hisselerini temel + teknik skora göre sıralar ve filtreler
-  2. "Bugün ilginç hisseler" listesi en yüksek skorlu hisseleri öne çıkarır
-  3. Kullanıcı bir hisseye tıklayıp fiyat grafiğini dört zaman aralığında (7g, 1ay, 3ay, 1y) görür
-  4. Kullanıcı temel metrikleri (F/K, PD/DD, net kar, bilanço büyümesi) ve teknik göstergeleri (RSI, MACD, hareketli ortalamalar) yanlarındaki Türkçe tooltip açıklamalarıyla görür
-  5. Kullanıcı "Analiz Et" butonuna basınca DeepSeek API o hisseye özel Türkçe analiz üretir; ikinci kez basılmadan yeni API çağrısı yapılmaz
-  6. Kullanıcı hissenin KAP açıklamalarını ve basın haberlerini detay sayfasında görür
+  1. Dashboard BIST100 grafiği 6 periyot tabını gösterir (1G, 1H, 1A, 3A, 1Y, Tüm); intraday verisi yoksa mock veri ile sekme çalışır durumda kalır
+  2. Kazananlar/kaybedenler satırlarında 40×28px mini sparkline prototype'a uygun şekilde görünür
+  3. Model portföy sayfası 6 strateji kartını (Temettü Avcısı, Büyüme Lokomotifleri, Defansif Kalkan dahil) listeler
+  4. Light mode'da hover durumları hardcoded renk değeri yerine theme-aware CSS değişkeni kullanır; karanlık arka plan artifaktı görünmez
+  5. Dashboard portföy kartı pozisyon yokken "/portföy" sayfasına yönlendiren Türkçe boş durum mesajı gösterir; `SparklineWidget.tsx` ve kullanılmayan api.ts metodları kod tabanında bulunmaz
 **Plans**: TBD
 
 Plans:
-- [ ] 30-01: Keşif sayfası — skorlu hisse listesi, filtreleme ve sıralama
-- [ ] 30-02: Hisse detay sayfası — fiyat grafiği, temel ve teknik metrik kartları (Türkçe tooltipli)
-- [ ] 30-03: On-demand AI analizi (DeepSeek) ve haber/KAP bölümü
+- [ ] 34-01: BIST100 grafik 6 tab + sparkline düzeltmesi (DESIGN-01, DESIGN-02)
+- [ ] 34-02: Model portföy 6 kart + hover fix + dead code temizlik + portföy boş durum (DESIGN-03, DESIGN-04, DESIGN-05, DESIGN-06)
 
-### Phase 31: Haberler
-**Goal**: Kullanıcı tüm BIST haberlerini ve KAP açıklamalarını tarih sıralı tek bir sayfada takip eder.
-**Depends on**: Phase 28
-**Requirements**: NEWS-01
+### Phase 35: Gemini LLM Altyapısı
+**Goal**: Backend'de Gemini 2.0 Flash servis katmanı çalışır; tüm LLM çağrıları bu katmandan geçer ve quota aşımında sistem hata yerine placeholder döner.
+**Depends on**: Phase 34
+**Requirements**: LLM-01
+**Success Criteria** (what must be TRUE):
+  1. `google-generativeai` SDK ile Gemini 2.0 Flash'a istek gönderilebilir; API key `.env`'den okunur
+  2. Quota aşıldığında (429) endpoint HTTP 500 yerine yapılandırılmış bir fallback mesajı döner; uygulama çökmez
+  3. Servis katmanı izole edilmiş bir modül olarak import edilebilir; tüm üst-level LLM çağrıları bu modülden geçer
+**Plans**: TBD
+
+Plans:
+- [ ] 35-01: GeminiService sınıfı — SDK entegrasyonu, async generate, quota fallback, unit testler
+
+### Phase 36: Keşif & Hisse Detay + AI Analizi
+**Goal**: Kullanıcı yüksek fırsatlı hisseleri keşfeder, detay sayfasında tüm metrikleri Türkçe açıklamalarıyla görür ve talep üzerine Gemini'den Türkçe analiz alır.
+**Depends on**: Phase 35
+**Requirements**: DISC-03, STCK-01, STCK-02, STCK-03, STCK-04, STCK-05, STCK-06, LLM-02
+**Success Criteria** (what must be TRUE):
+  1. Kullanıcı keşif sayfasında BIST100 hisselerini skora göre sıralar; bir hisseye tıkladığında detay sayfasına gider
+  2. Detay sayfasında fiyat grafiği 4 zaman aralığında görünür (7g, 1ay, 3ay, 1y)
+  3. Temel metrikler (F/K, PD/DD, net kar, bilanço büyümesi) ve teknik göstergeler (RSI, MACD, hareketli ortalamalar) her birinin yanında Türkçe tooltip açıklamasıyla görünür
+  4. Kullanıcı "Analiz Et" butonuna bastığında Gemini o hisseye özel Türkçe analiz üretir; aynı oturumda ikinci kez basılmadan yeni istek gönderilmez
+  5. Kullanıcı detay sayfasında hissenin KAP açıklamalarını ve basın haberlerini görür
+**Plans**: TBD
+
+Plans:
+- [ ] 36-01: Keşif sayfası — skorlu hisse listesi, filtreleme ve sıralama (DISC-03)
+- [ ] 36-02: Hisse detay — fiyat grafiği, temel ve teknik metrik kartları (Türkçe tooltipli) (STCK-01, STCK-02, STCK-03, STCK-05, STCK-06)
+- [ ] 36-03: On-demand Gemini analizi — "Analiz Et" butonu, önbellek, fallback (STCK-04, LLM-02)
+
+### Phase 37: Haberler + Günlük Piyasa Özeti
+**Goal**: Kullanıcı tüm BIST haberlerini tarih sıralı tek sayfada takip eder; her sabah Gemini tarafından üretilen günlük piyasa özeti sayfanın üstünde görünür.
+**Depends on**: Phase 35
+**Requirements**: NEWS-01, LLM-03
 **Success Criteria** (what must be TRUE):
   1. Kullanıcı haberler sayfasında KAP açıklamaları ve basın haberlerinin tarih sıralı birleşik akışını görür
-  2. Sayfa yenilendiğinde yeni haberler listenin başına eklenir
+  2. Sayfa yenilendiğinde yeni haberler listenin başına eklenir; eski haberler aşağıda kalır
+  3. Sayfanın en üstünde o güne ait Gemini piyasa özeti kartı görünür; kart tarihi ve oluşturulma saati içerir
+  4. APScheduler her sabah otomatik olarak yeni özeti üretir; kullanıcı müdahalesi gerekmez
 **Plans**: TBD
 
 Plans:
-- [ ] 31-01: Haberler sayfası — KAP + basın birleşik akışı, tarih sıralı (Türkçe)
+- [ ] 37-01: Haberler sayfası — KAP + basın birleşik akışı, tarih sıralı (NEWS-01)
+- [ ] 37-02: Günlük Gemini piyasa özeti — APScheduler job, DB kaydı, dashboard + haberler entegrasyonu (LLM-03)
 
-### Phase 32: Portföy
+### Phase 38: Portföy
 **Goal**: Kullanıcı gerçek alım-satımlarını girer, kâr/zarar takibi yapar, BIST100 ile karşılaştırır ve izleme listesi tutar.
 **Depends on**: Phase 29
 **Requirements**: PORT-01, PORT-02, PORT-03, PORT-04, PORT-05
 **Success Criteria** (what must be TRUE):
-  1. Kullanıcı hisse, lot, fiyat ve tarih girerek alım işlemi kaydeder
-  2. Kullanıcı satım işlemi girer; kapalı pozisyon gerçekleşen kâr/zararla görünür
-  3. Kullanıcı açık pozisyonlarını TL ve % kâr/zarar olarak görür
-  4. Kullanıcı portföy performansını BIST100 endeksiyle grafiksel olarak karşılaştırır
+  1. Kullanıcı hisse, lot, fiyat ve tarih girerek alım işlemi kaydeder; kayıt anında portföy listesine yansır
+  2. Kullanıcı satım işlemi girer; kapalı pozisyon gerçekleşen kâr/zararla (TL ve %) görünür
+  3. Kullanıcı açık pozisyonlarını güncel fiyatla hesaplanmış TL ve % kâr/zarar olarak görür
+  4. Kullanıcı portföy performansını BIST100 endeksiyle grafiksel olarak karşılaştırır (aynı başlangıç tarihinden itibaren)
   5. Kullanıcı izleme listesine hisse ekler ve çıkarır; watchlist canlı fiyatlarla görünür
 **Plans**: TBD
 
 Plans:
-- [ ] 32-01: Portföy veri modeli ve alım-satım işlem girişi
-- [ ] 32-02: Portföy performans görünümü ve BIST100 karşılaştırması
-- [ ] 32-03: İzleme listesi (watchlist) — ekleme, çıkarma, canlı fiyat
+- [ ] 38-01: Portföy veri modeli ve alım-satım işlem girişi (PORT-01, PORT-02)
+- [ ] 38-02: Portföy performans görünümü ve BIST100 karşılaştırması (PORT-03, PORT-04)
+- [ ] 38-03: İzleme listesi (watchlist) — ekleme, çıkarma, canlı fiyat (PORT-05)
 
-### Phase 33: Model Portföy
-**Goal**: Asistan haftalık özerk model portföy yönetir; kullanıcı geçmişi, gerekçeleri ve kendi portföyüyle karşılaştırmayı görür.
-**Depends on**: Phase 30, Phase 32
-**Requirements**: MODEL-01, MODEL-02, MODEL-03, MODEL-04
+### Phase 39: Model Portföy + AI Kararları
+**Goal**: Sistem haftalık özerk model portföy yönetir; her karar Gemini tarafından Türkçe gerekçesiyle yazılır; kullanıcı geçmişi ve kendi portföyüyle karşılaştırmayı görür.
+**Depends on**: Phase 35, Phase 38
+**Requirements**: MODEL-01, MODEL-02, MODEL-03, MODEL-04, LLM-04
 **Success Criteria** (what must be TRUE):
-  1. Asistan haftalık olarak BIST100 evreni içinde model portföy oluşturur ve günceller (tam özerk)
-  2. Her alım/satım kararı Türkçe gerekçesiyle birlikte tarih damgalı olarak veritabanında saklanır
-  3. Kullanıcı model portföyün tam geçmişini (tarih, işlem, gerekçe) görebilir
-  4. Kullanıcı kendi portföyünün performansını model portföyle yan yana karşılaştırır
+  1. APScheduler haftalık olarak BIST100 evreni içinde model portföyü günceller; insan müdahalesi olmadan çalışır
+  2. Her alım/satım kararı Gemini'nin yazdığı Türkçe gerekçesiyle birlikte tarih damgalı olarak veritabanına kaydedilir
+  3. Kullanıcı model portföyün tam geçmişini (tarih, işlem, gerekçe) sayfalanmış olarak görür
+  4. Kullanıcı kendi portföyünün performansını model portföyle yan yana karşılaştırır (getiri, grafik)
 **Plans**: TBD
 
 Plans:
-- [ ] 33-01: Model portföy otomasyonu — haftalık AI karar döngüsü ve gerekçe kaydı
-- [ ] 33-02: Model portföy görünümü — karar geçmişi ve kullanıcı portföyü karşılaştırması
+- [ ] 39-01: Model portföy özerk karar döngüsü + Gemini Türkçe gerekçe kaydı (MODEL-01, MODEL-02, LLM-04)
+- [ ] 39-02: Model portföy görünümü — geçmiş ve kullanıcı portföyü karşılaştırması (MODEL-03, MODEL-04)
 
 ## Progress Table
 
 **Execution Order:**
-Phases execute in numeric order: 28 → 29 → 30 → 31 → 32 → 33
+v5.0 phases execute in numeric order: 34 → 35 → 36 → 37 → 38 → 39
+Note: Phase 38 depends on Phase 29 (not 35); Phase 37 depends on Phase 35; Phases 36 and 37 can execute in parallel after Phase 35.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -264,12 +307,14 @@ Phases execute in numeric order: 28 → 29 → 30 → 31 → 32 → 33
 | 25. Business Logic Correctness | v3.1 | 1/1 | Complete | 2026-04-28 |
 | 26. Frontend Quality | v3.1 | 1/1 | Complete | 2026-04-28 |
 | 27. Infrastructure Upgrade | v3.1 | 1/1 | Complete | 2026-04-29 |
-| 28. Veri Altyapısı | v4.0 | 3/3 | Complete    | 2026-05-05 |
-| 29. Dashboard | v4.0 | 2/2 | Complete    | 2026-05-07 |
-| 30. Keşif & Hisse Detay | v4.0 | 0/3 | Not started | - |
-| 31. Haberler | v4.0 | 0/1 | Not started | - |
-| 32. Portföy | v4.0 | 0/3 | Not started | - |
-| 33. Model Portföy | v4.0 | 0/2 | Not started | - |
+| 28. Veri Altyapısı | v4.0 | 3/3 | Complete | 2026-05-05 |
+| 29. Dashboard | v4.0 | 2/2 | Complete | 2026-05-07 |
+| 34. Frontend Tasarım Düzeltmeleri | v5.0 | 0/2 | Not started | - |
+| 35. Gemini LLM Altyapısı | v5.0 | 0/1 | Not started | - |
+| 36. Keşif & Hisse Detay + AI Analizi | v5.0 | 0/3 | Not started | - |
+| 37. Haberler + Günlük Piyasa Özeti | v5.0 | 0/2 | Not started | - |
+| 38. Portföy | v5.0 | 0/3 | Not started | - |
+| 39. Model Portföy + AI Kararları | v5.0 | 0/2 | Not started | - |
 
 ## Kuzey Yıldızı
 
