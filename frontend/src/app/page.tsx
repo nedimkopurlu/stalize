@@ -157,12 +157,14 @@ export default function DashboardPage() {
             </section>
           </div>
 
-          {/* ─── Portföy Özet (Plan 02 ekleyecek) ─── */}
+          {/* ─── Portföy Özet ─── */}
           <section className={styles.portfolioPlaceholder} aria-label="Portföyüm">
             <h2 className={styles.widgetTitle} style={{ marginBottom: 16 }}>Portföyüm</h2>
-            <TerminalEmpty>
-              Henüz portföy eklenmedi. Alım-satım işlemlerinizi girdikten sonra toplam değer ve günlük değişiminiz burada görünür. (Portföy yönetimi yakında)
-            </TerminalEmpty>
+            <p className={styles.portfolioPlaceholderTitle}>Henüz portföy eklenmedi</p>
+            <p className={styles.portfolioPlaceholderBody}>
+              Alım-satım işlemlerinizi girdikten sonra toplam değer ve günlük değişiminiz burada görünür.
+            </p>
+            <p className={styles.portfolioPlaceholderCta}>Portföy yönetimi yakında</p>
           </section>
         </div>
       </TerminalShell>
