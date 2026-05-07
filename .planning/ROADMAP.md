@@ -63,7 +63,7 @@ Full details: See Phase Details section (archived phases 22–27 inline above).
 **Milestone Hedefi:** Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem Türkçe açıklamayla cevap veren, portföy takibi ve AI destekli model portföy karşılaştırması sunan kişisel yatırım asistanı.
 
 - [x] **Phase 28: Veri Altyapısı** — BIST100 odaklı fiyat, temel/teknik metrikler ve puanlama motorunun hazırlanması (completed 2026-05-05)
-- [ ] **Phase 29: Dashboard** — BIST100 özeti, döviz, altın ve portföy özetinin tek ekranda görünmesi
+- [x] **Phase 29: Dashboard** — BIST100 özeti, döviz, altın ve portföy özetinin tek ekranda görünmesi (completed 2026-05-07)
 - [ ] **Phase 30: Keşif & Hisse Detay** — Skorlu hisse listesi, fiyat grafiği, metrik açıklamaları ve on-demand AI analizi
 - [ ] **Phase 31: Haberler** — Tüm BIST haberlerinin tarih sıralı tek sayfada görünmesi
 - [ ] **Phase 32: Portföy** — Gerçek alım-satım girişi, kâr/zarar takibi ve izleme listesi
@@ -187,7 +187,7 @@ Plans:
 
 Plans:
 - [x] 29-01-PLAN.md — api.ts market endpoints + page.tsx/page.module.css rewrite (BIST100 banner, Döviz, Altın widgets, 30s auto-refresh)
-- [ ] 29-02-PLAN.md — Portfolio placeholder per UI-SPEC (Henüz portföy eklenmedi) + browser smoke checkpoint
+- [x] 29-02-PLAN.md — Portfolio placeholder per UI-SPEC (Henüz portföy eklenmedi) + browser smoke checkpoint
 
 ### Phase 30: Keşif & Hisse Detay
 **Goal**: Kullanıcı yüksek fırsatlı hisseleri keşfeder, detay sayfasında tüm metrikleri Türkçe açıklamalarıyla görür ve talep üzerine AI analizi alır.
@@ -265,7 +265,7 @@ Phases execute in numeric order: 28 → 29 → 30 → 31 → 32 → 33
 | 26. Frontend Quality | v3.1 | 1/1 | Complete | 2026-04-28 |
 | 27. Infrastructure Upgrade | v3.1 | 1/1 | Complete | 2026-04-29 |
 | 28. Veri Altyapısı | v4.0 | 3/3 | Complete    | 2026-05-05 |
-| 29. Dashboard | v4.0 | 1/2 | In Progress|  |
+| 29. Dashboard | v4.0 | 2/2 | Complete   | 2026-05-07 |
 | 30. Keşif & Hisse Detay | v4.0 | 0/3 | Not started | - |
 | 31. Haberler | v4.0 | 0/1 | Not started | - |
 | 32. Portföy | v4.0 | 0/3 | Not started | - |

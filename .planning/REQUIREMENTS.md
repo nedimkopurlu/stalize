@@ -10,7 +10,7 @@
 - [x] **DASH-01**: Kullanıcı BIST100 endeks özetini görür (günlük değişim, hacim)
 - [x] **DASH-02**: Kullanıcı 5-10 döviz çiftini takip eder (USD/TRY, EUR/TRY, GBP/TRY vb.)
 - [x] **DASH-03**: Kullanıcı altın fiyatlarını takip eder (gram, ons, çeyrek, yarım, tam)
-- [ ] **DASH-04**: Kullanıcı portföy özetini görür (toplam değer, günlük değişim)
+- [x] **DASH-04**: Kullanıcı portföy özetini görür (toplam değer, günlük değişim)
 
 ### Keşif & Tarama
 
@@ -74,7 +74,7 @@
 | DASH-01 | Phase 28 | Complete |
 | DASH-02 | Phase 28 | Complete |
 | DASH-03 | Phase 28 | Complete |
-| DASH-04 | Phase 29 | Pending |
+| DASH-04 | Phase 29 | Complete |
 | DISC-01 | Phase 30 | Complete |
 | DISC-02 | Phase 30 | Complete |
 | DISC-03 | Phase 30 | Pending |
