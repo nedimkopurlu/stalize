@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v5.0
-milestone_name: LLM Entegrasyonlu Yatırım Asistanı
-status: complete
-last_updated: "2026-05-08T14:00:00.000Z"
+milestone: v5.1
+milestone_name: Kapsamlı Bug Fix & Kalite İyileştirme
+status: in_progress
+last_updated: "2026-05-08T21:00:00.000Z"
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 6
-  completed_plans: 6
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -18,12 +18,15 @@ progress:
 See: `.planning/PROJECT.md`
 
 **Core value:** Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıklamayla cevap vermek — karar kullanıcıda, anlayış asistanda.
-**Current milestone:** v5.0 — LLM Entegrasyonlu Yatırım Asistanı ✅ COMPLETE
+**Current milestone:** v5.1 — Kapsamlı Bug Fix & Kalite İyileştirme 🔄 IN PROGRESS
+**Previous milestone:** v5.0 — LLM Entegrasyonlu Yatırım Asistanı ✅ COMPLETE
 **Previous milestone:** v4.0 — Kişisel Yatırım Asistanı (Phases 28-29 tamamlandı)
 
 ## Current Position
 
-All v5.0 phases complete. Milestone ready for audit.
+Phase: Not started (defining requirements)
+Status: v5.1 milestone başlatıldı — 2026-05-08
+Last activity: 2026-05-08 — v5.1 requirements tanımlandı, roadmap bekleniyor
 
 ## v5.0 Phases
 

@@ -35,7 +35,7 @@
 ### Portföy
 
 - [ ] **PORT-01**: Kullanıcı alım işlemi girer (hisse, lot, fiyat, tarih)
-- [ ] **PORT-02**: Kullanıcı satım işlemi girer; kapalı pozisyon gerçekleşen kâr/zararla görünür
+- [x] **PORT-02**: Kullanıcı satım işlemi girer; kapalı pozisyon gerçekleşen kâr/zararla görünür
 - [ ] **PORT-03**: Kullanıcı açık pozisyonlarını ve kâr/zararını görür (TL ve % olarak)
 - [ ] **PORT-04**: Kullanıcı portföy performansını BIST100 endeksiyle karşılaştırır
 - [ ] **PORT-05**: Kullanıcı izleme listesine (watchlist) hisse ekler/çıkarır; watchlist canlı fiyatlarla görünür
@@ -62,6 +62,33 @@
 - [x] **DESIGN-04**: Light mode hover durumları theme-aware CSS değişkeni kullanır (hardcoded rgba(255,255,255,.03) kaldırılır) ✅
 - [x] **DESIGN-05**: Ölü kod temizlenir: SparklineWidget.tsx silindi, api.ts'ten kullanılmayan metodlar kaldırıldı ✅
 - [x] **DESIGN-06**: Dashboard portföy kartı pozisyon yoksa "/portföy" sayfasına yönlendiren boş durum mesajı gösterir ✅
+
+### UI/UX İyileştirme (v5.1)
+
+- [ ] **UI-01**: Tüm 7 sayfada (dashboard, stocks, stock-detail, intelligence, portfolio, watchlist, model-portfolio) piksel düzeyinde görsel geçiş yapılır; layout/spacing/renk tutarsızlıkları giderilir
+- [ ] **UI-02**: Mobile responsive düzeltmeler: tüm sayfalarda 375px ve 768px kırılım noktaları çalışır
+- [ ] **UI-03**: Boş durumlar (empty states) standardize edilir — her sayfada tutarlı mesaj ve yönlendirme butonu
+- [ ] **UI-04**: Yükleme skeleton ve hata durumları tüm sayfalarda tutarlı gösterilir
+- [ ] **UI-05**: Hisse detay sayfası hero ve fundGrid görsel sorunları tamamen çözülür
+
+### Veri & Hesaplama Doğruluğu (v5.1)
+
+- [ ] **DATA-01**: Portföy K/Z hesabı doğrulanır; kapalı pozisyonlar dashboard'da ve portföy sayfasında yanlış görünmez
+- [ ] **DATA-02**: Null/undefined veri durumunda tüm sayfalarda güvenli fallback — NaN veya çöken render yerine anlamlı placeholder
+- [ ] **DATA-03**: Hisse detay teknik/temel metriklerinde eksik veri görsel placeholder ile gösterilir (boş kutu yerine)
+
+### Eksik & Yarım Fonksiyonlar (v5.1)
+
+- [ ] **FEAT-01**: İzleme listesi: hisse detay sayfasında "İzlemeye Ekle/Çıkar" butonu çalışır, watchlist sayfasıyla localStorage üzerinden senkron
+- [ ] **FEAT-02**: Portföy pozisyon ekleme formu validasyon + başarılı işlem sonrası UI refresh doğru çalışır
+- [ ] **FEAT-03**: Portföy karşılaştırma grafiği (BIST100 vs portföy) veri geldiğinde düzgün render edilir
+
+### AI Kalite & Güvenilirlik (v5.1)
+
+- [ ] **AI-01**: Hisse analizi promtu derinleştirilir: valuasyon yorumu, sektör bağlamı, risk/fırsat dengesi açık şekilde ele alınır
+- [ ] **AI-02**: Günlük piyasa özeti makro bağlam (döviz, faiz, küresel piyasalar) içerir; cache mantığı doğrulanır
+- [ ] **AI-03**: Model portföy haftalık karar döngüsünde Groq gerekçe kalitesi artırılır; karar logları veritabanına doğru kaydedilir
+- [ ] **AI-04**: Tüm AI endpoint'lerde hata yönetimi standartlaştırılır; fallback mesajları kullanıcı dostu Türkçe gösterilir
 
 ## v2 Requirements
 
@@ -116,7 +143,7 @@
 | NEWS-01 | Phase 37 | Pending |
 | LLM-03 | Phase 37 | Complete |
 | PORT-01 | Phase 38 | Pending |
-| PORT-02 | Phase 38 | Pending |
+| PORT-02 | Phase 38 | Complete |
 | PORT-03 | Phase 38 | Pending |
 | PORT-04 | Phase 38 | Pending |
 | PORT-05 | Phase 38 | Pending |

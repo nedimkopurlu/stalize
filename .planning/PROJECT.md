@@ -57,17 +57,15 @@ Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıkl
 - Otomatik alım-satım — karar her zaman kullanıcıda
 - BIST100 dışı hisseler — v1 için likit evren yeterli
 
-## Current Milestone: v5.0 — LLM Entegrasyonlu Yatırım Asistanı
+## Current Milestone: v5.1 — Kapsamlı Bug Fix & Kalite İyileştirme
 
-**Goal:** Gemini 2.0 Flash ile LLM entegrasyonu ekle; prototype tasarımına tam uyum sağla; tüm eksik sayfaları (Keşif, Haberler, Portföy, Model Portföy) tamamla.
+**Goal:** v5.0'da gönderilen tüm özellikleri olgunlaştır; görsel hatalar, veri doğruluğu, eksik fonksiyonlar ve AI kalitesi olmak üzere 4 alanda kapsamlı düzeltme yap.
 
 **Target features:**
-- Gemini 2.0 Flash entegrasyonu (ücretsiz, on-demand hisse analizi + günlük piyasa özeti + model portföy gerekçeleri)
-- Frontend tasarım tutarsızlıkları giderilmesi (prototype'a tam uyum)
-- Keşif & Hisse Detay sayfası (skorlu liste + AI analizi)
-- Haberler sayfası (KAP + basın + günlük Gemini özeti)
-- Portföy sayfası (alım-satım, P&L, watchlist)
-- Model Portföy sayfası (özerk AI kararları + Türkçe gerekçe)
+- UI/UX: 7 sayfanın tamamında piksel düzeyinde görsel geçiş, mobile responsive düzeltmeler, empty state standardizasyonu
+- Veri & Hesaplama: portföy K/Z doğruluğu, null/undefined güvenliği, teknik/temel metrik fallback'ler
+- Eksik Fonksiyonlar: watchlist add/remove, portföy form validasyon, karşılaştırma grafiği
+- AI Kalite: hisse analizi + günlük özet + model portföy gerekçe prompt'ları derinleştirilir; Groq birincil sağlayıcı
 
 ## Context
 
@@ -114,4 +112,4 @@ Bu döküman her fazda ve milestone sınırında güncellenir.
 3. Out of Scope'daki gerekçeler hâlâ geçerli mi?
 
 ---
-*Last updated: 2026-05-08 after v5.0 milestone start — LLM entegrasyonu + frontend iyileştirme*
+*Last updated: 2026-05-08 after v5.1 milestone start — kapsamlı bug fix + kalite iyileştirme*
