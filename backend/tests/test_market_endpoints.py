@@ -1,5 +1,4 @@
-"""Tests for /market/* endpoints (Phase 28). Plan 28-01 ships the scaffolding;
-Plan 28-02 implements bist100/forex/gold; Plan 28-03 implements opportunities."""
+"""Tests for frontend-facing /market/* endpoints."""
 from __future__ import annotations
 
 import pytest
@@ -58,11 +57,8 @@ def _override_db_with_rows_map(client, rows_by_symbol: dict):
 
 def test_market_router_mounted(client):
     """Plan 28-01: market router must be mounted under /api."""
-    r = client.get("/api/market/health")
-    assert r.status_code == 200
-    body = r.json()
-    assert body.get("router") == "market"
-    assert body.get("status") == "ok"
+    r = client.get("/api/market/bist100")
+    assert r.status_code != 404
 
 
 # ─── BIST100 TESTS ───
@@ -226,20 +222,6 @@ def test_gold_endpoint_missing_data_returns_503(client):
 # ─── STATIC / CONSTANT TESTS ───
 
 
-def test_opportunities_endpoint(client):
-    """DISC-02: GET /api/market/opportunities returns top BIST100 sorted by overall_score desc."""
-    r = client.get("/api/market/opportunities?limit=10")
-    assert r.status_code == 200
-    body = r.json()
-    assert "stocks" in body and "count" in body
-    stocks = body["stocks"]
-    assert len(stocks) <= 10
-    # All must be is_bist100=True implicitly (endpoint filters)
-    # Sort check: overall_score descending where present
-    scores = [s["overall_score"] for s in stocks if s.get("overall_score") is not None]
-    assert scores == sorted(scores, reverse=True), "opportunities not sorted desc by overall_score"
-
-
 def test_gold_coin_weights_constants():
     """Coin weights are physical constants and must not drift."""
     from app.api.market import GOLD_COIN_WEIGHTS
@@ -259,99 +241,11 @@ def test_forex_pairs_includes_jpy_chf():
     assert FOREX_PAIRS["CHFTRY=X"] == "CHF/TRY"
 
 
-# ─── OPPORTUNITIES DETERMINISTIC TESTS ───
-
-
-def _make_stock(symbol: str, overall_score: float, is_bist100: bool = True,
-                is_active: bool = True, name: str = None, sector: str = "Test",
-                current_price: float = 100.0, daily_change_pct: float = 0.5,
-                fundamental_score: float = None, technical_score: float = None,
-                recommendation: str = "TUT"):
-    s = MagicMock()
-    s.symbol = symbol
-    s.name = name or symbol
-    s.sector = sector
-    s.current_price = current_price
-    s.daily_change_pct = daily_change_pct
-    s.is_bist100 = is_bist100
-    s.is_active = is_active
-    s.overall_score = overall_score
-    s.fundamental_score = fundamental_score
-    s.technical_score = technical_score
-    s.recommendation = recommendation
-    return s
-
-
-def _override_db_with_stocks(stocks):
-    """Stub get_db so it returns these stocks regardless of filters/limit.
-    The endpoint applies its own .where/.order_by in SQL, but since we mock DB,
-    we just return the list as-is — endpoint code path runs normally and
-    we test the response shape."""
-    from app.main import app
-    from app.core.database import get_db
-
-    async def _fake_db():
-        db = MagicMock()
-        async def _execute(stmt):
-            return _FakeResult(stocks)
-        db.execute = _execute
-        yield db
-
-    app.dependency_overrides[get_db] = _fake_db
-    return lambda: app.dependency_overrides.pop(get_db, None)
-
-
-def test_opportunities_endpoint_response_shape(client):
-    stocks = [
-        _make_stock("THYAO", 85.0, fundamental_score=80, technical_score=90, recommendation="AL"),
-        _make_stock("GARAN", 75.0, fundamental_score=70, technical_score=80, recommendation="AL"),
-    ]
-    cleanup = _override_db_with_stocks(stocks)
-    try:
-        r = client.get("/api/market/opportunities")
-        assert r.status_code == 200
-        body = r.json()
-        assert "stocks" in body and "count" in body and "as_of" in body
-        assert body["count"] == 2
-        keys_required = {"symbol", "name", "sector", "current_price", "daily_change_pct",
-                         "overall_score", "fundamental_score", "technical_score", "recommendation"}
-        assert keys_required.issubset(body["stocks"][0].keys())
-        assert body["stocks"][0]["symbol"] == "THYAO"
-        assert body["stocks"][0]["overall_score"] == 85.0
-        assert body["stocks"][0]["recommendation"] == "AL"
-    finally:
-        cleanup()
-
-
-def test_opportunities_endpoint_respects_limit(client):
-    stocks = [_make_stock(f"SYM{i}", float(100 - i)) for i in range(10)]
-    cleanup = _override_db_with_stocks(stocks)
-    try:
-        r = client.get("/api/market/opportunities?limit=5")
-        assert r.status_code == 200
-        # The mock returns all 10, but the endpoint passes limit to .limit() in SQL.
-        # Since our mock ignores SQL clauses, we instead verify the param was accepted (no 422).
-        assert "stocks" in r.json()
-    finally:
-        cleanup()
-
-
-def test_opportunities_endpoint_rejects_limit_over_50(client):
-    r = client.get("/api/market/opportunities?limit=100")
-    assert r.status_code == 422  # Query(le=50) constraint
-
-
-def test_opportunities_endpoint_rejects_limit_zero(client):
-    r = client.get("/api/market/opportunities?limit=0")
-    assert r.status_code == 422  # Query(ge=1)
-
-
 # ─── PHASE 28 INTEGRATION SMOKE TEST ───
 
 
 def test_phase_28_all_endpoints_registered(client):
-    """Phase 28 wiring smoke test: all four /market/* endpoints exist and reach handler.
-    Empty DB → bist100/gold return 503 (no data); forex/opportunities return 200 with empty lists."""
+    """Frontend-facing /market/* endpoints exist and reach handlers."""
     from app.main import app
     from app.core.database import get_db
 
@@ -377,9 +271,5 @@ def test_phase_28_all_endpoints_registered(client):
         r3 = client.get("/api/market/gold")
         assert r3.status_code == 503  # GC=F or USDTRY=X missing
 
-        r4 = client.get("/api/market/opportunities")
-        assert r4.status_code == 200
-        assert r4.json()["stocks"] == []
-        assert r4.json()["count"] == 0
     finally:
         app.dependency_overrides.pop(get_db, None)

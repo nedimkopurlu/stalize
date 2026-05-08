@@ -243,23 +243,59 @@ def _build_decision_band(
     }
 
 
-async def _generate_gemini_rationale(changes: dict, holdings_count: int) -> str:
-    """Gemini ile haftalık model portföy değişikliklerini Türkçe açıkla."""
+async def _generate_gemini_rationale(
+    changes: dict,
+    holdings_count: int,
+    selected_stocks: list | None = None,
+) -> str:
+    """LLM ile haftalık model portföy kararlarını derinlemesine Türkçe açıkla."""
     added = changes.get("added", [])
     removed = changes.get("removed", [])
+    increased = changes.get("increased", [])
+    decreased = changes.get("decreased", [])
 
-    prompt_parts = [f"Model portföy bu hafta {holdings_count} hisse içeriyor."]
+    # Seçili hisselerin skor ve sektör özeti
+    holdings_context = ""
+    if selected_stocks:
+        top = sorted(selected_stocks, key=lambda s: s.overall_score or 0, reverse=True)[:5]
+        lines = [f"  - {s.symbol} ({s.sector or 'Sektör?'}): skor {s.overall_score:.0f}/100, öneri {s.recommendation or '?'}"
+                 for s in top]
+        holdings_context = "\n## En Yüksek Skorlu Hisseler (Top 5)\n" + "\n".join(lines)
+
+    # Değişiklik özeti
+    change_lines = []
     if added:
-        prompt_parts.append(f"Eklenen hisseler: {', '.join(added[:5])}")
+        change_lines.append(f"  - Eklenenler: {', '.join(added[:6])}")
     if removed:
-        prompt_parts.append(f"Çıkarılan hisseler: {', '.join(removed[:5])}")
-    if not added and not removed:
-        prompt_parts.append("Bu hafta portföy kompozisyonunda büyük değişiklik yapılmadı.")
+        change_lines.append(f"  - Çıkarılanlar: {', '.join(removed[:6])}")
+    if increased:
+        syms = [f"{x['symbol']} ({x['previous_allocation_pct']:.0f}→{x['current_allocation_pct']:.0f}%)" for x in increased[:3]]
+        change_lines.append(f"  - Ağırlığı arttırılanlar: {', '.join(syms)}")
+    if decreased:
+        syms = [f"{x['symbol']} ({x['previous_allocation_pct']:.0f}→{x['current_allocation_pct']:.0f}%)" for x in decreased[:3]]
+        change_lines.append(f"  - Ağırlığı azaltılanlar: {', '.join(syms)}")
+    if not change_lines:
+        change_lines.append("  - Bu hafta portföy bileşiminde önemli bir değişiklik yapılmadı.")
 
-    prompt = " ".join(prompt_parts) + (
-        " Bu portföy kararlarını yatırımcılara 2-3 cümleyle Türkçe olarak açıkla. "
-        "Anlaşılır ve profesyonel bir dil kullan."
-    )
+    change_section = "\n".join(change_lines)
+
+    prompt = f"""Haftalık BIST100 model portföyü AI tarafından güncellendi. Yatırımcılara bu kararları açıkla.
+
+## Portföy Özeti
+- Toplam hisse sayısı: {holdings_count}
+
+## Bu Haftaki Değişiklikler
+{change_section}
+{holdings_context}
+
+## Açıklama Talimatları
+1. Bu haftaki portföy kararlarını bütünsel bir strateji çerçevesinde değerlendir
+2. Önemli ekleme/çıkarma varsa genel gerekçeyi belirt (örn. momentum, değerleme, risk azaltma)
+3. Değişiklik yoksa portföyün neden korunduğunu açıkla
+4. Yatırımcıya "bu hafta ne beklenmeli?" sorusunu yanıtla
+
+Yanıtı 3-5 cümlelik akıcı Türkçe paragraf olarak yaz. Madde listesi kullanma. Yasal uyarı ekleme."""
+
     return await gemini_service.generate(prompt)
 
 
@@ -524,7 +560,7 @@ async def generate_weekly_model_portfolio(force: bool = False, target_date: Opti
         current_fakes = [_FakeHolding(s.symbol) for s in selected]
         changes_for_gemini = _summarize_week_changes(current_fakes, previous_week_holdings)  # type: ignore[arg-type]
 
-        gemini_text = await _generate_gemini_rationale(changes_for_gemini, len(selected))
+        gemini_text = await _generate_gemini_rationale(changes_for_gemini, len(selected), selected_stocks=selected)
 
         if gemini_text and FALLBACK_MESSAGE not in gemini_text:
             async with AsyncSessionLocal() as update_db:

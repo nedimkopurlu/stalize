@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     # Security
     API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
+    GROQ_API_KEY: Optional[str] = None
     ENVIRONMENT: str = "development"
 
     # Database

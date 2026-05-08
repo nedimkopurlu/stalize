@@ -10,11 +10,16 @@ logger = logging.getLogger(__name__)
 # ─── Günlük AI piyasa özeti — in-memory cache ───
 _summary_cache: dict = {}
 
-DAILY_SUMMARY_PROMPT = (
-    "BIST100 borsasındaki günlük piyasa koşulları hakkında yatırımcılara yönelik "
-    "kısa Türkçe bir özet yaz. 3-4 cümle, anlaşılır dil, genel eğilim ve dikkat "
-    "edilmesi gereken noktaları içersin."
-)
+DAILY_SUMMARY_PROMPT = """Bugün BIST100 piyasasında yatırımcılar için günlük bir piyasa değerlendirmesi yaz.
+
+Aşağıdaki konuları kısaca ele al:
+1. Türk borsasının genel durumu ve son dönem eğilimi (yükselen mi, baskı altında mı?)
+2. Küresel piyasaların (ABD, Avrupa, emtia) BIST'e olası etkisi
+3. Türk yatırımcıların dikkat etmesi gereken makroekonomik faktörler (döviz kuru, faiz, enflasyon)
+4. Bugün öne çıkabilecek sektörler veya temalar
+5. Kısa vadeli bir yön önerisi
+
+Yanıtı 4-6 cümlelik akıcı Türkçe paragraflar olarak yaz. Gereksiz yasal uyarı ekleme."""
 
 
 @router.get("/intelligence/daily-summary")

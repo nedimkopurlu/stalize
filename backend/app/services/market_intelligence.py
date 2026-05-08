@@ -24,6 +24,8 @@ logger = logging.getLogger(__name__)
 class MarketIntelligenceService:
     """KAP + makro + senaryo birleştirme servisi."""
 
+    OVERVIEW_CACHE_TTL_SECONDS = 10
+
     FEED_MAX_AGE_HOURS = {
         "KAP": 72,
         "TCMB": 720,
@@ -32,16 +34,19 @@ class MarketIntelligenceService:
         "Borsa İstanbul": 168,
         "MKK": 168,
         "Takasbank": 168,
-        "Reuters": 72,
         "Bloomberg HT": 72,
-        "Bloomberg": 72,
-        "CNBC": 72,
-        "Yahoo Finance": 72,
-        "Financial Times": 72,
-        "MarketWatch": 72,
-        "Investing": 72,
         "Ekonomim": 72,
-        "Dunya": 72,
+        "Dünya": 72,
+        "CNBC-e": 72,
+        "Bigpara": 72,
+        "A Para": 72,
+        "Borsa Gündem": 72,
+        "Finans Gündem": 72,
+        "Para Analiz": 72,
+        "Mynet Finans": 72,
+        "Foreks": 72,
+        "Borsa Direkt": 72,
+        "InvestAZ": 72,
     }
 
     OFFICIAL_INTELLIGENCE_SOURCES = {
@@ -52,6 +57,51 @@ class MarketIntelligenceService:
         "MKK",
         "Takasbank",
     }
+
+    TURKEY_NEWS_SOURCES = OFFICIAL_INTELLIGENCE_SOURCES | {
+        "KAP",
+        "Bloomberg HT",
+        "Ekonomim",
+        "Dünya",
+        "Dunya",
+        "CNBC-e",
+        "Bigpara",
+        "A Para",
+        "Borsa Gündem",
+        "Finans Gündem",
+        "Para Analiz",
+        "Mynet Finans",
+        "Foreks",
+        "Borsa Direkt",
+        "InvestAZ",
+    }
+
+    TURKEY_SOURCE_DOMAINS = (
+        "kap.org.tr",
+        "tcmb.gov.tr",
+        "tuik.gov.tr",
+        "hmb.gov.tr",
+        "borsaistanbul.com",
+        "mkk.com.tr",
+        "takasbank.com.tr",
+        "bloomberght.com",
+        "ekonomim.com",
+        "dunya.com",
+        "cnbce.com",
+        "bigpara.hurriyet.com.tr",
+        "apara.com.tr",
+        "borsagundem.com.tr",
+        "finansgundemi.com",
+        "paraanaliz.com",
+        "finans.mynet.com",
+        "foreks.com",
+        "borsadirekt.com",
+        "investaz.com.tr",
+        "news.google.com",
+    )
+
+    def __init__(self) -> None:
+        self._overview_cache: Dict[int, Tuple[datetime, Dict]] = {}
 
     def _normalize_text(self, value: str) -> str:
         mapping = str.maketrans("çğıöşüÇĞİÖŞÜ", "cgiosuCGIOSU")
@@ -89,6 +139,13 @@ class MarketIntelligenceService:
             return False
         age = datetime.now(timezone.utc) - timestamp.astimezone(timezone.utc)
         return age <= timedelta(hours=self._max_age_hours(item))
+
+    def _is_turkey_scope_item(self, item: Dict) -> bool:
+        source = item.get("publisher") or item.get("source") or ""
+        source_ok = source in self.TURKEY_NEWS_SOURCES
+        url = (item.get("source_url") or item.get("url") or "").lower()
+        domain_ok = any(domain in url for domain in self.TURKEY_SOURCE_DOMAINS)
+        return source_ok and (domain_ok or not url)
 
     def _recency_score(self, item: Dict) -> float:
         timestamp = self._parse_timestamp(item.get("timestamp", ""))
@@ -185,7 +242,7 @@ class MarketIntelligenceService:
         merged = [
             item
             for item in [*kap_feed, *official_feed, *external_rss_feed]
-            if self._is_fresh_enough(item)
+            if self._is_fresh_enough(item) and self._is_turkey_scope_item(item)
         ]
 
         deduped: Dict[Tuple[str, str], Dict] = {}
@@ -238,6 +295,21 @@ class MarketIntelligenceService:
         return ranked[:limit]
 
     async def get_overview(self, limit: int = 10) -> Dict:
+        cache_key = max(1, int(limit))
+        cached = self._overview_cache.get(cache_key)
+        if cached:
+            cached_at, payload = cached
+            age = (datetime.now(timezone.utc) - cached_at).total_seconds()
+            if age < self.OVERVIEW_CACHE_TTL_SECONDS:
+                return {
+                    **payload,
+                    "cache": {
+                        "status": "hit",
+                        "age_seconds": round(age, 2),
+                        "ttl_seconds": self.OVERVIEW_CACHE_TTL_SECONDS,
+                    },
+                }
+
         feed, scenarios = await asyncio.gather(
             self.get_unified_feed(limit=limit),
             self.get_unified_scenarios(limit=limit),
@@ -251,14 +323,26 @@ class MarketIntelligenceService:
             horizon = item.get("thesis_horizon") or "short_term"
             horizon_summary[horizon] = horizon_summary.get(horizon, 0) + 1
 
-        return {
+        payload = {
             "feed": feed,
             "scenarios": scenarios,
             "source_summary": source_summary,
             "horizon_summary": horizon_summary,
             "priority_mode": settings.NEWS_PRIORITIZATION_MODE,
             "primary_source": settings.PRIMARY_DISCLOSURE_SOURCE,
+            "scope": {
+                "language": "tr",
+                "region": "TR",
+                "source_policy": "turkiye_only",
+            },
+            "cache": {
+                "status": "miss",
+                "age_seconds": 0,
+                "ttl_seconds": self.OVERVIEW_CACHE_TTL_SECONDS,
+            },
         }
+        self._overview_cache[cache_key] = (datetime.now(timezone.utc), payload)
+        return payload
 
 
 market_intelligence_service = MarketIntelligenceService()

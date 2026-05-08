@@ -17,7 +17,7 @@ def test_all_routes_registered():
     Active domain router modules must exist and expose a `router` attribute after the split.
     main.py must import from domain routers, not endpoints.py.
     """
-    expected_routers = ["stocks", "macro", "intelligence", "admin", "portfolio_v2"]
+    expected_routers = ["stocks", "intelligence", "portfolio_v2", "model_portfolio", "market", "system"]
     for module_name in expected_routers:
         try:
             import importlib

@@ -34,7 +34,9 @@ Beklenen kritik yüzeyler:
 - `/api/intelligence/overview`
 - `/api/stocks/THYAO/score-breakdown`
 - `/api/model-portfolio/current`
+- `/api/model-portfolio/history?limit=4`
 - `/api/sources/catalog`
+- `/api/sources/health/history?limit=5`
 - `/`
 - `/model-portfolio`
 
@@ -50,16 +52,16 @@ Beklenen kritik yüzeyler:
 Belirli bir kaynağı elle tetiklemek için:
 
 ```bash
-curl -X POST http://localhost:8000/api/sources/scan/kap
-curl -X POST http://localhost:8000/api/sources/scan/tcmb
-curl -X POST http://localhost:8000/api/sources/scan/tuik
-curl -X POST http://localhost:8000/api/sources/scan/hmb
+curl -X POST -H "X-API-Key: <API_KEY>" http://localhost:8000/api/sources/scan/kap
+curl -X POST -H "X-API-Key: <API_KEY>" http://localhost:8000/api/sources/scan/tcmb
+curl -X POST -H "X-API-Key: <API_KEY>" http://localhost:8000/api/sources/scan/tuik
+curl -X POST -H "X-API-Key: <API_KEY>" http://localhost:8000/api/sources/scan/hmb
 ```
 
 Model portföyü elle güncellemek için:
 
 ```bash
-curl -X POST "http://localhost:8000/api/model-portfolio/generate?force=true"
+curl -X POST -H "X-API-Key: <API_KEY>" "http://localhost:8000/api/model-portfolio/generate?force=true"
 ```
 
 ## Sertleştirme Standardı

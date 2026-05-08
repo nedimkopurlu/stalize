@@ -421,8 +421,7 @@ class TechnicalAnalysisEngine:
         return round(float(last_close) - 2 * float(atr), 2)
 
     def _compute_target_price(self, df: pd.DataFrame) -> Optional[float]:
-        """İlk direnç (SGNL-01): son 20 bar içindeki last_close üstündeki en yüksek high,
-        yoksa last_close * 1.05 fallback."""
+        """İlk direnç (SGNL-01): son 20 bar içindeki last_close üstündeki en yüksek high."""
         if len(df) < 1:
             return None
         last_close = df["close"].iloc[-1]
@@ -431,7 +430,7 @@ class TechnicalAnalysisEngine:
         window = df["high"].tail(20)
         above = window[window > float(last_close)]
         if len(above) == 0:
-            return round(float(last_close) * 1.05, 2)
+            return None
         return round(float(above.max()), 2)
 
     # ─── RSI DIVERGENCE (SGNL-03) ────────────────────────────────────────

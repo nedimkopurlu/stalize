@@ -11,145 +11,150 @@ from typing import Any, Dict, List, Optional, Tuple
 import feedparser
 
 from app.services.macro_news import macro_news_collector
-from app.services.translator import financial_translator
-
-
 logger = logging.getLogger(__name__)
 
 
 class ExternalNewsRSSCollector:
-    """Public RSS-based global market news collector."""
+    """Türkiye kaynaklı Türkçe piyasa haberleri RSS toplayıcısı."""
 
     MAX_AGE_HOURS = 72
 
     FEEDS: list[dict[str, Any]] = [
         {
-            "key": "reuters_markets",
-            "publisher": "Reuters",
-            "url": "https://news.google.com/rss/search?q=site:reuters.com+markets&hl=en-US&gl=US&ceid=US:en",
-            "trigger_id": "bist100_index",
-            "base_importance": 0.82,
-        },
-        {
-            "key": "cnbc_markets",
-            "publisher": "CNBC",
-            "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114",
-            "trigger_id": "bist100_index",
-            "base_importance": 0.76,
-        },
-        {
-            "key": "ft_markets",
-            "publisher": "Financial Times",
-            "url": "https://news.google.com/rss/search?q=site:ft.com+markets&hl=en-US&gl=US&ceid=US:en",
-            "trigger_id": "bist100_index",
-            "base_importance": 0.8,
-        },
-        {
-            "key": "yahoo_finance",
-            "publisher": "Yahoo Finance",
-            "url": "https://finance.yahoo.com/news/rssindex",
-            "trigger_id": "bist100_index",
-            "base_importance": 0.7,
-        },
-        {
-            "key": "marketwatch_marketpulse",
-            "publisher": "MarketWatch",
-            "url": "https://feeds.content.dowjones.io/public/rss/mw_marketpulse",
-            "trigger_id": "bist100_index",
-            "base_importance": 0.68,
-        },
-        {
-            "key": "investing_stock",
-            "publisher": "Investing",
-            "url": "https://www.investing.com/rss/news_25.rss",
-            "trigger_id": "bist100_index",
-            "base_importance": 0.64,
-        },
-        {
-            "key": "investing_forex",
-            "publisher": "Investing",
-            "url": "https://www.investing.com/rss/news_1.rss",
-            "trigger_id": "usd_try",
-            "base_importance": 0.72,
-        },
-        {
-            "key": "investing_economic",
-            "publisher": "Investing",
-            "url": "https://www.investing.com/rss/news_95.rss",
-            "trigger_id": "macro_calendar",
-            "base_importance": 0.78,
-        },
-        {
             "key": "bloomberght",
             "publisher": "Bloomberg HT",
-            "url": "https://news.google.com/rss/search?q=site:bloomberght.com+borsa&hl=tr&gl=TR&ceid=TR:tr",
+            "url": "https://news.google.com/rss/search?q=site:bloomberght.com+borsa+OR+ekonomi+OR+BIST&hl=tr&gl=TR&ceid=TR:tr",
             "trigger_id": "bist100_index",
             "base_importance": 0.74,
         },
         {
             "key": "ekonomim",
             "publisher": "Ekonomim",
-            "url": "https://news.google.com/rss/search?q=site:ekonomim.com+borsa&hl=tr&gl=TR&ceid=TR:tr",
+            "url": "https://news.google.com/rss/search?q=site:ekonomim.com+borsa+OR+ekonomi+OR+BIST&hl=tr&gl=TR&ceid=TR:tr",
             "trigger_id": "bist100_index",
             "base_importance": 0.68,
         },
         {
             "key": "dunya",
-            "publisher": "Dunya",
-            "url": "https://news.google.com/rss/search?q=site:dunya.com+borsa&hl=tr&gl=TR&ceid=TR:tr",
+            "publisher": "Dünya",
+            "url": "https://news.google.com/rss/search?q=site:dunya.com+borsa+OR+ekonomi+OR+BIST&hl=tr&gl=TR&ceid=TR:tr",
             "trigger_id": "bist100_index",
             "base_importance": 0.66,
+        },
+        {
+            "key": "cnbce",
+            "publisher": "CNBC-e",
+            "url": "https://news.google.com/rss/search?q=site:cnbce.com+borsa+OR+ekonomi+OR+BIST&hl=tr&gl=TR&ceid=TR:tr",
+            "trigger_id": "bist100_index",
+            "base_importance": 0.7,
+        },
+        {
+            "key": "bigpara",
+            "publisher": "Bigpara",
+            "url": "https://news.google.com/rss/search?q=site:bigpara.hurriyet.com.tr+borsa+OR+ekonomi+OR+BIST&hl=tr&gl=TR&ceid=TR:tr",
+            "trigger_id": "bist100_index",
+            "base_importance": 0.62,
+        },
+        {
+            "key": "apara",
+            "publisher": "A Para",
+            "url": "https://news.google.com/rss/search?q=site:apara.com.tr+borsa+OR+ekonomi+OR+BIST&hl=tr&gl=TR&ceid=TR:tr",
+            "trigger_id": "bist100_index",
+            "base_importance": 0.62,
+        },
+        {
+            "key": "borsagundem",
+            "publisher": "Borsa Gündem",
+            "url": "https://news.google.com/rss/search?q=site:borsagundem.com.tr+BIST+OR+borsa&hl=tr&gl=TR&ceid=TR:tr",
+            "trigger_id": "bist100_index",
+            "base_importance": 0.6,
+        },
+        {
+            "key": "finansgundem",
+            "publisher": "Finans Gündem",
+            "url": "https://news.google.com/rss/search?q=site:finansgundemi.com+BIST+OR+borsa+OR+ekonomi&hl=tr&gl=TR&ceid=TR:tr",
+            "trigger_id": "bist100_index",
+            "base_importance": 0.6,
+        },
+        {
+            "key": "paraanaliz",
+            "publisher": "Para Analiz",
+            "url": "https://news.google.com/rss/search?q=site:paraanaliz.com+BIST+OR+borsa+OR+ekonomi&hl=tr&gl=TR&ceid=TR:tr",
+            "trigger_id": "bist100_index",
+            "base_importance": 0.58,
+        },
+        {
+            "key": "mynet_finans",
+            "publisher": "Mynet Finans",
+            "url": "https://news.google.com/rss/search?q=site:finans.mynet.com+BIST+OR+borsa+OR+ekonomi+OR+dolar&hl=tr&gl=TR&ceid=TR:tr",
+            "trigger_id": "bist100_index",
+            "base_importance": 0.58,
+        },
+        {
+            "key": "foreks",
+            "publisher": "Foreks",
+            "url": "https://news.google.com/rss/search?q=site:foreks.com+BIST+OR+borsa+OR+piyasa&hl=tr&gl=TR&ceid=TR:tr",
+            "trigger_id": "bist100_index",
+            "base_importance": 0.57,
+        },
+        {
+            "key": "borsa_direkt",
+            "publisher": "Borsa Direkt",
+            "url": "https://news.google.com/rss/search?q=site:borsadirekt.com+BIST+OR+borsa+OR+hisse&hl=tr&gl=TR&ceid=TR:tr",
+            "trigger_id": "bist100_index",
+            "base_importance": 0.57,
+        },
+        {
+            "key": "investaz",
+            "publisher": "InvestAZ",
+            "url": "https://news.google.com/rss/search?q=site:investaz.com.tr+BIST+OR+borsa+OR+ekonomi&hl=tr&gl=TR&ceid=TR:tr",
+            "trigger_id": "bist100_index",
+            "base_importance": 0.56,
         },
     ]
 
     BLOCKED_PATTERNS = (
-        "should i ",
-        "retire at",
-        "my adviser",
-        "complain",
-        "nonprofit job",
-        "commute",
-        "form 4",
-        "form 13g",
-        "director sells",
-        "insider trading",
-        "company stock",
-        "common stock",
-        "personal finance",
+        "magazin",
+        "spor",
+        "emekli maaşı",
+        "personel alımı",
+        "ilan",
+        "giriş sınavı",
+        "staj",
+        "kariyer",
     )
 
     RELEVANCE_PATTERNS = (
-        "market",
-        "stocks",
-        "shares",
-        "bond",
-        "yield",
-        "forex",
-        "dollar",
+        "bist",
+        "borsa",
+        "hisse",
+        "endeks",
+        "piyasa",
+        "tahvil",
+        "faiz",
+        "döviz",
+        "dolar",
         "euro",
+        "tl",
         "lira",
-        "oil",
-        "gold",
-        "inflation",
-        "interest rate",
-        "fed",
-        "central bank",
-        "economy",
-        "tariff",
-        "trade",
-        "iran",
-        "china",
-        "europe",
-        "u.s.",
-        "bank",
-        "growth",
-        "recession",
-        "jobless",
-        "consumer sentiment",
-        "payrolls",
-        "treasury",
-        "commodity",
-        "crypto",
+        "altın",
+        "petrol",
+        "enflasyon",
+        "merkez bankası",
+        "tcmb",
+        "ekonomi",
+        "banka",
+        "kredi",
+        "büyüme",
+        "resesyon",
+        "ihracat",
+        "ithalat",
+        "emtia",
+        "kripto",
+        "kap",
+        "temettü",
+        "halka arz",
+        "bilanço",
     )
 
     def _normalize_text(self, value: str) -> str:
@@ -182,9 +187,6 @@ class ExternalNewsRSSCollector:
         normalized = self._normalize_text(f"{title} {summary}")
         if any(pattern in normalized for pattern in self.BLOCKED_PATTERNS):
             return False
-
-        if feed_key.startswith("investing_"):
-            return True
 
         return any(pattern in normalized for pattern in self.RELEVANCE_PATTERNS)
 
@@ -225,35 +227,35 @@ class ExternalNewsRSSCollector:
             "trigger_id": trigger_id,
             "direction": direction,
             "magnitude": magnitude,
-            "headline": financial_translator.translate_headline(title),
+            "headline": title,
             "original_headline": title,
             "source_url": str(entry.get("link") or "").strip(),
             "publisher": str(feed_def["publisher"]),
             "sentiment_score": sentiment_score,
             "importance_score": round(importance, 2),
             "timestamp": published_at.isoformat(),
-            "category": "global_news",
+            "category": "turkiye_news",
             "thesis_horizon": thesis_horizon,
         }
 
     def _classify_thesis_horizon(self, title: str, summary: str, importance: float) -> str:
         normalized = self._normalize_text(f"{title} {summary}")
         medium_term_keywords = (
-            "inflation",
-            "interest rate",
-            "central bank",
-            "tariff",
-            "trade",
-            "sanction",
-            "budget",
-            "growth",
-            "recession",
-            "earnings",
-            "guidance",
-            "oil",
-            "gold",
-            "bond yield",
-            "credit",
+            "enflasyon",
+            "faiz",
+            "merkez bankasi",
+            "tcmb",
+            "butce",
+            "buyume",
+            "resesyon",
+            "bilanco",
+            "petrol",
+            "altin",
+            "tahvil",
+            "kredi",
+            "kur",
+            "dolar",
+            "euro",
         )
         if importance >= 0.82 or any(keyword in normalized for keyword in medium_term_keywords):
             return "medium_term"

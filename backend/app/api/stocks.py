@@ -440,22 +440,55 @@ async def analyze_stock(
     )
     fund = fund_result.scalar_one_or_none()
 
-    pe = f"{fund.pe_ratio:.1f}" if fund and fund.pe_ratio is not None else "bilinmiyor"
-    pb = f"{fund.pb_ratio:.2f}" if fund and fund.pb_ratio is not None else "bilinmiyor"
-    roe = f"{fund.roe * 100:.1f}%" if fund and fund.roe is not None else "bilinmiyor"
+    pe = f"{fund.pe_ratio:.1f}" if fund and fund.pe_ratio is not None else None
+    pb = f"{fund.pb_ratio:.2f}" if fund and fund.pb_ratio is not None else None
+    roe = f"{fund.roe * 100:.1f}%" if fund and fund.roe is not None else None
+    market_cap = fund.market_cap if fund and fund.market_cap is not None else None
+    dividend_yield = f"{fund.dividend_yield * 100:.2f}%" if fund and fund.dividend_yield is not None else None
+    debt_equity = f"{fund.debt_to_equity:.2f}" if fund and fund.debt_to_equity is not None else None
 
-    prompt = (
-        f"Türk borsasındaki {stock.symbol} ({stock.name or stock.symbol}) hissesi için "
-        f"kısa bir yatırım analizi yaz. "
-        f"Hisse bilgileri: Sektör={stock.sector or 'bilinmiyor'}, "
-        f"Güncel fiyat={stock.current_price or 'bilinmiyor'} TL, "
-        f"Günlük değişim="
-        f"{'%+.2f' % stock.daily_change_pct if stock.daily_change_pct is not None else 'bilinmiyor'}, "
-        f"Model skoru={stock.overall_score or 'bilinmiyor'}, "
-        f"Öneri={stock.recommendation or 'bilinmiyor'}, "
-        f"F/K={pe}, PD/DD={pb}, ROE={roe}. "
-        f"Yanıtını Türkçe ver, 3-5 cümle, yatırımcıya hitap et."
-    )
+    # Fiyat ve teknik bilgiler
+    price = f"{stock.current_price:.2f} TL" if stock.current_price else "bilinmiyor"
+    change = (f"%+.2f" % stock.daily_change_pct) if stock.daily_change_pct is not None else "bilinmiyor"
+    score = f"{stock.overall_score:.1f}/100" if stock.overall_score else "bilinmiyor"
+    rec = stock.recommendation or "bilinmiyor"
+    sector = stock.sector or "bilinmiyor"
+    name = stock.name or stock.symbol
+
+    # Temel analiz satırları — sadece mevcut veriler
+    fund_lines = []
+    if pe:      fund_lines.append(f"  - F/K oranı: {pe} (sektör ortalamasıyla kıyasla)")
+    if pb:      fund_lines.append(f"  - PD/DD oranı: {pb}")
+    if roe:     fund_lines.append(f"  - Öz sermaye getirisi (ROE): {roe}")
+    if dividend_yield: fund_lines.append(f"  - Temettü verimi: {dividend_yield}")
+    if debt_equity:    fund_lines.append(f"  - Borç/Öz Sermaye: {debt_equity}")
+    if market_cap:
+        mc_b = market_cap / 1e9
+        fund_lines.append(f"  - Piyasa değeri: {mc_b:.1f} Milyar TL")
+
+    fund_section = "\n".join(fund_lines) if fund_lines else "  - Temel veriler mevcut değil"
+
+    prompt = f"""Aşağıdaki verilere dayanarak {name} ({stock.symbol}) hissesi için kapsamlı bir yatırım analizi yaz.
+
+## Hisse Verileri
+- Sektör: {sector}
+- Güncel Fiyat: {price}
+- Günlük Değişim: {change}
+- Model Skoru: {score}
+- Sistem Önerisi: {rec}
+
+## Temel Analiz Verileri
+{fund_section}
+
+## Analiz Talimatları
+1. Bu verileri bir araya getirerek {stock.symbol} hakkında bütünsel bir değerlendirme yap
+2. Değerleme çarpanlarını (F/K, PD/DD) yorumla — ucuz mu pahalı mı?
+3. ROE ve karlılık göstergelerini değerlendir
+4. Model skorunu ve öneriyi temel verilerle ilişkilendir
+5. Mevcut piyasa koşullarında (Türkiye ekonomisi, enflasyon, faiz) bu sektörün durumunu kısaca belirt
+6. Net bir sonuç: Bu hissede fırsat var mı, risk nedir?
+
+Analizi Türkçe, akıcı paragraflar halinde yaz. Madde listesi kullanma."""
 
     analysis_text = await gemini_service.generate(prompt)
 

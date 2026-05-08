@@ -15,7 +15,7 @@ def _fresh_rfc2822():
     return format_datetime(datetime.now(timezone.utc))
 
 
-def test_normalize_entry_filters_personal_finance_marketwatch_item():
+def test_normalize_entry_filters_non_market_item():
     collector = ExternalNewsRSSCollector()
     feed_def = collector.FEEDS[0]
 
@@ -38,29 +38,29 @@ def test_normalize_entry_keeps_macro_relevant_item():
 
     item = collector._normalize_entry(
         {
-            "title": "Jobless claims fall to lowest level since mid-May",
-            "summary": "Labor market data and treasury yields move lower.",
-            "link": "https://example.com/jobless",
+            "title": "Borsa İstanbul günü rekor seviyeden tamamladı",
+            "summary": "BIST 100 endeksi bankacılık hisseleri öncülüğünde yükseldi.",
+            "link": "https://news.google.com/rss/articles/test",
             "published": _fresh_rfc2822(),
         },
         feed_def,
     )
 
     assert item is not None
-    assert item["publisher"] == "Reuters"
+    assert item["publisher"] == "Bloomberg HT"
     assert item["trigger_id"] == "bist100_index"
     assert item["thesis_horizon"] == "medium_term"
 
 
-def test_normalize_entry_filters_investing_insider_filing_noise():
+def test_normalize_entry_filters_personnel_notice_noise():
     collector = ExternalNewsRSSCollector()
-    feed_def = next(item for item in collector.FEEDS if item["key"] == "investing_stock")
+    feed_def = collector.FEEDS[0]
 
     item = collector._normalize_entry(
         {
-            "title": "Netlist director Blake Welcher sells $75,000 in common stock",
+            "title": "Bakanlık personel alımı için giriş sınavı duyurdu",
             "summary": "",
-            "link": "https://example.com/insider",
+            "link": "https://news.google.com/rss/articles/personel",
             "published": _fresh_rfc2822(),
         },
         feed_def,
@@ -77,9 +77,9 @@ async def test_fetch_market_news_dedupes_same_item(monkeypatch):
         return types.SimpleNamespace(
             entries=[
                 {
-                    "title": "Dollar slips after U.S., Iran agree to more peace talks",
-                    "summary": "Forex markets react.",
-                    "link": "https://example.com/fx",
+                    "title": "Borsa İstanbul bankacılık hisseleriyle yükseldi",
+                    "summary": "BIST 100 endeksi gün içinde güçlü seyretti.",
+                    "link": "https://news.google.com/rss/articles/bist",
                     "published": _fresh_rfc2822(),
                 }
             ]
@@ -90,7 +90,7 @@ async def test_fetch_market_news_dedupes_same_item(monkeypatch):
     items = await collector.fetch_market_news(limit=10)
 
     assert len(items) == 1
-    assert items[0]["publisher"] in {"Investing", "MarketWatch", "Reuters", "CNBC", "Financial Times", "Yahoo Finance", "Bloomberg HT", "Ekonomim", "Dunya"}
+    assert items[0]["publisher"] in {"Bloomberg HT", "Ekonomim", "Dünya", "CNBC-e", "Bigpara", "A Para", "Borsa Gündem", "Finans Gündem", "Para Analiz"}
 
 
 def test_normalize_entry_filters_stale_items():
@@ -99,9 +99,9 @@ def test_normalize_entry_filters_stale_items():
 
     item = collector._normalize_entry(
         {
-            "title": "Jobless claims fall to lowest level since mid-May",
-            "summary": "Labor market data and treasury yields move lower.",
-            "link": "https://example.com/jobless",
+            "title": "Borsa İstanbul günü yükselişle tamamladı",
+            "summary": "BIST 100 endeksi pozitif kapandı.",
+            "link": "https://news.google.com/rss/articles/stale",
             "published": "Thu, 03 Jul 2025 12:36:00 GMT",
         },
         feed_def,

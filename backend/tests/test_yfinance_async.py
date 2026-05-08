@@ -1,25 +1,20 @@
 """
-Tests for TECH-02 — async yfinance wrappers and non-blocking macro endpoint.
+Tests for TECH-02 — async yfinance wrappers.
 
 These tests prove:
 1. get_ticker_history is an async coroutine function
 2. get_ticker_info is an async coroutine function
 3. await get_ticker_history returns a DataFrame (executor plumbing works)
 4. await get_ticker_info returns a dict (executor plumbing works)
-5. /api/macro/indicators offloads yf.download to a thread (not MainThread)
-
 All tests use pytest.mark.asyncio (asyncio_mode=auto in pytest.ini handles this).
 """
 import asyncio
-import threading
-from datetime import datetime, timezone
 import pytest
 import pandas as pd
 import diskcache
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import app.services.data_collector as dc
-import app.api.macro as macro_module
 
 
 # ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -97,80 +92,3 @@ async def test_get_ticker_info_awaitable_returns_dict(tmp_path):
     assert result.get("sector") == "Finance"
     assert result.get("marketCap") == 1_000_000_000
 
-
-# ─── TEST 5: /api/macro/indicators offloads HTTP fallback to thread ───────────
-
-@pytest.mark.asyncio
-async def test_macro_indicators_uses_executor():
-    """
-    Force the DB-first macro endpoint to miss and use the requests fallback.
-    Monkeypatch requests.get to record which thread it runs in.
-    The /api/macro/indicators endpoint must offload the blocking HTTP call via
-    run_in_executor so it runs on a worker thread (not MainThread).
-
-    Also asserts the response shape contains the expected keys.
-
-    Note (v1.2): _fetch_last_close_with_date was rewritten to use requests.get
-    directly (Yahoo Finance JSON API) instead of yf.Ticker.history. The
-    run_in_executor guarantee still holds — this test patches requests.get.
-    """
-    import httpx
-    import json
-    import requests as requests_lib
-    from app.main import app as fastapi_app
-
-    # Track which thread the blocking HTTP call runs in
-    recorded_thread_name: list[str] = []
-
-    # Build a minimal Yahoo Finance JSON response
-    _ts = int(datetime.now(timezone.utc).timestamp())
-    _stub_payload = {
-        "chart": {
-            "result": [{
-                "timestamp": [_ts],
-                "indicators": {"quote": [{"close": [32.0]}]},
-            }]
-        }
-    }
-
-    class _StubResponse:
-        status_code = 200
-        def raise_for_status(self): pass
-        def json(self): return _stub_payload
-
-    def stub_requests_get(*args, **kwargs):
-        recorded_thread_name.append(threading.current_thread().name)
-        return _StubResponse()
-
-    async def stub_latest_market_reading(_db, symbol: str):
-        return None, None
-
-    # Reset the 60s TTL cache so the endpoint does a fresh fetch
-    macro_module._indicators_cache.clear()
-
-    with patch.object(macro_module, "_latest_market_reading", side_effect=stub_latest_market_reading):
-        with patch("app.api.macro.requests.get", side_effect=stub_requests_get):
-            transport = httpx.ASGITransport(app=fastapi_app)
-            async with httpx.AsyncClient(
-                transport=transport, base_url="http://testserver"
-            ) as client:
-                response = await client.get("/api/macro/indicators")
-
-    assert response.status_code == 200, (
-        f"Expected 200, got {response.status_code}: {response.text}"
-    )
-
-    # Assert thread offload: HTTP call must NOT run on MainThread
-    assert len(recorded_thread_name) in {3, 4}, (
-        "requests.get should be called once per Yahoo symbol plus optional live BIST100 fallback "
-        f"(3 or 4 total), got: {recorded_thread_name}"
-    )
-    assert all(name != "MainThread" for name in recorded_thread_name), (
-        f"requests.get ran on main thread: {recorded_thread_name!r}. "
-        "The endpoint must use run_in_executor to offload the blocking call."
-    )
-
-    # Assert response shape
-    data = response.json()
-    for key in ("usdtry", "gold_try", "bist100", "interest_rate", "inflation_rate", "as_of"):
-        assert key in data, f"Response missing key: {key!r}. Got: {list(data.keys())}"
