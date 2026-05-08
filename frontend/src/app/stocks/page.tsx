@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/components/AppShell';
-import Sparkline from '@/components/Sparkline';
 import { formatPrice, formatVolume, formatMarketCap } from '@/components/StockHelpers';
 import api, { StockSummary } from '@/lib/api';
 import styles from './page.module.css';
@@ -14,14 +13,6 @@ type SortKey = 'symbol' | 'name' | 'sector' | 'current_price' | 'daily_change_pc
 type SortDir = 'asc' | 'desc';
 
 // ── Helpers ────────────────────────────────────────────────
-
-function sparkSeed(symbol: string): number {
-  return symbol.charCodeAt(0) * 7 + (symbol.charCodeAt(2) || 1);
-}
-
-function sparkColor(changePct: number | null): string {
-  return (changePct ?? 0) >= 0 ? '#10b981' : '#ef4444';
-}
 
 function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
   if (col !== sortKey) {
@@ -37,7 +28,7 @@ function SkeletonRows() {
     <>
       {Array.from({ length: 12 }).map((_, i) => (
         <tr key={i} className={styles.skeletonRow}>
-          {Array.from({ length: 9 }).map((__, j) => (
+          {Array.from({ length: 8 }).map((__, j) => (
             <td key={j}>
               <div className={styles.skeletonCell} style={{ width: j === 1 ? 140 : j === 2 ? 100 : 60 }} />
             </td>
@@ -199,7 +190,7 @@ export default function StocksPage() {
                 <th className={styles.th} onClick={() => toggleSort('name')}>
                   Şirket <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} />
                 </th>
-                <th className={styles.th} onClick={() => toggleSort('sector')}>
+                <th className={`${styles.th} ${styles.hideMobile}`} onClick={() => toggleSort('sector')}>
                   Sektör <SortIcon col="sector" sortKey={sortKey} sortDir={sortDir} />
                 </th>
                 <th className={`${styles.th} ${styles.thRight}`} onClick={() => toggleSort('current_price')}>
@@ -208,16 +199,15 @@ export default function StocksPage() {
                 <th className={`${styles.th} ${styles.thRight}`} onClick={() => toggleSort('daily_change_pct')}>
                   Değişim <SortIcon col="daily_change_pct" sortKey={sortKey} sortDir={sortDir} />
                 </th>
-                <th className={`${styles.th} ${styles.thRight}`} onClick={() => toggleSort('fundamental_score')}>
+                <th className={`${styles.th} ${styles.thRight} ${styles.hideMobile}`} onClick={() => toggleSort('fundamental_score')}>
                   F/K <SortIcon col="fundamental_score" sortKey={sortKey} sortDir={sortDir} />
                 </th>
-                <th className={`${styles.th} ${styles.thRight}`} onClick={() => toggleSort('market_cap')}>
+                <th className={`${styles.th} ${styles.thRight} ${styles.hideTablet}`} onClick={() => toggleSort('market_cap')}>
                   P.Değeri <SortIcon col="market_cap" sortKey={sortKey} sortDir={sortDir} />
                 </th>
-                <th className={`${styles.th} ${styles.thRight}`} onClick={() => toggleSort('volume')}>
+                <th className={`${styles.th} ${styles.thRight} ${styles.hideMobile}`} onClick={() => toggleSort('volume')}>
                   Hacim <SortIcon col="volume" sortKey={sortKey} sortDir={sortDir} />
                 </th>
-                <th className={styles.th}>Trend</th>
                 <th className={styles.th} style={{ textAlign: 'center' }}>☆</th>
               </tr>
             </thead>
@@ -225,19 +215,19 @@ export default function StocksPage() {
               {loading ? (
                 <SkeletonRows />
               ) : (
-                filtered.map((stock) => {
+                filtered.map((stock, index) => {
                   const isUp = (stock.daily_change_pct ?? 0) >= 0;
-                  const changeColor = isUp ? '#10b981' : '#ef4444';
+                  const changeColor = isUp ? 'var(--accent-green)' : 'var(--accent-red)';
 
                   return (
                     <tr
-                      key={stock.symbol}
+                      key={`${stock.symbol}-${index}`}
                       className={styles.row}
                       onClick={() => handleRowClick(stock.symbol)}
                     >
                       <td className={styles.tdSymbol}>{stock.symbol}</td>
                       <td className={styles.tdName}>{stock.name ?? '—'}</td>
-                      <td className={styles.tdSector}>{stock.sector ?? '—'}</td>
+                      <td className={`${styles.tdSector} ${styles.hideMobile}`}>{stock.sector ?? '—'}</td>
                       <td className={`${styles.td} ${styles.tdRight} ${styles.mono}`}>
                         {formatPrice(stock.current_price)}
                       </td>
@@ -246,22 +236,14 @@ export default function StocksPage() {
                           ? `${isUp ? '+' : ''}${stock.daily_change_pct.toFixed(2)}%`
                           : '—'}
                       </td>
-                      <td className={`${styles.td} ${styles.tdRight} ${styles.mono} ${styles.muted}`}>
+                      <td className={`${styles.td} ${styles.tdRight} ${styles.mono} ${styles.muted} ${styles.hideMobile}`}>
                         {stock.fundamental_score !== null ? stock.fundamental_score.toFixed(0) : '—'}
                       </td>
-                      <td className={`${styles.td} ${styles.tdRight} ${styles.mono} ${styles.muted}`}>
+                      <td className={`${styles.td} ${styles.tdRight} ${styles.mono} ${styles.muted} ${styles.hideTablet}`}>
                         {formatMarketCap(stock.market_cap)}
                       </td>
-                      <td className={`${styles.td} ${styles.tdRight} ${styles.mono} ${styles.muted}`}>
+                      <td className={`${styles.td} ${styles.tdRight} ${styles.mono} ${styles.muted} ${styles.hideMobile}`}>
                         {formatVolume(stock.volume)}
-                      </td>
-                      <td className={styles.tdSparkline}>
-                        <Sparkline
-                          seed={sparkSeed(stock.symbol)}
-                          color={changeColor}
-                          width={70}
-                          height={22}
-                        />
                       </td>
                       <td className={styles.tdStar}>☆</td>
                     </tr>
@@ -272,7 +254,11 @@ export default function StocksPage() {
           </table>
 
           {!loading && filtered.length === 0 && (
-            <div className={styles.emptyState}>Sonuç bulunamadı.</div>
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>🔍</div>
+              <div className={styles.emptyTitle}>Sonuç bulunamadı</div>
+              <p className={styles.emptyDesc}>Arama veya filtre kriterlerinizi değiştirmeyi deneyin.</p>
+            </div>
           )}
         </div>
       </div>

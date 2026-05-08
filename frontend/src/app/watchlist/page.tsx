@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AppShell from '@/components/AppShell';
-import Sparkline from '@/components/Sparkline';
 import { formatPrice, formatVolume } from '@/components/StockHelpers';
 import api, { StockSummary } from '@/lib/api';
 import styles from './page.module.css';
@@ -34,14 +33,6 @@ function applyFilter(stocks: StockSummary[], filter: FilterKey): StockSummary[] 
   }
 }
 
-function sparklineSeed(symbol: string): number {
-  return symbol.charCodeAt(0) * 7 + (symbol.charCodeAt(2) || 1);
-}
-
-function sparklineColor(change: number | null): string {
-  return (change ?? 0) >= 0 ? '#10b981' : '#ef4444';
-}
-
 // ─── Page ────────────────────────────────────────────────────
 
 export default function WatchlistPage() {
@@ -50,6 +41,7 @@ export default function WatchlistPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>('all');
+  const [watchSymbols, setWatchSymbols] = useState<string[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +50,14 @@ export default function WatchlistPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await api.getStocks({ limit: 100 });
+        const stored = JSON.parse(localStorage.getItem('stalize-watchlist') || '[]') as string[];
+        const symbols = Array.from(new Set(stored.filter(Boolean)));
+        if (!cancelled) setWatchSymbols(symbols);
+        if (symbols.length === 0) {
+          if (!cancelled) setStocks([]);
+          return;
+        }
+        const res = await api.getStocks({ symbols: symbols.join(','), limit: symbols.length });
         if (!cancelled) setStocks(res.stocks);
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Veriler alınamadı');
@@ -81,7 +80,7 @@ export default function WatchlistPage() {
           <div className={styles.headerLeft}>
             <p className={styles.eyebrow}>Takip Listem</p>
             <h1 className={styles.title}>
-              {loading ? '— hisse takipte' : `${displayed.length} hisse takipte`}
+              {loading ? '— hisse takipte' : `${displayed.length}/${watchSymbols.length} hisse takipte`}
             </h1>
           </div>
 
@@ -108,13 +107,12 @@ export default function WatchlistPage() {
                 <thead>
                   <tr>
                     <th>Sembol</th>
-                    <th>Şirket</th>
-                    <th>Sektör</th>
+                    <th className={styles.hideMobile}>Şirket</th>
+                    <th className={styles.hideMobile}>Sektör</th>
                     <th className={styles.right}>Fiyat</th>
                     <th className={styles.right}>Değişim</th>
                     <th className={styles.right}>Skor</th>
-                    <th className={styles.right}>Hacim</th>
-                    <th className={styles.center}>Trend</th>
+                    <th className={`${styles.right} ${styles.hideMobile}`}>Hacim</th>
                     <th className={styles.right}>☆</th>
                   </tr>
                 </thead>
@@ -122,7 +120,7 @@ export default function WatchlistPage() {
                   {loading ? (
                     Array.from({ length: 10 }).map((_, i) => (
                       <tr key={i} className={styles.skeletonRow}>
-                        {Array.from({ length: 9 }).map((__, j) => (
+                        {Array.from({ length: 8 }).map((__, j) => (
                           <td key={j}>
                             <div
                               className={styles.skeletonLine}
@@ -134,30 +132,43 @@ export default function WatchlistPage() {
                     ))
                   ) : displayed.length === 0 ? (
                     <tr>
-                      <td colSpan={9}>
+                      <td colSpan={8}>
                         <div className={styles.empty}>
-                          Bu filtreyle eşleşen hisse bulunamadı.
+                          {watchSymbols.length === 0 ? (
+                            <>
+                              <div className={styles.emptyIcon}>⭐</div>
+                              <div className={styles.emptyTitle}>Takip listeniz boş</div>
+                              <p className={styles.emptyDesc}>Bir hisse detay sayfasında yıldız ikonuna tıklayarak ekleyebilirsiniz.</p>
+                              <a href="/stocks" className={styles.emptyAction}>Hisselere Göz At →</a>
+                            </>
+                          ) : (
+                            <>
+                              <div className={styles.emptyIcon}>🔍</div>
+                              <div className={styles.emptyTitle}>Sonuç bulunamadı</div>
+                              <p className={styles.emptyDesc}>Bu filtreyle eşleşen hisse bulunamadı.</p>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
                   ) : (
-                    displayed.map((s) => {
+                    displayed.map((s, index) => {
                       const change = s.daily_change_pct;
                       const isUp = (change ?? 0) >= 0;
                       return (
                         <tr
-                          key={s.symbol}
+                          key={`${s.symbol}-${index}`}
                           onClick={() => router.push(`/stocks/${s.symbol}`)}
                         >
                           <td>
                             <div className={styles.symbol}>{s.symbol}</div>
                           </td>
-                          <td>
+                          <td className={styles.hideMobile}>
                             <div className={styles.companyName} title={s.name ?? undefined}>
                               {s.name ?? '—'}
                             </div>
                           </td>
-                          <td>
+                          <td className={styles.hideMobile}>
                             <span className={styles.sector}>{s.sector ?? '—'}</span>
                           </td>
                           <td>
@@ -179,16 +190,8 @@ export default function WatchlistPage() {
                                 : '—'}
                             </div>
                           </td>
-                          <td>
+                          <td className={styles.hideMobile}>
                             <div className={styles.volume}>{formatVolume(s.volume)}</div>
-                          </td>
-                          <td className={styles.trendCell}>
-                            <Sparkline
-                              seed={sparklineSeed(s.symbol)}
-                              color={sparklineColor(change)}
-                              width={70}
-                              height={22}
-                            />
                           </td>
                           <td className={styles.starCell}>
                             <span className={styles.star}>★</span>

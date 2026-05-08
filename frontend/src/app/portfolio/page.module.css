@@ -657,7 +657,7 @@
   border-radius: 10px;
   padding: 12px 16px;
   font-size: 13px;
-  color: #ef4444;
+  color: var(--accent-red);
   margin-bottom: 20px;
 }
 
@@ -855,4 +855,41 @@
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
+}
+
+/* ── Responsive ── */
+
+.hideMobile {
+  display: table-cell;
+}
+
+.loadingMsg {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 24px;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 20px 16px 48px;
+  }
+
+  .hideMobile {
+    display: none;
+  }
+
+  .heroGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .portfolioValue {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 24px;
+  }
 }

@@ -147,6 +147,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
   const [prices, setPrices] = useState<StockPricesResponse | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [chartError, setChartError] = useState<string | null>(null);
   const [inWatchlist, setInWatchlist] = useState(false);
   const [period, setPeriod] = useState('6m');
   const [analysis, setAnalysis] = useState<string | null>(null);
@@ -212,11 +213,12 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
   // ── Price chart fetch ────────────────────────────────────
   const loadPrices = useCallback(async () => {
+    setChartError(null);
     try {
       const r = await api.getStockPrices(symbol, period);
       setPrices(r);
     } catch {
-      /* */
+      setChartError('Grafik verisi alınamadı.');
     }
   }, [symbol, period]);
 
@@ -380,6 +382,34 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 </div>
               )}
             </div>
+
+            {/* Quick stats row — fills the vertical gap in heroLeft */}
+            <div className={styles.heroQuickStats}>
+              {high52 != null && (
+                <div className={styles.heroQuickStat}>
+                  <span className={styles.heroQuickStatLabel}>Dönem Yüksek</span>
+                  <span className={styles.heroQuickStatValue}>₺{formatPrice(high52)}</span>
+                </div>
+              )}
+              {low52 != null && (
+                <div className={styles.heroQuickStat}>
+                  <span className={styles.heroQuickStatLabel}>Dönem Düşük</span>
+                  <span className={styles.heroQuickStatValue}>₺{formatPrice(low52)}</span>
+                </div>
+              )}
+              {s.market_cap != null && (
+                <div className={styles.heroQuickStat}>
+                  <span className={styles.heroQuickStatLabel}>Piyasa Değeri</span>
+                  <span className={styles.heroQuickStatValue}>{formatMarketCap(s.market_cap)}</span>
+                </div>
+              )}
+              {s.volume != null && (
+                <div className={styles.heroQuickStat}>
+                  <span className={styles.heroQuickStatLabel}>Hacim</span>
+                  <span className={styles.heroQuickStatValue}>{formatVolume(s.volume)}</span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right column — AI Score Card */}
@@ -485,7 +515,9 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             </div>
 
             <div className={styles.chartArea}>
-              {allPrices.length > 0 ? (
+              {chartError ? (
+                <div className={styles.chartEmpty} style={{ color: 'var(--accent-red)' }}>{chartError}</div>
+              ) : allPrices.length > 0 ? (
                 <LineChart prices={allPrices} color={chartColor} height={280} />
               ) : (
                 <div className={styles.chartEmpty}>Grafik verisi yükleniyor...</div>

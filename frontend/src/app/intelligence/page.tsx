@@ -402,7 +402,11 @@ export default function IntelligencePage() {
         {loading ? (
           <SkeletonCards />
         ) : filtered.length === 0 ? (
-          <div className={styles.emptyState}>Bu filtrede haber bulunamadı.</div>
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>📭</div>
+            <div className={styles.emptyTitle}>Haber bulunamadı</div>
+            <p className={styles.emptyDesc}>Bu filtreyle eşleşen haber bulunamadı. Filtre seçimini değiştirin.</p>
+          </div>
         ) : (
           <div className={styles.feedList}>
             {filtered.map((entry) => (

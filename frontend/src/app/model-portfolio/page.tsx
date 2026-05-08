@@ -79,7 +79,11 @@ function AiPortfolioSection() {
       )}
 
       {!loading && !error && holdings.length === 0 && (
-        <p className={styles.aiEmpty}>AI portföy henüz oluşturulmadı.</p>
+        <div className={styles.aiEmptyState}>
+          <div className={styles.aiEmptyIcon}>🤖</div>
+          <p className={styles.aiEmptyTitle}>AI portföy henüz oluşturulmadı</p>
+          <p className={styles.aiEmpty}>Model portföy her hafta otomatik olarak güncellenir.</p>
+        </div>
       )}
 
       {!loading && holdings.length > 0 && (
@@ -95,7 +99,7 @@ function AiPortfolioSection() {
                   {h.weekly_return_pct !== null && (
                     <span
                       className={styles.aiHoldingReturn}
-                      style={{ color: isGreen ? 'var(--accent-green, #10b981)' : 'var(--accent-red, #ef4444)' }}
+                      style={{ color: isGreen ? 'var(--accent-green)' : 'var(--accent-red)' }}
                     >
                       {formatPct(h.weekly_return_pct)}
                     </span>
@@ -113,8 +117,8 @@ function AiPortfolioSection() {
                     className={styles.aiStatValue}
                     style={{
                       color: (data.week.portfolio_return_pct ?? 0) >= 0
-                        ? 'var(--accent-green, #10b981)'
-                        : 'var(--accent-red, #ef4444)',
+                        ? 'var(--accent-green)'
+                        : 'var(--accent-red)',
                     }}
                   >
                     {formatPct(data.week.portfolio_return_pct)}
@@ -134,8 +138,8 @@ function AiPortfolioSection() {
                     className={styles.aiStatValue}
                     style={{
                       color: (data.week.active_return_spread ?? 0) >= 0
-                        ? 'var(--accent-green, #10b981)'
-                        : 'var(--accent-red, #ef4444)',
+                        ? 'var(--accent-green)'
+                        : 'var(--accent-red)',
                     }}
                   >
                     {formatPct(data.week.active_return_spread)}

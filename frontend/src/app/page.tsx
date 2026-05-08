@@ -163,7 +163,8 @@ export default function DashboardPage() {
 
   const bist100Up = (bist100?.daily_change_pct ?? 0) >= 0;
   const topSignal = dashboard?.top_buy?.[0] ?? null;
-  const portfolioValue = positions.reduce((total, position) => {
+  const activePositions = positions.filter((p) => p.is_active !== false);
+  const portfolioValue = activePositions.reduce((total, position) => {
     if (position.current_price == null) return total;
     return total + position.current_price * position.quantity;
   }, 0);
@@ -220,12 +221,12 @@ export default function DashboardPage() {
               {chartPeriod === '1G' || chartPeriod === '1H' ? (
                 <Bist100Chart
                   points={bistHistory?.points ?? []}
-                  color={bist100Up ? '#10b981' : '#ef4444'}
+                  color={bist100Up ? 'var(--accent-green)' : 'var(--accent-red)'}
                   period={chartPeriod}
                   seedValues={seedSeries(chartPeriod, chartPeriod === '1G' ? 48 : 30, bist100?.value ?? 9000, 200)}
                 />
               ) : bistHistory?.points?.length ? (
-                <Bist100Chart points={bistHistory.points} color={bist100Up ? '#10b981' : '#ef4444'} period={chartPeriod} />
+                <Bist100Chart points={bistHistory.points} color={bist100Up ? 'var(--accent-green)' : 'var(--accent-red)'} period={chartPeriod} />
               ) : (
                 <div className={styles.chartSkeleton} />
               )}
@@ -240,14 +241,14 @@ export default function DashboardPage() {
           <div className={styles.heroCard}>
             <div className={styles.heroEyebrow}>Portföyüm</div>
             <div className={styles.portfolioValue}>
-              {positions.length > 0 && portfolioValue > 0 ? `₺${formatPrice(portfolioValue)}` : '—'}
+              {activePositions.length > 0 && portfolioValue > 0 ? `₺${formatPrice(portfolioValue)}` : '—'}
             </div>
             <div className={styles.portfolioDay}>
-              {positions.length > 0 ? `${positions.length} aktif pozisyon` : 'Aktif pozisyon yok.'}
+              {activePositions.length > 0 ? `${activePositions.length} aktif pozisyon` : 'Aktif pozisyon yok.'}
             </div>
-            {positions.length > 0 ? (
+            {activePositions.length > 0 ? (
               <div className={styles.portfolioPositions}>
-                {positions.slice(0, 5).map((position, index) => (
+                {activePositions.slice(0, 5).map((position, index) => (
                   <Link key={`${position.id}-${position.symbol}-${index}`} href={`/stocks/${position.symbol}`} className={styles.portfolioPositionRow}>
                     <span>{position.symbol}</span>
                     <strong>{position.pnl_pct != null ? `${position.pnl_pct >= 0 ? '+' : ''}${position.pnl_pct.toFixed(2)}%` : '—'}</strong>

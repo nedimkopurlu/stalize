@@ -111,7 +111,7 @@ function PortfolioChart({
 
   const last = values[values.length - 1];
   const isPositive = last >= 0;
-  const lineColor = isPositive ? '#10b981' : '#ef4444';
+  const lineColor = isPositive ? 'var(--accent-green)' : 'var(--accent-red)';
 
   return (
     <svg
@@ -219,6 +219,7 @@ export default function PortfolioPage() {
     exit_date: todayISO(),
   });
   const [closeLoading, setCloseLoading] = useState(false);
+  const [closeError, setCloseError] = useState<string | null>(null);
 
   useEffect(() => {
     void fetchPositions();
@@ -331,6 +332,7 @@ export default function PortfolioPage() {
     const exitPrice = parseFloat(closeForm.exit_price);
     if (isNaN(exitPrice) || exitPrice <= 0) return;
     setCloseLoading(true);
+    setCloseError(null);
     try {
       await api.closePosition(closingId, {
         exit_price: exitPrice,
@@ -340,7 +342,7 @@ export default function PortfolioPage() {
       setCloseForm({ exit_price: '', exit_date: todayISO() });
       await Promise.all([fetchPositions(), fetchHistory()]);
     } catch (e) {
-      console.error('Pozisyon kapatma hatası:', e);
+      setCloseError(e instanceof Error ? e.message : 'Pozisyon kapatılamadı.');
     } finally {
       setCloseLoading(false);
     }
@@ -356,9 +358,9 @@ export default function PortfolioPage() {
   const totalPnl = currentValue - investedValue;
   const totalPnlPct = investedValue > 0 ? (totalPnl / investedValue) * 100 : null;
 
-  // Day change from latest snapshot
+  // Day change from latest snapshot — only meaningful when there are active positions
   const latestSnapshot = history?.snapshots?.slice(-1)[0];
-  const dayChangePct = latestSnapshot?.daily_pnl_pct ?? null;
+  const dayChangePct = activePositions.length > 0 ? (latestSnapshot?.daily_pnl_pct ?? null) : null;
 
   // Risk summary
   const risk = history?.risk_summary;
@@ -410,16 +412,16 @@ export default function PortfolioPage() {
             ) : (
               <>
                 <div className={styles.portfolioValue}>
-                  {positions.length > 0 ? formatTRY(currentValue) : '--'}
+                  {activePositions.length > 0 ? formatTRY(currentValue) : '--'}
                 </div>
 
                 <div className={`${styles.dayChange} ${dayChangeClass(dayChangePct)}`}>
                   {dayChangePct != null
                     ? `Bugün ${formatPct(dayChangePct)}`
-                    : positions.length > 0 ? 'Günlük değişim hesaplanıyor' : 'Pozisyon eklenmedi'}
+                    : activePositions.length > 0 ? 'Günlük değişim hesaplanıyor' : 'Pozisyon eklenmedi'}
                 </div>
 
-                {positions.length > 0 && (
+                {activePositions.length > 0 && (
                   <div className={styles.totalPnl}>
                     Toplam K/Z:&nbsp;
                     <span className={`${styles.totalPnlValue} ${totalPnl >= 0 ? styles.totalPnlPos : styles.totalPnlNeg}`}>
@@ -542,14 +544,14 @@ export default function PortfolioPage() {
                 <thead>
                   <tr>
                     <th>Sembol</th>
-                    <th>Şirket</th>
+                    <th className={styles.hideMobile}>Şirket</th>
                     <th>Adet</th>
                     <th>Maliyet</th>
                     <th>Son</th>
                     <th>Değer</th>
                     <th>K/Z</th>
                     <th>K/Z%</th>
-                    <th>Ağırlık</th>
+                    <th className={styles.hideMobile}>Ağırlık</th>
                     <th>İşlem</th>
                   </tr>
                 </thead>
@@ -572,7 +574,7 @@ export default function PortfolioPage() {
                             </div>
                           </Link>
                         </td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+                        <td className={styles.hideMobile} style={{ color: 'var(--text-muted)', fontSize: 13 }}>
                           {pos.symbol}
                           {pos.partial && (
                             <span className={styles.partialMark} title="Kısmi fiyat verisi">~</span>
@@ -588,7 +590,7 @@ export default function PortfolioPage() {
                         <td className={pnlClass(pos.pnl_pct)}>
                           {formatPct(pos.pnl_pct)}
                         </td>
-                        <td>
+                        <td className={styles.hideMobile}>
                           <div className={styles.weightCell}>
                             <div className={styles.weightBar}>
                               <div
@@ -628,10 +630,13 @@ export default function PortfolioPage() {
                               </button>
                               <button
                                 className={styles.closeCancel}
-                                onClick={() => setClosingId(null)}
+                                onClick={() => { setClosingId(null); setCloseError(null); }}
                               >
                                 İptal
                               </button>
+                              {closeError && closingId === pos.id && (
+                                <span style={{ color: 'var(--accent-red)', fontSize: 11 }}>{closeError}</span>
+                              )}
                             </div>
                           ) : (
                             <button

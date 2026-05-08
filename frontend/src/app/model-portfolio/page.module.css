@@ -194,7 +194,7 @@
 
 .aiError {
   font-size: 13px;
-  color: #ef4444;
+  color: var(--accent-red);
   background: rgba(239, 68, 68, 0.08);
   border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: 8px;
@@ -205,6 +205,23 @@
   font-size: 13.5px;
   color: var(--text-muted, #8b8d93);
   margin: 0;
+}
+
+.aiEmptyState {
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.aiEmptyIcon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.aiEmptyTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 6px;
 }
 
 /* ── Strategy Templates ──────────────────────────────────────── */
