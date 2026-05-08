@@ -213,7 +213,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 34-01: BIST100 grafik 6 tab + sparkline düzeltmesi (DESIGN-01, DESIGN-02)
+- [x] 34-01: BIST100 grafik 6 tab + sparkline düzeltmesi (DESIGN-01, DESIGN-02)
 - [ ] 34-02: Model portföy 6 kart + hover fix + dead code temizlik + portföy boş durum (DESIGN-03, DESIGN-04, DESIGN-05, DESIGN-06)
 
 ### Phase 35: Gemini LLM Altyapısı
@@ -309,7 +309,7 @@ Note: Phase 38 depends on Phase 29 (not 35); Phase 37 depends on Phase 35; Phase
 | 27. Infrastructure Upgrade | v3.1 | 1/1 | Complete | 2026-04-29 |
 | 28. Veri Altyapısı | v4.0 | 3/3 | Complete | 2026-05-05 |
 | 29. Dashboard | v4.0 | 2/2 | Complete | 2026-05-07 |
-| 34. Frontend Tasarım Düzeltmeleri | v5.0 | 0/2 | Not started | - |
+| 34. Frontend Tasarım Düzeltmeleri | v5.0 | 1/2 | In Progress|  |
 | 35. Gemini LLM Altyapısı | v5.0 | 0/1 | Not started | - |
 | 36. Keşif & Hisse Detay + AI Analizi | v5.0 | 0/3 | Not started | - |
 | 37. Haberler + Günlük Piyasa Özeti | v5.0 | 0/2 | Not started | - |
