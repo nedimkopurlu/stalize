@@ -58,10 +58,10 @@
 
 - [x] **DESIGN-01**: Dashboard BIST100 grafiği tüm 6 periyot tabını gösterir (1G, 1H, 1A, 3A, 1Y, Tüm) — 1G/1H için intraday veri yoksa mock veri gösterilir
 - [x] **DESIGN-02**: Dashboard kazananlar/kaybedenler satırlarında prototype'a uygun 40×28px mini sparkline gösterilir
-- [ ] **DESIGN-03**: Model portföy sayfası 6 strateji kartını gösterir (Temettü Avcısı, Büyüme Lokomotifleri, Defansif Kalkan vb.)
-- [ ] **DESIGN-04**: Light mode hover durumları theme-aware CSS değişkeni kullanır (hardcoded rgba(255,255,255,.03) kaldırılır)
-- [ ] **DESIGN-05**: Ölü kod temizlenir: SparklineWidget.tsx silindi, api.ts'ten kullanılmayan metodlar kaldırıldı
-- [ ] **DESIGN-06**: Dashboard portföy kartı pozisyon yoksa "/portföy" sayfasına yönlendiren boş durum mesajı gösterir
+- [x] **DESIGN-03**: Model portföy sayfası 6 strateji kartını gösterir (Temettü Avcısı, Büyüme Lokomotifleri, Defansif Kalkan vb.)
+- [x] **DESIGN-04**: Light mode hover durumları theme-aware CSS değişkeni kullanır (hardcoded rgba(255,255,255,.03) kaldırılır)
+- [x] **DESIGN-05**: Ölü kod temizlenir: SparklineWidget.tsx silindi, api.ts'ten kullanılmayan metodlar kaldırıldı
+- [x] **DESIGN-06**: Dashboard portföy kartı pozisyon yoksa "/portföy" sayfasına yönlendiren boş durum mesajı gösterir
 
 ## v2 Requirements
 
@@ -100,10 +100,10 @@
 | DISC-02 | Phase 28 | Complete |
 | DESIGN-01 | Phase 34 | Complete |
 | DESIGN-02 | Phase 34 | Complete |
-| DESIGN-03 | Phase 34 | Pending |
-| DESIGN-04 | Phase 34 | Pending |
-| DESIGN-05 | Phase 34 | Pending |
-| DESIGN-06 | Phase 34 | Pending |
+| DESIGN-03 | Phase 34 | Complete |
+| DESIGN-04 | Phase 34 | Complete |
+| DESIGN-05 | Phase 34 | Complete |
+| DESIGN-06 | Phase 34 | Complete |
 | LLM-01 | Phase 35 | Pending |
 | DISC-03 | Phase 36 | Pending |
 | STCK-01 | Phase 36 | Pending |

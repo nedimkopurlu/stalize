@@ -73,7 +73,7 @@ Phases 30–33 (Keşif, Haberler, Portföy, Model Portföy) planned in v4.0 but 
 
 **Milestone Hedefi:** Gemini 2.0 Flash ile LLM entegrasyonu ekle; prototype tasarımına tam uyum sağla; tüm eksik sayfaları (Keşif, Haberler, Portföy, Model Portföy) tamamla.
 
-- [ ] **Phase 34: Frontend Tasarım Düzeltmeleri** — Prototype audit sonrası bulunan 6 tasarım tutarsızlığı giderilir
+- [x] **Phase 34: Frontend Tasarım Düzeltmeleri** — Prototype audit sonrası bulunan 6 tasarım tutarsızlığı giderilir (completed 2026-05-08)
 - [ ] **Phase 35: Gemini LLM Altyapısı** — Backend Gemini 2.0 Flash servis katmanı kurulur; quota aşımında graceful fallback çalışır
 - [ ] **Phase 36: Keşif & Hisse Detay + AI Analizi** — Skorlu hisse listesi, detay sayfası (metrik tooltipli), on-demand Gemini analizi
 - [ ] **Phase 37: Haberler + Günlük Piyasa Özeti** — KAP + basın birleşik haber akışı; her sabah otomatik Gemini piyasa özeti
@@ -214,7 +214,7 @@ Plans:
 
 Plans:
 - [x] 34-01: BIST100 grafik 6 tab + sparkline düzeltmesi (DESIGN-01, DESIGN-02)
-- [ ] 34-02: Model portföy 6 kart + hover fix + dead code temizlik + portföy boş durum (DESIGN-03, DESIGN-04, DESIGN-05, DESIGN-06)
+- [x] 34-02: Model portföy 6 kart + hover fix + dead code temizlik + portföy boş durum (DESIGN-03, DESIGN-04, DESIGN-05, DESIGN-06)
 
 ### Phase 35: Gemini LLM Altyapısı
 **Goal**: Backend'de Gemini 2.0 Flash servis katmanı çalışır; tüm LLM çağrıları bu katmandan geçer ve quota aşımında sistem hata yerine placeholder döner.
@@ -309,7 +309,7 @@ Note: Phase 38 depends on Phase 29 (not 35); Phase 37 depends on Phase 35; Phase
 | 27. Infrastructure Upgrade | v3.1 | 1/1 | Complete | 2026-04-29 |
 | 28. Veri Altyapısı | v4.0 | 3/3 | Complete | 2026-05-05 |
 | 29. Dashboard | v4.0 | 2/2 | Complete | 2026-05-07 |
-| 34. Frontend Tasarım Düzeltmeleri | v5.0 | 1/2 | In Progress|  |
+| 34. Frontend Tasarım Düzeltmeleri | v5.0 | 2/2 | Complete   | 2026-05-08 |
 | 35. Gemini LLM Altyapısı | v5.0 | 0/1 | Not started | - |
 | 36. Keşif & Hisse Detay + AI Analizi | v5.0 | 0/3 | Not started | - |
 | 37. Haberler + Günlük Piyasa Özeti | v5.0 | 0/2 | Not started | - |
