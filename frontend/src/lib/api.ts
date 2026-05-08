@@ -576,6 +576,13 @@ export interface StockPeersResponse {
   peers: StockPeer[];
 }
 
+export interface StockAnalysisResponse {
+  symbol: string;
+  analysis: string;
+  cached: boolean;
+  generated_at: string;
+}
+
 export interface ImpactRankingItem {
   title?: string;
   sources?: string[];
@@ -717,6 +724,9 @@ export const api = {
 
   getStockPeers: (symbol: string) =>
     apiFetch<StockPeersResponse>(`/stocks/${symbol}/peers`),
+
+  analyzeStock: (symbol: string) =>
+    apiFetch<StockAnalysisResponse>(`/stocks/${symbol}/analyze`, { method: 'POST' }),
 
   getStockSectors: () =>
     apiFetch<StockSectorsResponse>('/stocks/sectors'),
