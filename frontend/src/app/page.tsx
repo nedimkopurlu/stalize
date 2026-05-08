@@ -13,35 +13,44 @@ import {
   DashboardData,
   IntelligenceOverview,
   StockSummary,
+  Bist100HistoryResponse,
+  PortfolioPosition,
 } from '@/lib/api';
 import styles from './page.module.css';
 
 const REFRESH_SECONDS = 30;
 
-// ── Seed-based price series (deterministic) ───────────────────
-function seedSeries(seed: number, n: number, base: number): number[] {
-  let v = base;
-  let s = seed * 9301;
-  return Array.from({ length: n }, () => {
-    s = (s * 9301 + 49297) % 233280;
-    v = v * (1 + ((s / 233280 - 0.5) * 2) * 0.012);
-    return v;
+// Deterministic LCG-based mock series. Same seed → same array.
+function seedSeries(seed: string, n: number, base = 9000, spread = 200): number[] {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return Array.from({ length: n }, (_, i) => {
+    h = (h * 1664525 + 1013904223) >>> 0;
+    const noise = ((h >>> 16) / 65535 - 0.5) * spread;
+    return base + noise + (i / n) * (spread * 0.25);
   });
 }
 
 // ── Full line chart with area fill ───────────────────────────
 function Bist100Chart({
-  baseValue,
+  points,
   color,
   period,
+  seedValues,
 }: {
-  baseValue: number;
+  points: Bist100HistoryResponse['points'];
   color: string;
   period: string;
+  seedValues?: number[];
 }) {
-  const n = period === '1G' ? 48 : period === '1H' ? 30 : period === '1A' ? 52 : period === '3A' ? 90 : 180;
-  const seed = Math.floor(baseValue) % 9999;
-  const values = useMemo(() => seedSeries(seed, n, baseValue * 0.88), [seed, n, baseValue]);
+  const values = useMemo(() => {
+    if ((period === '1G' || period === '1H') && seedValues && seedValues.length >= 2) {
+      return seedValues;
+    }
+    const n = period === '1A' ? 30 : period === '3A' ? 90 : period === '1Y' ? 252 : points.length;
+    return points.slice(-n).map((p) => p.close);
+  }, [period, points, seedValues]);
+  if (values.length < 2) return <div className={styles.chartEmpty}>Grafik için yeterli gerçek veri yok.</div>;
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
@@ -69,82 +78,6 @@ function Bist100Chart({
   );
 }
 
-function Sparkline({
-  seed,
-  color,
-  width = 60,
-  height = 20,
-}: {
-  seed: number;
-  color: string;
-  width?: number;
-  height?: number;
-}) {
-  const values = seedSeries(seed, 20, 100);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const pts = values
-    .map((v: number, i: number) => {
-      const x = (i / (values.length - 1)) * width;
-      const y = height - ((v - min) / range) * (height - 2) - 1;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(' ');
-  return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ display: 'block' }}>
-      <polyline
-        points={pts}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-// ── Portfolio donut with legend ───────────────────────────────
-const PORTFOLIO_SLICES = [
-  { name: 'Bankacılık', pct: 38, color: '#f59e0b' },
-  { name: 'Sanayi', pct: 24, color: '#3b82f6' },
-  { name: 'Holding', pct: 18, color: '#a855f7' },
-  { name: 'Teknoloji', pct: 12, color: '#10b981' },
-  { name: 'Diğer', pct: 8, color: '#64748b' },
-];
-
-function PortfolioDonut({ size = 96, thickness = 16 }: { size?: number; thickness?: number }) {
-  const R = (size - thickness) / 2;
-  const cx = size / 2;
-  const circumference = 2 * Math.PI * R;
-  let offset = 0;
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
-      {PORTFOLIO_SLICES.map((s, i) => {
-        const dash = (s.pct / 100) * circumference;
-        const el = (
-          <circle
-            key={i}
-            cx={cx}
-            cy={cx}
-            r={R}
-            fill="none"
-            stroke={s.color}
-            strokeWidth={thickness}
-            strokeDasharray={`${dash} ${circumference - dash}`}
-            strokeDashoffset={-offset}
-            transform={`rotate(-90 ${cx} ${cx})`}
-            opacity={0.8}
-          />
-        );
-        offset += dash;
-        return el;
-      })}
-    </svg>
-  );
-}
-
 // ── Label maps ────────────────────────────────────────────────
 const FOREX_TR_LABELS: Record<string, string> = {
   'USDTRY=X': 'Dolar',
@@ -168,6 +101,7 @@ type GoldKey = (typeof GOLD_FORM_ORDER)[number];
 // ── Page ──────────────────────────────────────────────────────
 export default function DashboardPage() {
   const [bist100, setBist100] = useState<MarketBist100Response | null>(null);
+  const [bistHistory, setBistHistory] = useState<Bist100HistoryResponse | null>(null);
   const [bist100Loading, setBist100Loading] = useState(true);
 
   const [forex, setForex] = useState<MarketForexResponse | null>(null);
@@ -180,6 +114,7 @@ export default function DashboardPage() {
 
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [intel, setIntel] = useState<IntelligenceOverview | null>(null);
+  const [positions, setPositions] = useState<PortfolioPosition[]>([]);
 
   const [countdown, setCountdown] = useState(REFRESH_SECONDS);
   const [chartPeriod, setChartPeriod] = useState<'1G' | '1H' | '1A' | '3A' | '1Y' | 'Tüm'>('1A');
@@ -191,6 +126,11 @@ export default function DashboardPage() {
         .then((d) => setBist100(d))
         .catch(() => {})
         .finally(() => setBist100Loading(false));
+
+      api
+        .getMarketBist100History(365)
+        .then((d) => setBistHistory(d))
+        .catch(() => setBistHistory(null));
 
       api
         .getMarketForex()
@@ -206,6 +146,7 @@ export default function DashboardPage() {
 
       api.getDashboard().then((d) => setDashboard(d)).catch(() => {});
       api.getIntelligenceOverview(6).then((d) => setIntel(d)).catch(() => {});
+      api.getPortfolioPositions().then((d) => setPositions(d)).catch(() => setPositions([]));
     };
 
     fetchAll();
@@ -220,6 +161,10 @@ export default function DashboardPage() {
 
   const bist100Up = (bist100?.daily_change_pct ?? 0) >= 0;
   const topSignal = dashboard?.top_buy?.[0] ?? null;
+  const portfolioValue = positions.reduce((total, position) => {
+    if (position.current_price == null) return total;
+    return total + position.current_price * position.quantity;
+  }, 0);
 
   return (
     <AppShell>
@@ -270,16 +215,21 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className={styles.heroChart}>
-              {bist100?.value ? (
-                <Bist100Chart baseValue={bist100.value} color={bist100Up ? '#10b981' : '#ef4444'} period={chartPeriod} />
+              {chartPeriod === '1G' || chartPeriod === '1H' ? (
+                <Bist100Chart
+                  points={bistHistory?.points ?? []}
+                  color={bist100Up ? '#10b981' : '#ef4444'}
+                  period={chartPeriod}
+                  seedValues={seedSeries(chartPeriod, chartPeriod === '1G' ? 48 : 30, bist100?.value ?? 9000, 200)}
+                />
+              ) : bistHistory?.points?.length ? (
+                <Bist100Chart points={bistHistory.points} color={bist100Up ? '#10b981' : '#ef4444'} period={chartPeriod} />
               ) : (
                 <div className={styles.chartSkeleton} />
               )}
             </div>
             <div className={styles.heroStats}>
-              <span>Açılış: <strong>{bist100 ? formatPrice((bist100.value ?? 0) * 0.998) : '—'}</strong></span>
-              <span>Yüksek: <strong>{bist100 ? formatPrice((bist100.value ?? 0) * 1.004) : '—'}</strong></span>
-              <span>Düşük: <strong>{bist100 ? formatPrice((bist100.value ?? 0) * 0.994) : '—'}</strong></span>
+              <span>Son gerçek nokta: <strong>{bistHistory?.points?.at(-1)?.date ?? '—'}</strong></span>
               <span>Hacim: <strong>{bist100 ? formatVolume(bist100.volume) : '—'}</strong></span>
             </div>
           </div>
@@ -287,20 +237,24 @@ export default function DashboardPage() {
           {/* Portfolio */}
           <div className={styles.heroCard}>
             <div className={styles.heroEyebrow}>Portföyüm</div>
-            <div className={styles.portfolioValue}>₺ —</div>
-            <div className={styles.portfolioDay}>Portföy verisi bekleniyor…</div>
-            <div className={styles.portfolioContent}>
-              <PortfolioDonut size={100} thickness={18} />
-              <div className={styles.portfolioLegend}>
-                {PORTFOLIO_SLICES.map((s) => (
-                  <div key={s.name} className={styles.legendItem}>
-                    <span className={styles.legendDot} style={{ background: s.color }} />
-                    <span className={styles.legendName}>{s.name}</span>
-                    <span className={styles.legendPct}>{s.pct}%</span>
-                  </div>
+            <div className={styles.portfolioValue}>
+              {positions.length > 0 && portfolioValue > 0 ? `₺${formatPrice(portfolioValue)}` : '—'}
+            </div>
+            <div className={styles.portfolioDay}>
+              {positions.length > 0 ? `${positions.length} aktif pozisyon` : 'Aktif pozisyon yok.'}
+            </div>
+            {positions.length > 0 ? (
+              <div className={styles.portfolioPositions}>
+                {positions.slice(0, 5).map((position, index) => (
+                  <Link key={`${position.id}-${position.symbol}-${index}`} href={`/stocks/${position.symbol}`} className={styles.portfolioPositionRow}>
+                    <span>{position.symbol}</span>
+                    <strong>{position.pnl_pct != null ? `${position.pnl_pct >= 0 ? '+' : ''}${position.pnl_pct.toFixed(2)}%` : '—'}</strong>
+                  </Link>
                 ))}
               </div>
-            </div>
+            ) : (
+              <Link href="/portfolio" className={styles.emptyLink}>Pozisyon ekle</Link>
+            )}
           </div>
         </div>
 
@@ -310,8 +264,8 @@ export default function DashboardPage() {
             <div className={styles.aiIcon}>✦</div>
             <div className={styles.aiBannerBody}>
               <div className={styles.aiBannerTitle}>
-                <span className={styles.aiBannerLabel}>AI Asistan:</span>{' '}
-                Bugünkü en güçlü sinyal: <strong>{topSignal.symbol}</strong> ·{' '}
+                <span className={styles.aiBannerLabel}>Model sinyali:</span>{' '}
+                En yüksek skorlu hisse: <strong>{topSignal.symbol}</strong> ·{' '}
                 {topSignal.recommendation}
               </div>
               <div className={styles.aiBannerSub}>
@@ -406,13 +360,10 @@ export default function DashboardPage() {
 function StockRows({ stocks }: { stocks: StockSummary[] }) {
   return (
     <div className={styles.stockList}>
-      {stocks.map((s) => {
+      {stocks.map((s, index) => {
         const up = (s.daily_change_pct ?? 0) >= 0;
-        const seed =
-          (s.symbol.charCodeAt(0) || 1) * 7 +
-          (s.symbol.charCodeAt(1) || 1);
         return (
-          <Link key={s.symbol} href={`/stocks/${s.symbol}`} className={styles.stockRow}>
+          <Link key={`${s.symbol}-${index}`} href={`/stocks/${s.symbol}`} className={styles.stockRow}>
             <span className={styles.stockSymbol}>{s.symbol}</span>
             <span className={styles.stockName}>{s.name}</span>
             <span className={styles.stockPrice}>{formatPrice(s.current_price)}</span>
@@ -423,12 +374,6 @@ function StockRows({ stocks }: { stocks: StockSummary[] }) {
               {up ? '+' : ''}
               {(s.daily_change_pct ?? 0).toFixed(2)}%
             </span>
-            <Sparkline
-              seed={seed}
-              color={up ? '#10b981' : '#ef4444'}
-              width={60}
-              height={20}
-            />
           </Link>
         );
       })}
@@ -470,8 +415,8 @@ function ForexList({ pairs }: { pairs: ForexPair[] }) {
     return <p className={styles.errText}>Veri bekleniyor…</p>;
   return (
     <div className={styles.pairList}>
-      {pairs.map((p) => (
-        <div key={p.symbol} className={styles.pairRow}>
+      {pairs.map((p, index) => (
+        <div key={`${p.symbol}-${index}`} className={styles.pairRow}>
           <span className={styles.pairLabel}>
             {FOREX_TR_LABELS[p.symbol] ?? p.name}
           </span>
