@@ -266,8 +266,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 37-01: Haberler backend — `/api/news` endpoint; KAP + basın birleşik akışı, filtreleme, sayfalama (NEWS-01)
-- [ ] 37-02: Günlük Gemini piyasa özeti — APScheduler 09:00 job, DB kaydı, dashboard kartı + haberler sayfası entegrasyonu (LLM-03)
+- [ ] 37-01-PLAN.md — Günlük Gemini piyasa özeti: /intelligence/daily-summary endpoint, APScheduler 09:05 cache reset, dashboard + haberler banner (LLM-03)
 
 ### Phase 38: Portföy + Takip Listesi
 **Goal**: Mevcut `/portfolio` sayfasının tam tasarımı çalışır hale getirilir: alım-satım girişi, gerçek P&L hesaplama, BIST100 karşılaştırması. Mevcut `/watchlist` sayfası hisse ekleme/çıkarma ve canlı fiyatla çalışır.
