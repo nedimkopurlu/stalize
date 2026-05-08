@@ -253,7 +253,10 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <Link href="/portfolio" className={styles.emptyLink}>Pozisyon ekle</Link>
+              <div className={styles.portfolioEmpty}>
+                <p className={styles.portfolioEmptyText}>Henüz portföy eklenmedi.</p>
+                <Link href="/portfolio" className={styles.emptyLink}>Pozisyon ekle →</Link>
+              </div>
             )}
           </div>
         </div>
