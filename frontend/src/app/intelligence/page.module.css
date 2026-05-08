@@ -75,6 +75,48 @@
   color: var(--accent, #f59e0b);
 }
 
+.scopeRail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: -12px 0 20px;
+}
+
+.scopeRail span {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.06));
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-muted, #8b8d93);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.liveIdle::before,
+.liveRefreshing::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  margin-right: 6px;
+  background: var(--accent-green, #10b981);
+}
+
+.liveRefreshing::before {
+  background: var(--accent, #f59e0b);
+  animation: livePulse 0.8s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
 /* ── Feed List ── */
 
 .feedList {
@@ -189,6 +231,17 @@
   border-radius: 999px;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.newBadge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.14);
+  color: var(--accent-green, #10b981);
+  border: 1px solid rgba(16, 185, 129, 0.24);
+  white-space: nowrap;
 }
 
 .impactBadge_high {
@@ -349,4 +402,46 @@
   .filterPills {
     width: 100%;
   }
+}
+
+/* ── Günlük AI Piyasa Özeti Banner ── */
+.aiSummaryBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.aiSummaryIcon {
+  color: var(--accent);
+  font-size: 14px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.aiSummaryText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aiSummaryLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.aiSummaryBody {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
 }

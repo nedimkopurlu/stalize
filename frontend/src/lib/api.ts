@@ -523,6 +523,12 @@ export interface IntelligenceOverview {
   };
 }
 
+export interface DailySummaryResponse {
+  summary: string;
+  generated_at: string;
+  from_cache: boolean;
+}
+
 export interface MacroIndicators {
   usdtry: number | null;
   gold_try: number | null;
@@ -771,6 +777,9 @@ export const api = {
 
   getKapFeed: (limit: number = 10) =>
     apiFetch<KapNotification[]>(`/stocks/kap-feed?limit=${limit}`),
+
+  getDailySummary: (): Promise<DailySummaryResponse> =>
+    apiFetch<DailySummaryResponse>('/intelligence/daily-summary'),
 
   // ── Market Endpoints (Phase 29) ─────────────────────────
   getMarketBist100: () => apiFetch<MarketBist100Response>('/market/bist100'),

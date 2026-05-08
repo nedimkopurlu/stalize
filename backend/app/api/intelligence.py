@@ -1,11 +1,52 @@
-"""Market events router — KAP/makro olay akışı ve korelasyon analizi."""
+"""Haberler ekranı için gerçek piyasa/KAP akışı."""
+import datetime
 import logging
-from fastapi import APIRouter, HTTPException
-from typing import Optional, List, Dict
-from datetime import datetime, timezone
+from datetime import timezone
+from fastapi import APIRouter
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# ─── Günlük AI piyasa özeti — in-memory cache ───
+_summary_cache: dict = {}
+
+DAILY_SUMMARY_PROMPT = (
+    "BIST100 borsasındaki günlük piyasa koşulları hakkında yatırımcılara yönelik "
+    "kısa Türkçe bir özet yaz. 3-4 cümle, anlaşılır dil, genel eğilim ve dikkat "
+    "edilmesi gereken noktaları içersin."
+)
+
+
+@router.get("/intelligence/daily-summary")
+async def get_daily_summary():
+    """Günlük Gemini piyasa özeti — in-memory cache, her sabah 09:05'te sıfırlanır."""
+    from app.services.gemini_service import gemini_service
+
+    today = datetime.date.today().isoformat()
+    if _summary_cache.get("date") == today and _summary_cache.get("summary"):
+        return {
+            "summary": _summary_cache["summary"],
+            "generated_at": _summary_cache["generated_at"],
+            "from_cache": True,
+        }
+
+    try:
+        summary_text = await gemini_service.generate(DAILY_SUMMARY_PROMPT)
+    except Exception as e:
+        logger.error(f"Günlük özet üretim hatası: {e}")
+        summary_text = "Piyasa özeti şu anda alınamıyor."
+
+    generated_at = datetime.datetime.now(timezone.utc).isoformat()
+    _summary_cache.clear()
+    _summary_cache["date"] = today
+    _summary_cache["summary"] = summary_text
+    _summary_cache["generated_at"] = generated_at
+
+    return {
+        "summary": summary_text,
+        "generated_at": generated_at,
+        "from_cache": False,
+    }
 
 
 @router.get("/intelligence/overview")
@@ -28,108 +69,3 @@ async def get_intelligence_overview(limit: int = 10):
         }
 
 
-
-@router.get("/correlation/matrix")
-async def get_correlation_matrix(window_days: int = 30):
-    """
-    Dinamik korelasyon matrisini getir.
-
-    window_days: 30, 60, veya 90 gün
-    """
-    from app.services.dynamic_correlation import correlation_engine
-
-    try:
-        if window_days not in [30, 60, 90]:
-            window_days = 30
-
-        result = await correlation_engine.compute_correlation_matrix(window_days=window_days)
-
-        if not result:
-            raise HTTPException(status_code=503, detail="Yeterli veri yok")
-
-        return result
-
-    except Exception as e:
-        logger.error(f"Korelasyon matrisi hatası: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Korelasyon matrisi hesaplanamadı")
-
-
-@router.get("/correlation/crisis")
-async def get_crisis_mode_status():
-    """Kriz modu durumunu kontrol et."""
-    from app.services.dynamic_correlation import correlation_engine
-
-    try:
-        # Son korelasyon matrisini hesapla
-        result = await correlation_engine.compute_correlation_matrix(window_days=30)
-
-        if not result:
-            return {
-                "crisis_mode": False,
-                "reason": "Veri yok",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            }
-
-        stats = result.get("statistics", {})
-        crisis = result.get("crisis_mode", False)
-
-        return {
-            "crisis_mode": crisis,
-            "statistics": stats,
-            "alert_level": "🔴 KRİTİK" if crisis else "🟢 NORMAL",
-            "mean_correlation": stats.get("mean_correlation"),
-            "mean_volatility_pct": stats.get("mean_volatility_pct"),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-
-    except Exception as e:
-        logger.error(f"Kriz modu hatası: {e}", exc_info=True)
-        return {"error": "Kriz modu hesaplanamadı"}
-
-
-@router.get("/correlation/diversification-advice")
-async def get_diversification_advice():
-    """Portföy çeşitlendirme tavsiyesi al."""
-    from app.services.dynamic_correlation import correlation_engine
-
-    try:
-        recommendations = await correlation_engine.get_diversification_recommendations()
-
-        if not recommendations:
-            raise HTTPException(status_code=503, detail="Tavsiye üretilemiyor")
-
-        return recommendations
-
-    except Exception as e:
-        logger.error(f"Diversifikasyon tavsiyesi hatası: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Diversifikasyon tavsiyesi alınamadı")
-
-
-@router.get("/correlation/low-correlation-pairs")
-async def get_low_correlation_pairs(threshold: float = 0.3, limit: int = 20):
-    """Düşük korelasyonlu hisse çiftlerini getir (çeşitlendirme için)."""
-    from app.services.dynamic_correlation import correlation_engine
-
-    try:
-        pairs = await correlation_engine.find_low_correlation_pairs(
-            correlation_threshold=threshold
-        )
-
-        return {
-            "pairs": [
-                {
-                    "symbol1": s1,
-                    "symbol2": s2,
-                    "correlation": corr,
-                    "quality": "excellent" if corr < 0.1 else "good" if corr < 0.3 else "fair"
-                }
-                for s1, s2, corr in pairs[:limit]
-            ],
-            "total_found": len(pairs),
-            "threshold": threshold,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-
-    except Exception as e:
-        logger.error(f"Düşük korelasyon çiftleri hatası: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Korelasyon çiftleri hesaplanamadı")

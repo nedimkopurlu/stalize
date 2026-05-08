@@ -116,6 +116,7 @@ export default function DashboardPage() {
   const [intel, setIntel] = useState<IntelligenceOverview | null>(null);
   const [positions, setPositions] = useState<PortfolioPosition[]>([]);
 
+  const [dailySummary, setDailySummary] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(REFRESH_SECONDS);
   const [chartPeriod, setChartPeriod] = useState<'1G' | '1H' | '1A' | '3A' | '1Y' | 'Tüm'>('1A');
 
@@ -147,6 +148,7 @@ export default function DashboardPage() {
       api.getDashboard().then((d) => setDashboard(d)).catch(() => {});
       api.getIntelligenceOverview(6).then((d) => setIntel(d)).catch(() => {});
       api.getPortfolioPositions().then((d) => setPositions(d)).catch(() => setPositions([]));
+      api.getDailySummary().then((r) => setDailySummary(r.summary)).catch(() => null);
     };
 
     fetchAll();
@@ -260,6 +262,17 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+
+        {/* ─── Günlük AI Piyasa Özeti ─── */}
+        {dailySummary && (
+          <div className={styles.aiSummaryBanner}>
+            <span className={styles.aiSummaryIcon}>✦</span>
+            <div className={styles.aiSummaryText}>
+              <span className={styles.aiSummaryLabel}>Günlük Piyasa Özeti</span>
+              <p className={styles.aiSummaryBody}>{dailySummary}</p>
+            </div>
+          </div>
+        )}
 
         {/* ─── AI signal banner ─── */}
         {topSignal && (

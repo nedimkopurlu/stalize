@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import models as _models  # noqa: F401
 from app.core.config import settings
 from app.core import database
-from app.api import stocks, macro, intelligence, admin, portfolio_v2, model_portfolio, market
+from app.api import stocks, intelligence, portfolio_v2, model_portfolio, market, system
 from app.services.portfolio_snapshot import take_daily_snapshot
 from app.services.data_collector import data_collector
 
@@ -198,6 +198,13 @@ async def background_model_portfolio_snapshot():
         logging.error(f"Model portföy snapshot hatası: {e}")
 
 
+def background_daily_summary_reset() -> None:
+    """Her sabah 09:05'te günlük AI piyasa özeti cache'ini sıfırlar."""
+    from app.api.intelligence import _summary_cache
+    _summary_cache.clear()
+    logging.info("DAILY_SUMMARY_CACHE_RESET completed")
+
+
 async def background_data_update():
     logging.info("JOB_START source=data_update")
     try:
@@ -330,6 +337,17 @@ async def lifespan(app: FastAPI):
         start_date=_now + timedelta(minutes=25),
     )
 
+    # Günlük AI piyasa özeti cache sıfırlama — her sabah 09:05 İstanbul saatiyle
+    scheduler.add_job(
+        background_daily_summary_reset,
+        "cron",
+        hour=9,
+        minute=5,
+        timezone="Europe/Istanbul",
+        max_instances=1,
+        misfire_grace_time=300,
+    )
+
     scheduler.start()
     _task_startup_refresh = asyncio.create_task(
         startup_refresh_sources(), name="startup_refresh_sources"
@@ -385,12 +403,11 @@ app.add_middleware(
 
 # API rotaları
 app.include_router(stocks.router, prefix="/api")
-app.include_router(macro.router, prefix="/api")
 app.include_router(intelligence.router, prefix="/api")
-app.include_router(admin.router, prefix="/api")
 app.include_router(portfolio_v2.router, prefix="/api")
 app.include_router(model_portfolio.router, prefix="/api")
 app.include_router(market.router, prefix="/api")
+app.include_router(system.router, prefix="/api")
 
 
 @app.get("/")

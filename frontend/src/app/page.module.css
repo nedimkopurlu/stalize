@@ -539,3 +539,45 @@
   line-height: 1.5;
   margin: 0;
 }
+
+/* ── Günlük AI Piyasa Özeti Banner ── */
+.aiSummaryBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  margin-bottom: 4px;
+}
+
+.aiSummaryIcon {
+  color: var(--accent);
+  font-size: 14px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.aiSummaryText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aiSummaryLabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.aiSummaryBody {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
