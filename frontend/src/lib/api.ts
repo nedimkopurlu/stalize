@@ -306,6 +306,11 @@ export interface PortfolioPosition {
   current_price: number | null;
   pnl_pct: number | null;
   partial: boolean;
+  // PORT-02: pozisyon kapatma alanları
+  is_active: boolean;
+  exit_price: number | null;
+  exit_date: string | null;
+  realized_pnl: number | null;
 }
 
 export interface PortfolioSnapshot {
@@ -757,6 +762,12 @@ export const api = {
       method: 'POST',
       body: data,
     }),
+
+  closePosition: (id: number, data: { exit_price: number; exit_date: string }) =>
+    apiFetch<{ id: number; symbol: string; realized_pnl: number | null; status: string }>(
+      `/portfolio/positions/${id}/close`,
+      { method: 'PATCH', body: data },
+    ),
 
   getCurrentModelPortfolio: () =>
     apiFetch<ModelPortfolioCurrentResponse>('/model-portfolio/current'),
