@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: LLM Entegrasyonlu Yatırım Asistanı
 status: unknown
-last_updated: "2026-05-08T05:12:09.209Z"
+last_updated: "2026-05-08T10:38:28.940Z"
 progress:
   total_phases: 14
-  completed_phases: 4
-  total_plans: 9
-  completed_plans: 14
+  completed_phases: 5
+  total_plans: 10
+  completed_plans: 15
 ---
 
 # Project State
@@ -23,12 +23,12 @@ See: `.planning/PROJECT.md` (updated 2026-05-08)
 
 ## Current Position
 
-Phase: 34 (Frontend Tasarım Düzeltmeleri) — EXECUTING
-Plan: 2 of 2
+Phase: 35 (Gemini LLM Altyapısı) — EXECUTING
+Plan: 1 of 1
 
 ## v5.0 Phases
 
-- [ ] Phase 34: Frontend Tasarım Düzeltmeleri — 6 prototype audit tasarım tutarsızlığı giderilir
+- [x] Phase 34: Frontend Tasarım Düzeltmeleri — 6 prototype audit tasarım tutarsızlığı giderilir ✅ (2026-05-08)
 - [ ] Phase 35: Gemini LLM Altyapısı — Backend Gemini 2.0 Flash servis katmanı, quota fallback
 - [ ] Phase 36: Keşif & Hisse Detay + AI Analizi — Skorlu liste, detay sayfası, on-demand Gemini analizi
 - [ ] Phase 37: Haberler + Günlük Piyasa Özeti — KAP + basın birleşik akış, otomatik günlük özet
@@ -61,6 +61,7 @@ Phase 29 (tamamlandı)
 | Completed | 2026-04-29 | — (absorbed) | — |
 | Phase 34 P01 | 117 | 2 tasks | 2 files |
 | Phase 34 P02 | 3 | 3 tasks | 6 files |
+| Phase 35 P01 | 224 | 2 tasks | 4 files |
 
 ### v4.0 Completed Plans (reference)
 
@@ -108,7 +109,7 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-08T05:12:09.205Z
-**Next action:** Execute Phase 34 — `/gsd:plan-phase 34`
+**Last session:** 2026-05-08T10:38:28.937Z
+**Next action:** Plan & Execute Phase 35 — `/gsd:plan-phase 35`
 
 ---

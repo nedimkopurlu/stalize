@@ -49,7 +49,7 @@
 
 ### LLM Entegrasyonu (Gemini 2.0 Flash)
 
-- [ ] **LLM-01**: Backend'de Gemini 2.0 Flash servis katmanı çalışır (google-generativeai SDK, quota aşılırsa graceful fallback)
+- [x] **LLM-01**: Backend'de Gemini 2.0 Flash servis katmanı çalışır (google-generativeai SDK, quota aşılırsa graceful fallback)
 - [ ] **LLM-02**: Kullanıcı hisse detay sayfasında "Analiz Et" butonu ile on-demand Türkçe Gemini analizi alır; önbellek ile tekrar istek gitmez
 - [ ] **LLM-03**: Sistem her sabah otomatik olarak Gemini'den kısa günlük piyasa özeti üretir; dashboard'da ve haberler sayfasında görünür
 - [ ] **LLM-04**: Model portföy haftalık karar döngüsünde Gemini portföy değişikliklerini Türkçe gerekçeyle açıklar
@@ -58,10 +58,10 @@
 
 - [x] **DESIGN-01**: Dashboard BIST100 grafiği tüm 6 periyot tabını gösterir (1G, 1H, 1A, 3A, 1Y, Tüm) — 1G/1H için intraday veri yoksa mock veri gösterilir
 - [x] **DESIGN-02**: Dashboard kazananlar/kaybedenler satırlarında prototype'a uygun 40×28px mini sparkline gösterilir
-- [x] **DESIGN-03**: Model portföy sayfası 6 strateji kartını gösterir (Temettü Avcısı, Büyüme Lokomotifleri, Defansif Kalkan vb.)
-- [x] **DESIGN-04**: Light mode hover durumları theme-aware CSS değişkeni kullanır (hardcoded rgba(255,255,255,.03) kaldırılır)
-- [x] **DESIGN-05**: Ölü kod temizlenir: SparklineWidget.tsx silindi, api.ts'ten kullanılmayan metodlar kaldırıldı
-- [x] **DESIGN-06**: Dashboard portföy kartı pozisyon yoksa "/portföy" sayfasına yönlendiren boş durum mesajı gösterir
+- [x] **DESIGN-03**: Model portföy sayfası 6 strateji kartını gösterir (Temettü Avcısı, Büyüme Lokomotifleri, Defansif Kalkan vb.) ✅
+- [x] **DESIGN-04**: Light mode hover durumları theme-aware CSS değişkeni kullanır (hardcoded rgba(255,255,255,.03) kaldırılır) ✅
+- [x] **DESIGN-05**: Ölü kod temizlenir: SparklineWidget.tsx silindi, api.ts'ten kullanılmayan metodlar kaldırıldı ✅
+- [x] **DESIGN-06**: Dashboard portföy kartı pozisyon yoksa "/portföy" sayfasına yönlendiren boş durum mesajı gösterir ✅
 
 ## v2 Requirements
 
@@ -98,21 +98,21 @@
 | DASH-04 | Phase 29 | Complete |
 | DISC-01 | Phase 28 | Complete |
 | DISC-02 | Phase 28 | Complete |
-| DESIGN-01 | Phase 34 | Complete |
-| DESIGN-02 | Phase 34 | Complete |
-| DESIGN-03 | Phase 34 | Complete |
-| DESIGN-04 | Phase 34 | Complete |
-| DESIGN-05 | Phase 34 | Complete |
-| DESIGN-06 | Phase 34 | Complete |
-| LLM-01 | Phase 35 | Pending |
+| DESIGN-01 | Phase 34 | ✅ Complete (2026-05-08) |
+| DESIGN-02 | Phase 34 | ✅ Complete (2026-05-08) |
+| DESIGN-03 | Phase 34 | ✅ Complete (2026-05-08) |
+| DESIGN-04 | Phase 34 | ✅ Complete (2026-05-08) |
+| DESIGN-05 | Phase 34 | ✅ Complete (2026-05-08) |
+| DESIGN-06 | Phase 34 | ✅ Complete (2026-05-08) |
+| LLM-01 | Phase 35 | Complete |
 | DISC-03 | Phase 36 | Pending |
 | STCK-01 | Phase 36 | Pending |
 | STCK-02 | Phase 36 | Pending |
 | STCK-03 | Phase 36 | Pending |
 | STCK-04 | Phase 36 | Pending |
 | LLM-02 | Phase 36 | Pending |
-| STCK-05 | Phase 36 | Pending |
-| STCK-06 | Phase 36 | Pending |
+| STCK-05 | Phase 37 | Pending (haberler sayfasında, detay sayfasında değil) |
+| STCK-06 | Phase 37 | Pending (haberler sayfasında, detay sayfasında değil) |
 | NEWS-01 | Phase 37 | Pending |
 | LLM-03 | Phase 37 | Pending |
 | PORT-01 | Phase 38 | Pending |
