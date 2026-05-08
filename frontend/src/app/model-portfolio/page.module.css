@@ -291,3 +291,130 @@
     font-size: 18px;
   }
 }
+
+/* ── Gemini Review Summary (LLM-04) ───────────────────────────── */
+.reviewSummary {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+}
+
+.reviewSummaryIcon {
+  color: var(--accent);
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.reviewSummaryText {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ── Getiri Karşılaştırması (MODEL-04) ───────────────────────── */
+.comparisonCard {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.comparisonTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+
+.comparisonRow {
+  display: flex;
+  gap: 16px;
+}
+
+.comparisonCol {
+  flex: 1;
+  text-align: center;
+}
+
+.comparisonLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.comparisonValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ── Geçmiş Haftalar (MODEL-03) ───────────────────────────────── */
+.historySection {
+  margin-top: 8px;
+}
+
+.historySectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+
+.historyTable {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.historyRow {
+  padding: 14px 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 6px 16px;
+  align-items: center;
+}
+
+.historyDate {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.historyReturn {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.historyBenchmark {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.historyReview {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 4px 0 0;
+  font-style: italic;
+}
+
+.historyLoading {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 12px 0;
+}

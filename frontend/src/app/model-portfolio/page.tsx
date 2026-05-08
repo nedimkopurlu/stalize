@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import AppShell from '@/components/AppShell';
-import api, { ModelPortfolioCurrentResponse } from '@/lib/api';
+import api, { ModelPortfolioCurrentResponse, ModelPortfolioHistoryResponse } from '@/lib/api';
 import styles from './page.module.css';
 
 // ── Strategy Templates ────────────────────────────────────────
@@ -29,6 +29,7 @@ function AiPortfolioSection() {
   const [data, setData] = useState<ModelPortfolioCurrentResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userReturnPct, setUserReturnPct] = useState<number | null>(null);
 
   useEffect(() => {
     void (async () => {
@@ -41,6 +42,10 @@ function AiPortfolioSection() {
         setLoading(false);
       }
     })();
+    // Non-blocking: kullanıcı portföy getirisi (MODEL-04)
+    api.getPortfolioHistory(30)
+      .then((r) => setUserReturnPct(r.risk_summary?.latest_portfolio_return_pct ?? null))
+      .catch(() => null);
   }, []);
 
   const holdings = data?.holdings ?? [];
@@ -139,8 +144,112 @@ function AiPortfolioSection() {
               )}
             </div>
           )}
+
+          {/* ── Gemini haftalık gerekçe (LLM-04) ── */}
+          {data?.week?.review_summary && (
+            <div className={styles.reviewSummary}>
+              <span className={styles.reviewSummaryIcon}>✦</span>
+              <p className={styles.reviewSummaryText}>{data.week.review_summary}</p>
+            </div>
+          )}
+
+          {/* ── Getiri karşılaştırması (MODEL-04) ── */}
+          <div className={styles.comparisonCard}>
+            <div className={styles.comparisonTitle}>Getiri Karşılaştırması</div>
+            <div className={styles.comparisonRow}>
+              <div className={styles.comparisonCol}>
+                <div className={styles.comparisonLabel}>Portföyüm</div>
+                <div
+                  className={styles.comparisonValue}
+                  style={{ color: (userReturnPct ?? 0) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}
+                >
+                  {userReturnPct != null ? `${userReturnPct >= 0 ? '+' : ''}${userReturnPct.toFixed(1)}%` : '—'}
+                </div>
+              </div>
+              <div className={styles.comparisonCol}>
+                <div className={styles.comparisonLabel}>Model Portföy</div>
+                <div
+                  className={styles.comparisonValue}
+                  style={{ color: (data?.week?.portfolio_return_pct ?? 0) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}
+                >
+                  {data?.week?.portfolio_return_pct != null
+                    ? `${(data.week.portfolio_return_pct ?? 0) >= 0 ? '+' : ''}${data.week.portfolio_return_pct.toFixed(1)}%`
+                    : '—'}
+                </div>
+              </div>
+              <div className={styles.comparisonCol}>
+                <div className={styles.comparisonLabel}>BIST100</div>
+                <div className={styles.comparisonValue}>
+                  {data?.week?.benchmark_return_pct != null
+                    ? `${(data.week.benchmark_return_pct ?? 0) >= 0 ? '+' : ''}${data.week.benchmark_return_pct.toFixed(1)}%`
+                    : '—'}
+                </div>
+              </div>
+            </div>
+          </div>
         </>
       )}
+    </section>
+  );
+}
+
+// ── Model Portfolio History (MODEL-03) ─────────────────────────
+
+function ModelPortfolioHistory() {
+  const [history, setHistory] = useState<ModelPortfolioHistoryResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.getModelPortfolioHistory(8)
+      .then((r) => setHistory(r))
+      .catch(() => null)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const weeks = history?.weeks ?? [];
+
+  if (loading) return <div className={styles.historyLoading}>Geçmiş yükleniyor…</div>;
+  if (weeks.length === 0) return null;
+
+  return (
+    <section className={styles.historySection}>
+      <h2 className={styles.historySectionTitle}>Geçmiş Haftalar</h2>
+      <div className={styles.historyTable}>
+        {weeks.map((week, i) => {
+          const isGreen = (week.portfolio_return_pct ?? 0) >= 0;
+          const bIsGreen = (week.benchmark_return_pct ?? 0) >= 0;
+          return (
+            <div key={`${week.id}-${i}`} className={styles.historyRow}>
+              <span className={styles.historyDate}>
+                {new Date(week.week_start).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
+                {' – '}
+                {new Date(week.week_end).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
+              </span>
+              <span
+                className={styles.historyReturn}
+                style={{ color: isGreen ? 'var(--accent-green)' : 'var(--accent-red)' }}
+              >
+                {week.portfolio_return_pct != null
+                  ? `${isGreen ? '+' : ''}${week.portfolio_return_pct.toFixed(1)}%`
+                  : '—'}
+              </span>
+              <span
+                className={styles.historyBenchmark}
+                style={{ color: 'var(--text-muted)' }}
+              >
+                BIST100: {week.benchmark_return_pct != null
+                  ? `${bIsGreen ? '+' : ''}${week.benchmark_return_pct.toFixed(1)}%`
+                  : '—'}
+              </span>
+              {(week.review_summary ?? week.change_summary) && (
+                <p className={styles.historyReview}>
+                  {week.review_summary ?? week.change_summary}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }
@@ -159,6 +268,7 @@ export default function ModelPortfolioPage() {
         </div>
 
         <AiPortfolioSection />
+        <ModelPortfolioHistory />
 
         {/* ── Strategy Templates ── */}
         <section className={styles.strategiesSection}>

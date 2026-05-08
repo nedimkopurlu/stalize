@@ -11,6 +11,7 @@ from sqlalchemy import delete, desc, select
 from app.core.database import AsyncSessionLocal
 from app.models.model_portfolio import ModelPortfolioDailySnapshot, ModelPortfolioHolding, ModelPortfolioWeek
 from app.models.stock import Stock
+from app.services.gemini_service import gemini_service, FALLBACK_MESSAGE
 from app.services.portfolio_snapshot import _fetch_close_price
 
 logger = logging.getLogger(__name__)
@@ -240,6 +241,26 @@ def _build_decision_band(
         "focus": focus,
         "actions": action_items[:4],
     }
+
+
+async def _generate_gemini_rationale(changes: dict, holdings_count: int) -> str:
+    """Gemini ile haftalık model portföy değişikliklerini Türkçe açıkla."""
+    added = changes.get("added", [])
+    removed = changes.get("removed", [])
+
+    prompt_parts = [f"Model portföy bu hafta {holdings_count} hisse içeriyor."]
+    if added:
+        prompt_parts.append(f"Eklenen hisseler: {', '.join(added[:5])}")
+    if removed:
+        prompt_parts.append(f"Çıkarılan hisseler: {', '.join(removed[:5])}")
+    if not added and not removed:
+        prompt_parts.append("Bu hafta portföy kompozisyonunda büyük değişiklik yapılmadı.")
+
+    prompt = " ".join(prompt_parts) + (
+        " Bu portföy kararlarını yatırımcılara 2-3 cümleyle Türkçe olarak açıkla. "
+        "Anlaşılır ve profesyonel bir dil kullan."
+    )
+    return await gemini_service.generate(prompt)
 
 
 async def _load_candidate_stocks() -> list[Stock]:
@@ -482,6 +503,41 @@ async def generate_weekly_model_portfolio(force: bool = False, target_date: Opti
             )
 
         await db.commit()
+
+    # ── Gemini haftalık gerekçe (LLM-04) ──────────────────────────────────
+    try:
+        # Önceki haftayla karşılaştırarak değişiklikleri hesapla
+        previous_week_holdings: list[ModelPortfolioHolding] = []
+        if previous_week is not None and previous_week.week_start != week_start:
+            async with AsyncSessionLocal() as _db:
+                prev_h_result = await _db.execute(
+                    select(ModelPortfolioHolding).where(ModelPortfolioHolding.week_id == previous_week.id)
+                )
+                previous_week_holdings = list(prev_h_result.scalars().all())
+
+        # Seçilen hisseleri mock ModelPortfolioHolding nesneleri gibi temsil et
+        class _FakeHolding:
+            def __init__(self, sym: str):
+                self.symbol = sym
+                self.allocation_pct = 0
+
+        current_fakes = [_FakeHolding(s.symbol) for s in selected]
+        changes_for_gemini = _summarize_week_changes(current_fakes, previous_week_holdings)  # type: ignore[arg-type]
+
+        gemini_text = await _generate_gemini_rationale(changes_for_gemini, len(selected))
+
+        if gemini_text and FALLBACK_MESSAGE not in gemini_text:
+            async with AsyncSessionLocal() as update_db:
+                upd_result = await update_db.execute(
+                    select(ModelPortfolioWeek).where(ModelPortfolioWeek.id == week.id)
+                )
+                w = upd_result.scalar_one_or_none()
+                if w:
+                    w.review_summary = gemini_text
+                    await update_db.commit()
+            logger.info(f"MODEL_PORTFOLIO Gemini gerekçe yazıldı (week_id={week.id})")
+    except Exception as _e:
+        logger.warning(f"Gemini haftalık gerekçe üretilemedi — deterministik fallback korunuyor: {_e}")
 
     await take_model_portfolio_snapshot(for_week_start=week_start)
     payload = await get_current_model_portfolio()
