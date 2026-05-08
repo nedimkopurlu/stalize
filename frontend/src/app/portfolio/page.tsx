@@ -7,15 +7,32 @@ import { formatPrice } from '@/components/StockHelpers';
 import api, { PortfolioHistoryResponse, PortfolioPosition } from '@/lib/api';
 import styles from './page.module.css';
 
-// ─── Design Tokens (inline colour palette) ───
-
-const SECTOR_COLORS = [
-  '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6',
-  '#ec4899', '#14b8a6', '#f97316', '#6366f1',
-];
-
 const PERIOD_OPTIONS = ['1H', '1A', '3A', '6A', '1Y', 'TÜMÜ'] as const;
 type Period = typeof PERIOD_OPTIONS[number];
+
+type PositionForm = {
+  symbol: string;
+  entry_price: string;
+  quantity: string;
+  entry_date: string;
+  stop_loss: string;
+  target_price: string;
+  rationale: string;
+};
+
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+const EMPTY_FORM: PositionForm = {
+  symbol: '',
+  entry_price: '',
+  quantity: '',
+  entry_date: todayISO(),
+  stop_loss: '',
+  target_price: '',
+  rationale: '',
+};
 
 // ─── Helpers ───
 
@@ -59,7 +76,7 @@ function PortfolioChart({
     if (!series.length) return series;
     const now = new Date();
     const cutoff = new Date(now);
-    if (period === '1H') cutoff.setMonth(now.getMonth() - 1);
+    if (period === '1H') cutoff.setDate(now.getDate() - 7);
     else if (period === '1A') cutoff.setMonth(now.getMonth() - 1);
     else if (period === '3A') cutoff.setMonth(now.getMonth() - 3);
     else if (period === '6A') cutoff.setMonth(now.getMonth() - 6);
@@ -138,120 +155,6 @@ function PortfolioChart({
   );
 }
 
-// ─── SVG Donut for Sector Allocation ───
-
-type SectorSlice = { label: string; pct: number; color: string };
-
-function SectorDonut({ positions }: { positions: PortfolioPosition[] }) {
-  const sectors = useMemo<SectorSlice[]>(() => {
-    if (!positions.length) return [];
-    const totalValue = positions.reduce(
-      (s, p) => s + (p.current_price ?? p.entry_price) * p.quantity,
-      0,
-    );
-    if (totalValue === 0) return [];
-
-    // Group by first 3 chars of symbol as rough sector proxy
-    const groups: Record<string, number> = {};
-    for (const pos of positions) {
-      const key = pos.symbol.slice(0, 3);
-      const val = (pos.current_price ?? pos.entry_price) * pos.quantity;
-      groups[key] = (groups[key] ?? 0) + val;
-    }
-
-    return Object.entries(groups)
-      .map(([label, val], i) => ({
-        label,
-        pct: (val / totalValue) * 100,
-        color: SECTOR_COLORS[i % SECTOR_COLORS.length],
-      }))
-      .sort((a, b) => b.pct - a.pct)
-      .slice(0, 8);
-  }, [positions]);
-
-  if (!sectors.length) {
-    return <div className={styles.sectorEmpty}>Pozisyon bulunmuyor</div>;
-  }
-
-  // Build SVG donut
-  const R = 56;
-  const CX = 72;
-  const CY = 72;
-  const INNER = 34;
-  const total = sectors.reduce((s, sl) => s + sl.pct, 0);
-  let angle = -90;
-
-  const slices = sectors.map((sl) => {
-    const sweep = (sl.pct / total) * 360;
-    const startAngle = angle;
-    angle += sweep;
-    return { ...sl, startAngle, sweep };
-  });
-
-  function polarToXY(deg: number, r: number) {
-    const rad = (deg * Math.PI) / 180;
-    return {
-      x: CX + r * Math.cos(rad),
-      y: CY + r * Math.sin(rad),
-    };
-  }
-
-  function arcPath(start: number, sweep: number): string {
-    if (sweep >= 359.9) {
-      // full circle
-      return [
-        `M ${CX} ${CY - R}`,
-        `A ${R} ${R} 0 1 1 ${CX - 0.01} ${CY - R}`,
-        `Z`,
-        `M ${CX} ${CY - INNER}`,
-        `A ${INNER} ${INNER} 0 1 0 ${CX - 0.01} ${CY - INNER}`,
-        `Z`,
-      ].join(' ');
-    }
-    const s = polarToXY(start, R);
-    const e = polarToXY(start + sweep, R);
-    const si = polarToXY(start, INNER);
-    const ei = polarToXY(start + sweep, INNER);
-    const lg = sweep > 180 ? 1 : 0;
-    return [
-      `M ${s.x} ${s.y}`,
-      `A ${R} ${R} 0 ${lg} 1 ${e.x} ${e.y}`,
-      `L ${ei.x} ${ei.y}`,
-      `A ${INNER} ${INNER} 0 ${lg} 0 ${si.x} ${si.y}`,
-      `Z`,
-    ].join(' ');
-  }
-
-  return (
-    <div className={styles.donutWrap}>
-      <svg
-        viewBox="0 0 144 144"
-        width={144}
-        height={144}
-        className={styles.donutSvg}
-      >
-        {slices.map((sl) => (
-          <path
-            key={sl.label}
-            d={arcPath(sl.startAngle, sl.sweep)}
-            fill={sl.color}
-            opacity={0.85}
-          />
-        ))}
-      </svg>
-      <div className={styles.sectorLegend}>
-        {slices.map((sl) => (
-          <div key={sl.label} className={styles.sectorLegendItem}>
-            <span className={styles.sectorDot} style={{ background: sl.color }} />
-            <span className={styles.sectorLegendLabel}>{sl.label}</span>
-            <span className={styles.sectorLegendPct}>{sl.pct.toFixed(1)}%</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ─── Recent Transactions ───
 
 function RecentTransactions({ positions }: { positions: PortfolioPosition[] }) {
@@ -265,11 +168,11 @@ function RecentTransactions({ positions }: { positions: PortfolioPosition[] }) {
 
   return (
     <div className={styles.transList}>
-      {sorted.slice(0, 8).map((pos) => {
+      {sorted.slice(0, 8).map((pos, index) => {
         const value = (pos.current_price ?? pos.entry_price) * pos.quantity;
         const pnl = pos.pnl_pct;
         return (
-          <div key={pos.id} className={styles.transItem}>
+          <div key={`${pos.id}-${pos.symbol}-${index}`} className={styles.transItem}>
             <div className={styles.transLeft}>
               <div className={styles.transDot}>📈</div>
               <div className={styles.transInfo}>
@@ -305,6 +208,17 @@ export default function PortfolioPage() {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>('3A');
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [form, setForm] = useState<PositionForm>(EMPTY_FORM);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // PORT-02: position close state
+  const [closingId, setClosingId] = useState<number | null>(null);
+  const [closeForm, setCloseForm] = useState<{ exit_price: string; exit_date: string }>({
+    exit_price: '',
+    exit_date: todayISO(),
+  });
+  const [closeLoading, setCloseLoading] = useState(false);
 
   useEffect(() => {
     void fetchPositions();
@@ -335,11 +249,108 @@ export default function PortfolioPage() {
     }
   }
 
-  // Derived values
-  const investedValue = positions.reduce(
+  function openAddForm() {
+    setForm({ ...EMPTY_FORM, entry_date: todayISO() });
+    setFormError(null);
+    setIsAddOpen(true);
+  }
+
+  function closeAddForm() {
+    if (isSubmitting) return;
+    setIsAddOpen(false);
+    setFormError(null);
+  }
+
+  function updateForm<K extends keyof PositionForm>(key: K, value: PositionForm[K]) {
+    setForm((current) => ({ ...current, [key]: value }));
+  }
+
+  async function submitPosition(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormError(null);
+
+    const symbol = form.symbol.trim().toUpperCase().replace(/\.IS$/, '');
+    const entryPrice = Number(form.entry_price);
+    const quantity = Number(form.quantity);
+    const stopLoss = form.stop_loss.trim() ? Number(form.stop_loss) : undefined;
+    const targetPrice = form.target_price.trim() ? Number(form.target_price) : undefined;
+
+    if (!symbol) {
+      setFormError('Sembol zorunlu.');
+      return;
+    }
+    if (!Number.isFinite(entryPrice) || entryPrice <= 0) {
+      setFormError('Alış fiyatı pozitif bir sayı olmalı.');
+      return;
+    }
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      setFormError('Adet pozitif bir sayı olmalı.');
+      return;
+    }
+    if (!form.entry_date) {
+      setFormError('Alış tarihi zorunlu.');
+      return;
+    }
+    if (stopLoss !== undefined && (!Number.isFinite(stopLoss) || stopLoss <= 0)) {
+      setFormError('Stop seviyesi pozitif bir sayı olmalı.');
+      return;
+    }
+    if (targetPrice !== undefined && (!Number.isFinite(targetPrice) || targetPrice <= 0)) {
+      setFormError('Hedef fiyat pozitif bir sayı olmalı.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await api.addPosition({
+        symbol,
+        entry_price: entryPrice,
+        quantity,
+        entry_date: form.entry_date,
+        ...(stopLoss !== undefined ? { stop_loss: stopLoss } : {}),
+        ...(targetPrice !== undefined ? { target_price: targetPrice } : {}),
+        ...(form.rationale.trim() ? { rationale: form.rationale.trim() } : {}),
+      });
+      setIsAddOpen(false);
+      setForm({ ...EMPTY_FORM, entry_date: todayISO() });
+      await Promise.all([fetchPositions(), fetchHistory()]);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Pozisyon eklenemedi.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  // PORT-02: Split open vs closed positions
+  const activePositions = positions.filter((p) => p.is_active !== false);
+  const closedPositions = positions.filter((p) => p.is_active === false);
+
+  // PORT-02: close position handler
+  async function handleClosePosition() {
+    if (closingId === null) return;
+    const exitPrice = parseFloat(closeForm.exit_price);
+    if (isNaN(exitPrice) || exitPrice <= 0) return;
+    setCloseLoading(true);
+    try {
+      await api.closePosition(closingId, {
+        exit_price: exitPrice,
+        exit_date: closeForm.exit_date,
+      });
+      setClosingId(null);
+      setCloseForm({ exit_price: '', exit_date: todayISO() });
+      await Promise.all([fetchPositions(), fetchHistory()]);
+    } catch (e) {
+      console.error('Pozisyon kapatma hatası:', e);
+    } finally {
+      setCloseLoading(false);
+    }
+  }
+
+  // Derived values — only from active positions
+  const investedValue = activePositions.reduce(
     (s, p) => s + p.entry_price * p.quantity, 0,
   );
-  const currentValue = positions.reduce(
+  const currentValue = activePositions.reduce(
     (s, p) => s + (p.current_price ?? p.entry_price) * p.quantity, 0,
   );
   const totalPnl = currentValue - investedValue;
@@ -353,14 +364,14 @@ export default function PortfolioPage() {
   const risk = history?.risk_summary;
   const portfolioSeries = history?.comparison?.portfolio_series ?? [];
 
-  // Position weights
+  // Position weights — only active positions
   const positionsWithWeight = useMemo(() => {
-    return positions.map((pos) => {
+    return activePositions.map((pos) => {
       const val = (pos.current_price ?? pos.entry_price) * pos.quantity;
       const weight = currentValue > 0 ? (val / currentValue) * 100 : 0;
       return { ...pos, weight, currentVal: val };
     });
-  }, [positions, currentValue]);
+  }, [activePositions, currentValue]);
 
   // Risk level label
   function riskLabel(): string {
@@ -454,7 +465,7 @@ export default function PortfolioPage() {
                   <circle cx="12" cy="9" r="1" fill="#0d0e10" />
                 </svg>
               </div>
-              <span className={styles.riskIconLabel}>AI Risk Analizi</span>
+              <span className={styles.riskIconLabel}>Risk Özeti</span>
             </div>
 
             <div className={styles.riskLevel}>{riskLabel()}</div>
@@ -462,50 +473,32 @@ export default function PortfolioPage() {
 
             <div className={styles.riskRows}>
               <div className={styles.riskRow}>
-                <span className={styles.riskRowLabel}>Beta</span>
+                <span className={styles.riskRowLabel}>Aktif pozisyon</span>
                 <div className={styles.riskRowRight}>
                   <span className={styles.riskRowValue}>
-                    {risk?.latest_portfolio_return_pct != null
-                      ? (risk.latest_portfolio_return_pct / (risk.latest_benchmark_return_pct || 1)).toFixed(2)
-                      : '--'}
+                    {risk?.active_positions ?? positions.length}
                   </span>
-                  <span className={styles.riskRowNote}>Piyasaya göre hassasiyet</span>
+                  <span className={styles.riskRowNote}>Portföydeki açık pozisyon</span>
                 </div>
               </div>
 
               <div className={styles.riskRow}>
-                <span className={styles.riskRowLabel}>Sharpe</span>
+                <span className={styles.riskRowLabel}>Stop yakın</span>
                 <div className={styles.riskRowRight}>
                   <span className={styles.riskRowValue}>
-                    {risk?.latest_portfolio_return_pct != null
-                      ? (risk.latest_portfolio_return_pct / 10).toFixed(2)
-                      : '--'}
+                    {risk?.positions_at_risk ?? '--'}
                   </span>
-                  <span className={styles.riskRowNote}>Risk-getiri oranı</span>
+                  <span className={styles.riskRowNote}>Stop seviyesine yakın pozisyon</span>
                 </div>
               </div>
 
               <div className={styles.riskRow}>
-                <span className={styles.riskRowLabel}>Volatilite</span>
+                <span className={styles.riskRowLabel}>Hedef yakın</span>
                 <div className={styles.riskRowRight}>
                   <span className={styles.riskRowValue}>
-                    {risk?.positions_at_risk != null
-                      ? risk.positions_at_risk === 0 ? 'Düşük' : risk.positions_at_risk === 1 ? 'Orta' : 'Yüksek'
-                      : '--'}
+                    {risk?.positions_near_target ?? '--'}
                   </span>
-                  <span className={styles.riskRowNote}>Fiyat dalgalanma seviyesi</span>
-                </div>
-              </div>
-
-              <div className={styles.riskRow}>
-                <span className={styles.riskRowLabel}>Çeşitlendirme</span>
-                <div className={styles.riskRowRight}>
-                  <span className={styles.riskRowValue}>
-                    {positions.length > 0
-                      ? positions.length >= 5 ? 'İyi' : positions.length >= 3 ? 'Orta' : 'Zayıf'
-                      : '--'}
-                  </span>
-                  <span className={styles.riskRowNote}>{positions.length} pozisyon</span>
+                  <span className={styles.riskRowNote}>Hedef fiyatına yaklaşan pozisyon</span>
                 </div>
               </div>
             </div>
@@ -517,13 +510,13 @@ export default function PortfolioPage() {
           <div className={styles.positionsHeader}>
             <h2 className={styles.positionsTitle}>
               Pozisyonlarım
-              <span className={styles.positionsCount}>{positions.length} hisse</span>
+              <span className={styles.positionsCount}>{activePositions.length} hisse</span>
             </h2>
             <div className={styles.positionsActions}>
               <button className={styles.btnGhost} disabled>
                 İhraç et
               </button>
-              <button className={styles.btnAccent} disabled>
+              <button className={styles.btnAccent} onClick={openAddForm}>
                 + Yeni Pozisyon
               </button>
             </div>
@@ -531,7 +524,7 @@ export default function PortfolioPage() {
 
           {loadingPositions ? (
             <div className={styles.loadingWrap}>Pozisyonlar yükleniyor…</div>
-          ) : positions.length === 0 ? (
+          ) : activePositions.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>📊</div>
               <p className={styles.emptyTitle}>Henüz pozisyon eklenmedi</p>
@@ -539,6 +532,9 @@ export default function PortfolioPage() {
                 Portföyünü takip etmek için hisse pozisyonlarınızı ekleyin.
                 Alış fiyatı, adet ve tarih bilgisiyle K/Z takibini başlatın.
               </p>
+              <button className={styles.emptyAction} onClick={openAddForm}>
+                Pozisyon ekle
+              </button>
             </div>
           ) : (
             <div className={styles.tableScroll}>
@@ -554,14 +550,15 @@ export default function PortfolioPage() {
                     <th>K/Z</th>
                     <th>K/Z%</th>
                     <th>Ağırlık</th>
+                    <th>İşlem</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {positionsWithWeight.map((pos) => {
+                  {positionsWithWeight.map((pos, index) => {
                     const cost = pos.entry_price * pos.quantity;
                     const pnlAbs = pos.currentVal - cost;
                     return (
-                      <tr key={pos.id}>
+                      <tr key={`${pos.id}-${pos.symbol}-${index}`}>
                         <td>
                           <Link
                             href={`/stocks/${pos.symbol}`}
@@ -578,7 +575,7 @@ export default function PortfolioPage() {
                         <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>
                           {pos.symbol}
                           {pos.partial && (
-                            <span className={styles.partialMark} title="Fiyat tahmini">~</span>
+                            <span className={styles.partialMark} title="Kısmi fiyat verisi">~</span>
                           )}
                         </td>
                         <td>{pos.quantity.toLocaleString('tr-TR')}</td>
@@ -604,6 +601,53 @@ export default function PortfolioPage() {
                             </span>
                           </div>
                         </td>
+                        <td>
+                          {closingId === pos.id ? (
+                            <div className={styles.closeForm}>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                placeholder="Çıkış fiyatı"
+                                value={closeForm.exit_price}
+                                onChange={(e) => setCloseForm((f) => ({ ...f, exit_price: e.target.value }))}
+                                className={styles.closeInput}
+                              />
+                              <input
+                                type="date"
+                                value={closeForm.exit_date}
+                                onChange={(e) => setCloseForm((f) => ({ ...f, exit_date: e.target.value }))}
+                                className={styles.closeInput}
+                              />
+                              <button
+                                className={styles.closeConfirm}
+                                onClick={handleClosePosition}
+                                disabled={closeLoading}
+                              >
+                                {closeLoading ? '...' : 'Onayla'}
+                              </button>
+                              <button
+                                className={styles.closeCancel}
+                                onClick={() => setClosingId(null)}
+                              >
+                                İptal
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              className={styles.closeBtn}
+                              onClick={() => {
+                                setClosingId(pos.id);
+                                setCloseForm((f) => ({
+                                  ...f,
+                                  exit_price: pos.current_price ? String(pos.current_price) : '',
+                                }));
+                              }}
+                            >
+                              Kapat
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
@@ -613,21 +657,195 @@ export default function PortfolioPage() {
           )}
         </div>
 
+        {/* ─── Geçmiş Pozisyonlar ─── */}
+        {closedPositions.length > 0 && (
+          <div className={styles.positionsSection}>
+            <div className={styles.positionsHeader}>
+              <h2 className={styles.positionsTitle}>
+                Geçmiş Pozisyonlar
+                <span className={styles.positionsCount}>{closedPositions.length} kapalı</span>
+              </h2>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Son 30 gün</span>
+            </div>
+            <div className={styles.tableScroll}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Sembol</th>
+                    <th>Çıkış Tarihi</th>
+                    <th>Alış</th>
+                    <th>Satış</th>
+                    <th>Adet</th>
+                    <th>Gerçek K/Z (TL)</th>
+                    <th>Gerçek K/Z%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {closedPositions.map((pos, idx) => {
+                    const realizedPct = pos.realized_pnl !== null && pos.entry_price > 0 && pos.exit_price !== null
+                      ? ((pos.exit_price - pos.entry_price) / pos.entry_price) * 100
+                      : null;
+                    return (
+                      <tr key={`closed-${pos.id}-${idx}`}>
+                        <td><span className={styles.symbolName}>{pos.symbol}</span></td>
+                        <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+                          {pos.exit_date
+                            ? new Date(pos.exit_date).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' })
+                            : '—'}
+                        </td>
+                        <td>{formatPrice(pos.entry_price)}</td>
+                        <td>{pos.exit_price != null ? formatPrice(pos.exit_price) : '—'}</td>
+                        <td>{pos.quantity.toLocaleString('tr-TR')}</td>
+                        <td className={pnlClass(pos.realized_pnl)}>
+                          {pos.realized_pnl !== null
+                            ? `${pos.realized_pnl >= 0 ? '+' : ''}${formatTRY(pos.realized_pnl)}`
+                            : '—'}
+                        </td>
+                        <td className={pnlClass(realizedPct)}>
+                          {formatPct(realizedPct)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* ─── Bottom 2-col ─── */}
         <div className={styles.bottomGrid}>
 
-          {/* Left — Sektör Dağılımı */}
+          {/* Left — Pozisyon Ağırlıkları */}
           <div className={styles.sectorCard}>
-            <h3 className={styles.sectionTitle}>Sektör Dağılımı</h3>
-            <SectorDonut positions={positions} />
+            <h3 className={styles.sectionTitle}>Pozisyon Ağırlıkları</h3>
+            {positionsWithWeight.length === 0 ? (
+              <div className={styles.sectorEmpty}>Pozisyon bulunmuyor</div>
+            ) : (
+              <div className={styles.sectorLegend}>
+                {positionsWithWeight
+                  .sort((a, b) => b.weight - a.weight)
+                  .map((pos, index) => (
+                    <div key={`${pos.id}-${pos.symbol}-${index}`} className={styles.sectorLegendItem}>
+                      <span className={styles.sectorLegendLabel}>{pos.symbol}</span>
+                      <span className={styles.sectorLegendPct}>{pos.weight.toFixed(1)}%</span>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
 
           {/* Right — Son İşlemler */}
           <div className={styles.transCard}>
             <h3 className={styles.sectionTitle}>Son İşlemler</h3>
-            <RecentTransactions positions={positions} />
+            <RecentTransactions positions={activePositions} />
           </div>
         </div>
+
+        {isAddOpen && (
+          <div className={styles.modalBackdrop} role="presentation" onClick={closeAddForm}>
+            <form className={styles.positionModal} onSubmit={submitPosition} onClick={(event) => event.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <div>
+                  <p className={styles.modalEyebrow}>MANUEL POZİSYON</p>
+                  <h3 className={styles.modalTitle}>Yeni Pozisyon</h3>
+                </div>
+                <button type="button" className={styles.modalClose} onClick={closeAddForm} aria-label="Kapat">
+                  ×
+                </button>
+              </div>
+
+              <div className={styles.formGrid}>
+                <label className={styles.field}>
+                  <span>Sembol</span>
+                  <input
+                    value={form.symbol}
+                    onChange={(event) => updateForm('symbol', event.target.value.toUpperCase())}
+                    placeholder="THYAO"
+                    autoFocus
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Alış tarihi</span>
+                  <input
+                    type="date"
+                    value={form.entry_date}
+                    onChange={(event) => updateForm('entry_date', event.target.value)}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Alış fiyatı</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    value={form.entry_price}
+                    onChange={(event) => updateForm('entry_price', event.target.value)}
+                    placeholder="312.50"
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Adet</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.0001"
+                    value={form.quantity}
+                    onChange={(event) => updateForm('quantity', event.target.value)}
+                    placeholder="10"
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Stop seviyesi</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    value={form.stop_loss}
+                    onChange={(event) => updateForm('stop_loss', event.target.value)}
+                    placeholder="Opsiyonel"
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>Hedef fiyat</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="0.01"
+                    value={form.target_price}
+                    onChange={(event) => updateForm('target_price', event.target.value)}
+                    placeholder="Opsiyonel"
+                  />
+                </label>
+              </div>
+
+              <label className={styles.field}>
+                <span>Not</span>
+                <textarea
+                  value={form.rationale}
+                  onChange={(event) => updateForm('rationale', event.target.value)}
+                  placeholder="Opsiyonel"
+                  rows={3}
+                />
+              </label>
+
+              {formError && <div className={styles.formError}>{formError}</div>}
+
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.btnGhost} onClick={closeAddForm}>
+                  Vazgeç
+                </button>
+                <button type="submit" className={styles.btnAccent} disabled={isSubmitting}>
+                  {isSubmitting ? 'Ekleniyor…' : 'Pozisyon ekle'}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
       </div>
     </AppShell>
