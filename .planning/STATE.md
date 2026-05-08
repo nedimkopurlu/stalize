@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: LLM Entegrasyonlu Yatırım Asistanı
 status: unknown
-stopped_at: Completed 37-01-PLAN.md (Günlük Gemini Piyasa Özeti)
-last_updated: "2026-05-08T11:03:22.181Z"
+stopped_at: Completed 38-01-PLAN.md (PORT-02 Pozisyon Kapatma)
+last_updated: "2026-05-08T11:18:13.001Z"
 progress:
   total_phases: 14
-  completed_phases: 7
-  total_plans: 12
-  completed_plans: 17
+  completed_phases: 8
+  total_plans: 13
+  completed_plans: 18
 ---
 
 # Project State
@@ -33,7 +33,7 @@ Plan: 36-01 complete
 - [ ] Phase 35: Gemini LLM Altyapısı — Backend Gemini 2.0 Flash servis katmanı, quota fallback
 - [ ] Phase 36: Keşif & Hisse Detay + AI Analizi — Skorlu liste, detay sayfası, on-demand Gemini analizi
 - [ ] Phase 37: Haberler + Günlük Piyasa Özeti — KAP + basın birleşik akış, otomatik günlük özet
-- [ ] Phase 38: Portföy — Alım-satım, P&L, BIST100 karşılaştırma, watchlist
+- [x] Phase 38: Portföy — PORT-02 pozisyon kapatma + gerçek K/Z ✅ (2026-05-08)
 - [ ] Phase 39: Model Portföy + AI Kararları — Özerk haftalık portföy, Gemini Türkçe gerekçe, geçmiş, karşılaştırma
 
 ## Phase Dependency Map
@@ -97,6 +97,8 @@ Phase 29 (tamamlandı)
 - [28-03] No cache on /market/opportunities — score freshness critical, endpoint reflects latest ScoringEngine run immediately
 - [28-03] overall_score IS NOT NULL guard ensures unscored stocks excluded from opportunities list (Pitfall 3 honored)
 - [28-03] Mock-based deterministic DISC-01 test: pre-sort list in test data since SQL ORDER BY cannot be enforced in MagicMock
+- [38-01] Closed positions skip yfinance fetch in GET — no current_price needed for exited positions
+- [38-01] activePositions only for portfolio value, weight, and risk — closed positions excluded from live calculations
 
 ### Known Constraints
 
@@ -112,8 +114,8 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-08T11:03:22.179Z
-**Stopped at:** Completed 37-01-PLAN.md (Günlük Gemini Piyasa Özeti)
+**Last session:** 2026-05-08T11:18:12.998Z
+**Stopped at:** Completed 38-01-PLAN.md (PORT-02 Pozisyon Kapatma)
 **Next action:** Continue Phase 36 or plan remaining phases (37-39)
 
 ---

@@ -86,7 +86,7 @@ Phases 30–33 (Keşif, Haberler, Portföy, Model Portföy) planned in v4.0 but 
 - [x] **Phase 35: Gemini LLM Altyapısı** — Backend Gemini 2.0 Flash servis katmanı; quota fallback; async generate (completed 2026-05-08)
 - [ ] **Phase 36: Hisse Detay + AI Analizi** — `/stocks/[symbol]` sayfası tamamen doldurulur: fiyat grafiği, temel + teknik metrik kartları (Türkçe tooltipli), on-demand Gemini analizi
 - [x] **Phase 37: Haberler + Günlük AI Özeti** — `/intelligence` sayfası KAP + basın verisiyle doldurulur; dashboard'a ve haberler sayfasına günlük Gemini piyasa özeti kartı eklenir (completed 2026-05-08)
-- [ ] **Phase 38: Portföy + Takip Listesi** — `/portfolio` sayfası: alım-satım girişi, gerçek P&L hesaplama, BIST100 karşılaştırması; `/watchlist`: hisse ekleme/çıkarma, canlı fiyat
+- [x] **Phase 38: Portföy + Takip Listesi** — `/portfolio` sayfası: alım-satım girişi, gerçek P&L hesaplama, BIST100 karşılaştırması; `/watchlist`: hisse ekleme/çıkarma, canlı fiyat (completed 2026-05-08)
 - [ ] **Phase 39: Model Portföy AI Kararları** — `/model-portfolio` sayfasına Gemini haftalık özerk kararlar + Türkçe gerekçe + karar geçmişi
 
 ## Phase Details
@@ -281,7 +281,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 38-01-PLAN.md — PORT-02 pozisyon kapatma: DB migration, PATCH endpoint, frontend Kapat butonu + Geçmiş Pozisyonlar tablosu
+- [x] 38-01-PLAN.md — PORT-02 pozisyon kapatma: DB migration, PATCH endpoint, frontend Kapat butonu + Geçmiş Pozisyonlar tablosu
 
 ### Phase 39: Model Portföy AI Kararları
 **Goal**: Mevcut `/model-portfolio` sayfası Gemini tarafından haftalık özerk olarak yönetilen gerçek bir model portföyle doldurulur; her karar Türkçe gerekçesiyle tarihli olarak kaydedilir.
