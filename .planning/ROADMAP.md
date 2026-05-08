@@ -219,7 +219,7 @@ Plans:
   3. Model portföy sayfası 6 strateji kartını (Temettü Avcısı, Büyüme Lokomotifleri, Defansif Kalkan dahil) listeler
   4. Light mode'da hover durumları hardcoded renk değeri yerine theme-aware CSS değişkeni kullanır; karanlık arka plan artifaktı görünmez
   5. Dashboard portföy kartı pozisyon yokken "/portföy" sayfasına yönlendiren Türkçe boş durum mesajı gösterir; `SparklineWidget.tsx` ve kullanılmayan api.ts metodları kod tabanında bulunmaz
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
 - [x] 34-01: BIST100 grafik 6 tab + sparkline düzeltmesi (DESIGN-01, DESIGN-02)
@@ -248,12 +248,10 @@ Plans:
   3. Teknik skorun altında "güçlü / nötr / zayıf" gibi Türkçe sinyal etiketleri bulunur
   4. "Analiz Et" butonuna basıldığında Gemini o hisseye özel Türkçe analiz üretir; aynı oturumda tekrar istek gönderilmez; Gemini yanıt verene kadar loading gösterilir
   5. `/stocks` listesindeki her hisse ismine tıklandığında ilgili detay sayfasına gidilir (DISC-03)
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 36-01: Backend hisse detay endpoint — fiyat geçmişi, temel metrikler, teknik göstergeler (STCK-01, STCK-02, STCK-03)
-- [ ] 36-02: Frontend `/stocks/[symbol]` sayfası — grafik, metrik kartlar, Türkçe tooltiplar, listeden navigasyon (STCK-01..03, DISC-03)
-- [ ] 36-03: On-demand Gemini analizi — "Analiz Et" butonu, oturum önbelleği, loading state, fallback (STCK-04, LLM-02)
+- [ ] 36-01-PLAN.md — Backend POST analyze endpoint + frontend Analiz Et butonu, tooltiplar (STCK-02, STCK-04, LLM-02)
 
 ### Phase 37: Haberler + Günlük AI Özeti
 **Goal**: Mevcut `/intelligence` sayfası (sidebar: "Haberler") KAP + basın verisiyle doldurulur; dashboard'a ve haberler sayfasına her sabah otomatik Gemini piyasa özeti kartı eklenir.
@@ -265,7 +263,7 @@ Plans:
   3. Dashboard'ın en üstünde (BIST100 kartı altında) o güne ait Gemini piyasa özeti kartı görünür; kart tarih + özet içerir
   4. Aynı özet `/intelligence` sayfasının en üstünde de görünür
   5. APScheduler her sabah 09:00'da yeni özeti üretir; Gemini yanıt vermezse kart gizlenir, sayfa bozulmaz
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
 - [ ] 37-01: Haberler backend — `/api/news` endpoint; KAP + basın birleşik akışı, filtreleme, sayfalama (NEWS-01)
@@ -281,7 +279,7 @@ Plans:
   3. Açık pozisyonlar güncel fiyatla hesaplanmış TL ve % kâr/zarar gösterir; risk özeti (aktif pozisyon, stop yakın, hedef yakın) doğru hesaplanır
   4. Portföy değer grafiği BIST100 ile aynı başlangıç noktasından karşılaştırılır
   5. `/watchlist` sayfasında hisse yıldızlanabilir/çıkarılabilir; takip listesi canlı fiyat + günlük değişim gösterir
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
 - [ ] 38-01: Portföy backend — alım-satım CRUD, P&L hesaplama, risk metrikleri, BIST100 karşılaştırma (PORT-01, PORT-02, PORT-03, PORT-04)
@@ -297,7 +295,7 @@ Plans:
   3. Her alım/satım kararı Gemini'nin Türkçe gerekçesiyle birlikte tarih damgalı olarak kaydedilir ve sayfada "Karar Geçmişi" bölümünde görünür
   4. Kullanıcı kendi portföy performansını (Phase 38) model portföyüyle grafik üzerinde karşılaştırabilir
   5. Gemini quota aşılırsa kararlar üretilemez ama mevcut pozisyonlar ve geçmiş görünmeye devam eder
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
 - [ ] 39-01: Model portföy özerk karar motoru — Gemini haftalık analiz + Türkçe gerekçe + DB kaydı (MODEL-01, MODEL-02, LLM-04)
