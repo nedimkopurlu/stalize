@@ -22,6 +22,9 @@ class PortfolioPosition(Base):
     target_price = Column(Float, nullable=True)                   # hedef fiyat
     rationale = Column(Text, nullable=True)                       # pozisyon gerekçesi (Türkçe)
     is_active = Column(Boolean, default=True, nullable=False)     # False = kapatılmış
+    exit_price = Column(Float, nullable=True)                     # TRY çıkış fiyatı (satış fiyatı)
+    exit_date = Column(Date, nullable=True)                       # satış tarihi
+    realized_pnl = Column(Float, nullable=True)                   # gerçekleşen kâr/zarar TRY
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
