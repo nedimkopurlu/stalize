@@ -5,7 +5,7 @@ from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, or_, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -59,11 +59,9 @@ class PositionCreate(BaseModel):
     rationale: Optional[str] = None
 
 
-class ChangeLogCreate(BaseModel):
-    date: date
-    action: str                        # "ADD" veya "REMOVE"
-    symbol: str
-    reason: Optional[str] = None
+class PositionClose(BaseModel):
+    exit_price: float
+    exit_date: date
 
 
 def _normalize_symbol(symbol: str) -> str:
@@ -94,22 +92,36 @@ async def _ensure_active_stock(symbol: str, db: AsyncSession) -> Stock:
 @router.get("/portfolio/positions")
 async def get_positions(db: AsyncSession = Depends(get_db)):
     """
-    Aktif pozisyonları gerçek yfinance fiyatıyla döner.
+    Aktif pozisyonları + son 30 günde kapatılanları gerçek yfinance fiyatıyla döner.
+    Kapalı pozisyonlar için current_price=None döner (yfinance çağrısı yapılmaz).
     Fiyat çekilemezse current_price=None, pnl_pct=None döner — hata fırlatmaz.
     """
+    cutoff = date.today() - timedelta(days=30)
     result = await db.execute(
-        select(PortfolioPosition).where(PortfolioPosition.is_active == True)  # noqa: E712
+        select(PortfolioPosition).where(
+            or_(
+                PortfolioPosition.is_active == True,  # noqa: E712
+                and_(
+                    PortfolioPosition.is_active == False,  # noqa: E712
+                    PortfolioPosition.exit_date >= cutoff,
+                ),
+            )
+        ).order_by(PortfolioPosition.is_active.desc(), PortfolioPosition.entry_date.desc())
     )
     positions = result.scalars().all()
 
     output = []
     for pos in positions:
-        yahoo_symbol = f"{pos.symbol}.IS"
-        current_price = await _fetch_close_price(yahoo_symbol)
-
-        pnl_pct = None
-        if current_price is not None:
-            pnl_pct = round(((current_price - pos.entry_price) / pos.entry_price) * 100, 4)
+        if pos.is_active:
+            yahoo_symbol = f"{pos.symbol}.IS"
+            current_price = await _fetch_close_price(yahoo_symbol)
+            pnl_pct = None
+            if current_price is not None:
+                pnl_pct = round(((current_price - pos.entry_price) / pos.entry_price) * 100, 4)
+        else:
+            # Kapalı pozisyon — yfinance çağrısı yapma
+            current_price = None
+            pnl_pct = None
 
         output.append({
             "id": pos.id,
@@ -122,10 +134,14 @@ async def get_positions(db: AsyncSession = Depends(get_db)):
             "rationale": pos.rationale,
             "current_price": current_price,
             "pnl_pct": pnl_pct,
-            "partial": current_price is None,
+            "partial": pos.is_active and current_price is None,
+            "is_active": pos.is_active,
+            "exit_price": pos.exit_price,
+            "exit_date": pos.exit_date.isoformat() if pos.exit_date else None,
+            "realized_pnl": pos.realized_pnl,
         })
 
-    logger.info(f"GET /portfolio/positions — {len(output)} aktif pozisyon döndü.")
+    logger.info(f"GET /portfolio/positions — {len(output)} pozisyon döndü (açık+kapalı 30g).")
     return output
 
 
@@ -281,70 +297,55 @@ async def add_position(
     return {"id": pos_id, "symbol": symbol, "status": "added"}
 
 
-# ─── Endpoint 4: DELETE /portfolio/positions/{position_id} ─────────────────
+# ─── Endpoint 4: PATCH /portfolio/positions/{id}/close ─────────────────────
 
-@router.delete("/portfolio/positions/{position_id}")
+@router.patch("/portfolio/positions/{position_id}/close")
 async def close_position(
     position_id: int,
+    body: PositionClose,
     db: AsyncSession = Depends(get_db),
     _: None = Depends(verify_api_key),
 ):
     """
-    Pozisyonu kapat (soft delete — is_active=False).
-    change_log'a REMOVE kaydı yazar.
+    Açık pozisyonu kapat — is_active=False, exit_price/exit_date/realized_pnl yazar,
+    change_log'a REMOVE kaydı ekler.
     """
+    _validate_positive_number(body.exit_price, "exit_price", required=True)
+
     result = await db.execute(
-        select(PortfolioPosition).where(PortfolioPosition.id == position_id)
+        select(PortfolioPosition).where(
+            PortfolioPosition.id == position_id,
+            PortfolioPosition.is_active == True,  # noqa: E712
+        )
     )
     pos = result.scalar_one_or_none()
-    if not pos:
-        raise HTTPException(status_code=404, detail=f"Pozisyon bulunamadı: id={position_id}")
+    if pos is None:
+        raise HTTPException(status_code=404, detail=f"Aktif pozisyon bulunamadı: id={position_id}")
+
+    realized_pnl = round((body.exit_price - pos.entry_price) * pos.quantity, 4)
 
     pos.is_active = False
-    symbol = pos.symbol
+    pos.exit_price = body.exit_price
+    pos.exit_date = body.exit_date
+    pos.realized_pnl = realized_pnl
 
     log_entry = PortfolioChangeLog(
         date=datetime.now(timezone.utc).date(),
         action="REMOVE",
-        symbol=symbol,
-        reason=None,
+        symbol=pos.symbol,
+        reason=f"Satış fiyatı: {body.exit_price}",
     )
     db.add(log_entry)
     await db.commit()
 
-    logger.info(f"DELETE /portfolio/positions/{position_id} — {symbol} kapatıldı.")
-    return {"status": "closed", "symbol": symbol}
-
-
-# ─── Endpoint 5: POST /portfolio/change-log ────────────────────────────────
-
-@router.post("/portfolio/change-log", status_code=201)
-async def add_change_log(
-    body: ChangeLogCreate,
-    db: AsyncSession = Depends(get_db),
-    _: None = Depends(verify_api_key),
-):
-    """
-    Doğrudan change_log girişi oluştur.
-    action "ADD" veya "REMOVE" dışında bir değerse 422 döner.
-    """
-    if body.action not in ("ADD", "REMOVE"):
-        raise HTTPException(
-            status_code=422,
-            detail=f"Geçersiz action: '{body.action}'. Sadece 'ADD' veya 'REMOVE' kabul edilir."
-        )
-    symbol = _normalize_symbol(body.symbol)
-    await _ensure_active_stock(symbol, db)
-
-    log_entry = PortfolioChangeLog(
-        date=body.date,
-        action=body.action,
-        symbol=symbol,
-        reason=body.reason,
+    logger.info(
+        f"PATCH /portfolio/positions/{position_id}/close — {pos.symbol} kapatıldı "
+        f"(realized_pnl={realized_pnl:.2f} TRY)."
     )
-    db.add(log_entry)
-    await db.commit()
-    log_id = log_entry.id
+    return {
+        "id": pos.id,
+        "symbol": pos.symbol,
+        "realized_pnl": realized_pnl,
+        "status": "closed",
+    }
 
-    logger.info(f"POST /portfolio/change-log — {body.action} {body.symbol} (id={log_id}).")
-    return {"id": log_id, "status": "logged"}
