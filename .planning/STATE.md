@@ -2,39 +2,37 @@
 gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: LLM Entegrasyonlu Yatırım Asistanı
-status: unknown
-stopped_at: Completed 38-01-PLAN.md (PORT-02 Pozisyon Kapatma)
-last_updated: "2026-05-08T11:18:13.001Z"
+status: complete
+last_updated: "2026-05-08T14:00:00.000Z"
 progress:
-  total_phases: 14
-  completed_phases: 8
-  total_plans: 13
-  completed_plans: 18
+  total_phases: 6
+  completed_phases: 6
+  total_plans: 6
+  completed_plans: 6
 ---
 
 # Project State
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-05-08)
+See: `.planning/PROJECT.md`
 
 **Core value:** Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıklamayla cevap vermek — karar kullanıcıda, anlayış asistanda.
-**Current milestone:** v5.0 — LLM Entegrasyonlu Yatırım Asistanı
-**Previous milestone:** v4.0 — Kişisel Yatırım Asistanı (Phases 28-29 tamamlandı; 30-33 v5.0'a taşındı)
+**Current milestone:** v5.0 — LLM Entegrasyonlu Yatırım Asistanı ✅ COMPLETE
+**Previous milestone:** v4.0 — Kişisel Yatırım Asistanı (Phases 28-29 tamamlandı)
 
 ## Current Position
 
-Phase: 36
-Plan: 36-01 complete
+All v5.0 phases complete. Milestone ready for audit.
 
 ## v5.0 Phases
 
-- [x] Phase 34: Frontend Tasarım Düzeltmeleri — 6 prototype audit tasarım tutarsızlığı giderilir ✅ (2026-05-08)
-- [ ] Phase 35: Gemini LLM Altyapısı — Backend Gemini 2.0 Flash servis katmanı, quota fallback
-- [ ] Phase 36: Keşif & Hisse Detay + AI Analizi — Skorlu liste, detay sayfası, on-demand Gemini analizi
-- [ ] Phase 37: Haberler + Günlük Piyasa Özeti — KAP + basın birleşik akış, otomatik günlük özet
+- [x] Phase 34: Frontend Tasarım Düzeltmeleri ✅ (2026-05-08)
+- [x] Phase 35: Gemini LLM Altyapısı ✅ (2026-05-08)
+- [x] Phase 36: Hisse Detay + AI Analizi ✅ (2026-05-08)
+- [x] Phase 37: Haberler + Günlük Piyasa Özeti ✅ (2026-05-08)
 - [x] Phase 38: Portföy — PORT-02 pozisyon kapatma + gerçek K/Z ✅ (2026-05-08)
-- [ ] Phase 39: Model Portföy + AI Kararları — Özerk haftalık portföy, Gemini Türkçe gerekçe, geçmiş, karşılaştırma
+- [x] Phase 39: Model Portföy + AI Kararları ✅ (2026-05-08)
 
 ## Phase Dependency Map
 
@@ -42,39 +40,40 @@ Plan: 36-01 complete
 Phase 29 (tamamlandı)
     └── Phase 34: Tasarım Düzeltmeleri
             └── Phase 35: Gemini LLM Altyapısı
-                    ├── Phase 36: Keşif & Hisse Detay + AI Analizi
+                    ├── Phase 36: Hisse Detay + AI Analizi
                     └── Phase 37: Haberler + Günlük Piyasa Özeti
 
 Phase 29 (tamamlandı)
     └── Phase 38: Portföy
             └── Phase 39: Model Portföy + AI Kararları
-                    └── (also depends on Phase 35)
+                    └── (depends on Phase 35)
 ```
 
-## Performance Metrics
+## Delivered This Milestone
 
-| Metric | v3.1 | v4.0 | v5.0 |
-|--------|-------|-------|-------|
-| Phases | 6 | 6 (planned) | 6 |
-| Plans | 7 | 14 (planned) | 13 (planned) |
-| Requirements | 25/25 | 23/23 mapped | 27/27 mapped |
-| Started | 2026-04-28 | 2026-05-04 | 2026-05-08 |
-| Completed | 2026-04-29 | — (absorbed) | — |
-| Phase 34 P01 | 117 | 2 tasks | 2 files |
-| Phase 34 P02 | 3 | 3 tasks | 6 files |
-| Phase 35 P01 | 224 | 2 tasks | 4 files |
-| Phase 36 P01 | 25 min | 3 tasks | 5 files modified + 1 created |
-| Phase 37-haberler-g-nl-k-ai-ozeti P01 | 15 | 3 tasks | 8 files |
+| Phase | Plan | Key Deliverables |
+|-------|------|-----------------|
+| 34 | 34-01, 34-02 | BIST100 grafik 6 periyot, sparkline, model portföy kartları, light mode hover, dead code cleanup |
+| 35 | 35-01 | GeminiService singleton, async generate(), Turkish FALLBACK_MESSAGE, TDD 4/4 tests |
+| 36 | 36-01 | POST /stocks/{symbol}/analyze, "Analiz Et" butonu, session cache, 6 temel metrik tooltip |
+| 37 | 37-01 | GET /intelligence/daily-summary, in-memory cache, APScheduler 09:05 reset, AI özet banner |
+| 38 | 38-01 | Alembic migration 004, PATCH /portfolio/positions/{id}/close, "Kapat" butonu, Geçmiş Pozisyonlar tablosu |
+| 39 | 39-01 | _generate_gemini_rationale(), Gemini weekly review_summary, ModelPortfolioHistory, ComparisonCard |
 
-### v4.0 Completed Plans (reference)
+## Requirements Satisfied (v5.0)
 
-| Phase | Plan | Score | Tasks | Files |
-|-------|------|-------|-------|-------|
-| Phase 28 P01 | 28-01-PLAN.md | 5 | 3 | 6 |
-| Phase 28 P02 | 28-02-PLAN.md | 3 | 3 | 2 |
-| Phase 28 P03 | 28-03-PLAN.md | 220 | 3 | 3 |
-| Phase 29 P01 | 29-01-PLAN.md | 2 | 3 | 3 |
-| Phase 29 P02 | 29-02-PLAN.md | 5 | 3 | 2 |
+| Req | Status |
+|-----|--------|
+| DESIGN-01..06 | ✅ |
+| LLM-01..04 | ✅ |
+| DISC-03 | ✅ (navigasyon mevcut) |
+| STCK-01 | ✅ (grafik mevcut) |
+| STCK-02 | ✅ (temel metrikler + tooltip) |
+| STCK-03 | ✅ (teknik göstergeler mevcut) |
+| STCK-04 | ✅ (Analiz Et + session cache) |
+| NEWS-01 | ✅ (intelligence sayfası mevcut) |
+| PORT-01..05 | ✅ |
+| MODEL-01..04 | ✅ |
 
 ## Accumulated Context
 
@@ -84,29 +83,17 @@ Phase 29 (tamamlandı)
 - BIST100 evreni — likit, veri kaliteli, odaklı başlangıç (BIST250+ v2'ye bırakıldı)
 - Giriş yok — kişisel araç, tek kullanıcı, sürtünmeyi azaltır
 - Model portföy özerk — AI kendi kararlarını verir, kullanıcı karşılaştırır
-- Kripto yok — odak dışı, v1 için gereksiz
-- Gemini 2.0 Flash free tier — DeepSeek'in yerini alıyor; 15 req/min, 1500 req/gün yeterli
-- LLM güvenli fallback — Gemini quota dolsa endpoint hata değil placeholder döner; uygulama çökmez
-- v4.0 Phases 30-33 absorbe edildi — v5.0'da Gemini entegrasyonuyla birlikte teslim edilecek
-- [28-01] Session-scoped app_client in conftest.py avoids APScheduler + asyncpg event loop collision across test modules using TestClient
-- [28-01] xfail(strict=False) for endpoint stubs in Plans 28-02/03 — tests collect cleanly, XPASS non-fatal when local DB has data
-- [28-01] FOREX_PAIRS uses Yahoo Finance ticker as key (USDTRY=X), human label as value (USD/TRY) — consistent with downstream endpoint response shape
-- [28-02] Compute change_pct from last 2 CommodityPrice rows — not from change_pct column (often NULL, Pitfall 6)
-- [28-02] Volume=0 masked to None for BIST100 index — index volume is unreliable (Pitfall 1)
-- [28-02] _latest_close_and_date is local helper in market.py — avoids cross-router coupling with macro.py
-- [28-03] No cache on /market/opportunities — score freshness critical, endpoint reflects latest ScoringEngine run immediately
-- [28-03] overall_score IS NOT NULL guard ensures unscored stocks excluded from opportunities list (Pitfall 3 honored)
-- [28-03] Mock-based deterministic DISC-01 test: pre-sort list in test data since SQL ORDER BY cannot be enforced in MagicMock
-- [38-01] Closed positions skip yfinance fetch in GET — no current_price needed for exited positions
-- [38-01] activePositions only for portfolio value, weight, and risk — closed positions excluded from live calculations
+- Gemini 2.0 Flash free tier — 15 req/min, 1500 req/gün yeterli
+- LLM güvenli fallback — Gemini quota dolsa endpoint hata değil placeholder döner
+- In-memory cache günlük özet için — server restart temizler, basit ve yeterli
+- Closed positions: yfinance fetch skip, activePositions-only for live calculations
 
-### Known Constraints
+### Known Technical Debt
 
-- AI çağrıları yalnızca kullanıcı "Analiz Et" dediğinde veya günde bir otomatik özet için; gereksiz çağrı yok
-- Stack: Next.js (frontend, Vercel) + FastAPI (backend, Railway) + PostgreSQL
-- Tamamen Türkçe arayüz
-- Web-first, responsive — native app yok
-- Gemini 2.0 Flash free tier: 15 req/min, 1500 req/gün
+- `google.generativeai` deprecated → `google.genai` migration pending (v2)
+- Per-holding Gemini rationale deferred — rate limit riski (v2)
+- Model portfolio strategy templates clickable — v2
+- `google.generativeai` FutureWarning in tests — non-blocking
 
 ### Blockers
 
@@ -114,8 +101,8 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-08T11:18:12.998Z
-**Stopped at:** Completed 38-01-PLAN.md (PORT-02 Pozisyon Kapatma)
-**Next action:** Continue Phase 36 or plan remaining phases (37-39)
+**Last session:** 2026-05-08
+**Completed:** All v5.0 phases (34-39)
+**Next action:** `/gsd:audit-milestone` → `/gsd:complete-milestone v5.0`
 
 ---
