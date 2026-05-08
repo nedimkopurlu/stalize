@@ -357,20 +357,37 @@ export default function DashboardPage() {
 
 /* ── Sub-components ── */
 
+function MiniSparkline({ values, up }: { values: number[]; up: boolean }) {
+  if (values.length < 2) return <span style={{ display: 'inline-block', width: 40, height: 28 }} />;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const W = 40;
+  const H = 28;
+  const pts = values
+    .map((v, i) => `${((i / (values.length - 1)) * W).toFixed(1)},${(H - ((v - min) / range) * (H - 4) - 2).toFixed(1)}`)
+    .join(' ');
+  const color = up ? 'var(--accent-green)' : 'var(--accent-red)';
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function StockRows({ stocks }: { stocks: StockSummary[] }) {
   return (
     <div className={styles.stockList}>
       {stocks.map((s, index) => {
         const up = (s.daily_change_pct ?? 0) >= 0;
+        const sparkValues = seedSeries(s.symbol, 20, s.current_price ?? 100, Math.max(2, (s.current_price ?? 100) * 0.04));
         return (
           <Link key={`${s.symbol}-${index}`} href={`/stocks/${s.symbol}`} className={styles.stockRow}>
             <span className={styles.stockSymbol}>{s.symbol}</span>
             <span className={styles.stockName}>{s.name}</span>
+            <MiniSparkline values={sparkValues} up={up} />
             <span className={styles.stockPrice}>{formatPrice(s.current_price)}</span>
-            <span
-              className={styles.stockChange}
-              data-up={String(up)}
-            >
+            <span className={styles.stockChange} data-up={String(up)}>
               {up ? '+' : ''}
               {(s.daily_change_pct ?? 0).toFixed(2)}%
             </span>

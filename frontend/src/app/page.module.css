@@ -161,6 +161,15 @@
   border-radius: 8px;
 }
 
+.chartEmpty {
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
 .heroStats {
   display: flex;
   gap: 20px;
@@ -204,42 +213,36 @@
   margin-bottom: 16px;
 }
 
-.portfolioContent {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.portfolioLegend {
-  flex: 1;
+.portfolioPositions {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.legendItem {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  font-size: 12px;
 }
 
-.legendDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-.legendName {
-  flex: 1;
+.portfolioPositionRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-primary);
   color: var(--text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 
-.legendPct {
+.portfolioPositionRow strong {
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
   color: var(--text-primary);
+}
+
+.emptyLink {
+  display: inline-flex;
+  width: fit-content;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 /* ── AI signal banner ────────────────────────────────── */
@@ -354,7 +357,7 @@
 
 .stockRow {
   display: grid;
-  grid-template-columns: 52px 1fr 68px 68px 60px;
+  grid-template-columns: 52px 1fr 40px 68px 68px;
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
