@@ -111,22 +111,6 @@
   color: var(--accent);
 }
 
-.tradeBtn {
-  background: var(--accent);
-  color: var(--on-accent);
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 7px 18px;
-  border-radius: 999px;
-  text-decoration: none;
-  transition: opacity 0.15s;
-  display: inline-block;
-}
-
-.tradeBtn:hover {
-  opacity: 0.88;
-}
-
 /* ── Hero section ─────────────────────────────────────────── */
 .hero {
   display: grid;
@@ -498,14 +482,14 @@
 /* ── 3-column analysis section ──────────────────────────── */
 .analysisSection {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   padding: 0 40px 40px;
 }
 
 @media (max-width: 1024px) {
   .analysisSection {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -554,76 +538,6 @@
   font-size: 0.8rem;
   color: var(--text-muted);
   line-height: 1.55;
-}
-
-/* Insider rows */
-.insiderList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.insiderRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.insiderAvatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.insiderInfo {
-  flex: 1;
-  min-width: 0;
-}
-
-.insiderName {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.insiderMeta {
-  font-size: 0.7rem;
-  color: var(--text-dim);
-}
-
-.insiderRight {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
-  flex-shrink: 0;
-}
-
-.insiderBadge {
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 4px;
-  letter-spacing: 0.04em;
-}
-
-.insiderAmount {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  font-family: monospace;
 }
 
 /* ── Bottom section: fundamentals + peers ──────────────── */
@@ -794,6 +708,48 @@
   text-align: center;
   margin-top: 80px;
   padding: 40px;
+}
+
+/* ── Analiz Et button ─────────────────────────────────────── */
+.analyzeBtn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 16px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.analyzeBtn:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.22);
+}
+
+.analyzeBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Analysis panel ───────────────────────────────────────── */
+.analyzePanel {
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+}
+
+.analyzeText {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-primary);
+  white-space: pre-wrap;
 }
 
 /* ── Responsive hero adjustments ─────────────────────────── */

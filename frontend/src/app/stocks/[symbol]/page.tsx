@@ -13,6 +13,7 @@ import {
 import api, {
   PricePoint,
   ScoreBreakdownResponse,
+  StockAnalysisResponse,
   StockDetail,
   StockFundamentals,
   StockPeer,
@@ -114,101 +115,6 @@ function Skeleton({ height = 16, width = '100%' }: { height?: number; width?: st
   );
 }
 
-// ── Bull / Bear thesis generator ─────────────────────────────
-
-interface Thesis {
-  title: string;
-  body: string;
-}
-
-function getBullTheses(sector: string | null, symbol: string, recommendation: string | null): Thesis[] {
-  const isBuy = recommendation === 'AL' || recommendation === 'GÜÇLÜ AL';
-  const sectorTheses: Record<string, Thesis[]> = {
-    'Savunma': [
-      { title: 'Artan savunma bütçeleri', body: 'NATO üyesi ülkelerin savunma harcamalarını artırması, ihracat gelirlerini doğrudan besliyor.' },
-      { title: 'Yerli üretim avantajı', body: 'İthal ikamesi politikaları kapsamında yerli savunma şirketlerine öncelikli ihaleler veriliyor.' },
-      { title: 'Teknoloji katma değeri', body: 'Yüksek teknolojili ürün portföyü, marj baskısını kısmen sınırlıyor ve fiyatlandırma gücü sağlıyor.' },
-    ],
-    'Havacılık': [
-      { title: 'Sezonsal talep artışı', body: 'Yaz sezonu öncesinde trafik verileri güçlü seyrediyor; kapasite kullanımı kritik eşiğin üzerinde.' },
-      { title: 'Yakıt fiyatı desteği', body: 'Jet yakıtı fiyatlarındaki gerileme, operasyonel maliyetleri olumlu etkiliyor.' },
-      { title: 'Rota çeşitlendirmesi', body: 'Yeni açılan rotalar ve ortak uçuş anlaşmaları, yolcu başına geliri artırıyor.' },
-    ],
-    'Bankacılık': [
-      { title: 'Faiz marjı genişlemesi', body: 'TCMB\'nin faiz indirim döngüsü, bankaların net faiz marjını olumlu yönde etkileyecek.' },
-      { title: 'Kredi büyümesi ivmeleniyor', body: 'Ekonomik canlanmayla birlikte bireysel ve ticari kredi talebi hız kazanıyor.' },
-      { title: 'Sermaye yeterliliği güçlü', body: 'SYR oranı sektör ortalamasının üzerinde seyrediyor; olası şoklara karşı tampon sağlıyor.' },
-    ],
-    'Teknoloji': [
-      { title: 'Dijitalleşme rüzgârı', body: 'Kurumsal dijital dönüşüm yatırımları artmaya devam ediyor; talep yapısal olarak güçlü.' },
-      { title: 'Yüksek marjlı iş modeli', body: 'Yazılım ve lisans gelirleri, hizmet segmentine kıyasla belirgin biçimde daha yüksek marj sunuyor.' },
-      { title: 'İhracat büyümesi', body: 'Döviz geliri sağlayan ihracat portföyü, kur volatilitesine karşı doğal bir koruma işlevi görüyor.' },
-    ],
-  };
-
-  const defaultTheses: Thesis[] = [
-    { title: isBuy ? 'Güçlü AI sinyali' : 'Değerleme avantajı', body: isBuy ? 'AI modelimiz çoklu faktör analiziyle bu hisseyi pozitif olarak değerlendiriyor.' : 'Mevcut fiyat seviyeleri, uzun vadeli yatırımcılar için cazip bir giriş noktası sunuyor.' },
-    { title: 'Sektör liderliği', body: `${sector || 'Sektör'} içinde öne çıkan konumuyla rakiplere karşı sürdürülebilir rekabet avantajı sağlıyor.` },
-    { title: 'Temettü potansiyeli', body: 'Güçlü serbest nakit akışı, sürdürülebilir ve büyüyen temettü ödemelerini destekliyor.' },
-  ];
-
-  return sectorTheses[sector ?? ''] ?? defaultTheses;
-}
-
-function getBearTheses(sector: string | null, symbol: string): Thesis[] {
-  const sectorBears: Record<string, Thesis[]> = {
-    'Savunma': [
-      { title: 'Proje gecikme riski', body: 'Büyük ölçekli savunma projelerinde yaşanan gecikmeler, gelir tanıma zamanlamasını olumsuz etkileyebilir.' },
-      { title: 'Döviz kuru maruziyeti', body: 'USD/TRY volatilitesi, maliyet yapısını ve ithalat girdilerini olumsuz etkileyebilir.' },
-      { title: 'Konsantrasyon riski', body: 'Gelirin büyük bölümünün az sayıda müşteriden gelmesi, müşteri kaybı riskini artırıyor.' },
-    ],
-    'Bankacılık': [
-      { title: 'Takipteki kredi artışı', body: 'Ekonomik yavaşlama senaryosunda sorunlu kredi oranlarında artış yaşanabilir.' },
-      { title: 'Regülasyon baskısı', body: 'BDDK düzenlemeleri ve kredi büyüme sınırlamaları, karlılığı kısıtlayabilir.' },
-      { title: 'Enflasyon belirsizliği', body: 'Yüksek enflasyon ortamı, reel kredi büyümesini ve mevduat maliyetlerini olumsuz etkileyebilir.' },
-    ],
-  };
-
-  const defaultBears: Thesis[] = [
-    { title: 'Makro volatilite', body: 'Yüksek faiz ortamı ve döviz kuru dalgalanmaları, değerleme çarpanlarına baskı yapabilir.' },
-    { title: 'Rekabet yoğunlaşması', body: 'Sektöre yeni girişler ve uluslararası rekabet, pazar payını ve fiyatlandırma gücünü tehdit edebilir.' },
-    { title: 'Likidite riski', body: 'Küresel risk iştahındaki ani daralma, yabancı yatırımcı çıkışıyla birlikte keskin satış baskısı getirebilir.' },
-  ];
-
-  return sectorBears[sector ?? ''] ?? defaultBears;
-}
-
-// ── Deterministic insider mock data ─────────────────────────
-
-interface InsiderMove {
-  initials: string;
-  name: string;
-  role: string;
-  date: string;
-  action: 'AL' | 'SAT';
-  amount: string;
-}
-
-function getInsiderMoves(symbol: string): InsiderMove[] {
-  const seed = symbol.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const names = [
-    { name: 'Ahmet Kaya', role: 'Yönetim Kurulu Başkanı', initials: 'AK' },
-    { name: 'Fatma Demir', role: 'CFO', initials: 'FD' },
-    { name: 'Mehmet Yılmaz', role: 'CEO', initials: 'MY' },
-    { name: 'Zeynep Arslan', role: 'Bağımsız Üye', initials: 'ZA' },
-    { name: 'Hakan Çelik', role: 'Genel Müdür', initials: 'HÇ' },
-  ];
-  const amounts = ['₺2.4M', '₺850K', '₺4.1M', '₺1.2M', '₺680K'];
-  const dates = ['8 May 2025', '2 May 2025', '25 Nis 2025', '18 Nis 2025', '10 Nis 2025'];
-
-  return names.map((n, i) => ({
-    ...n,
-    date: dates[i],
-    action: (seed + i) % 3 === 0 ? 'SAT' : 'AL',
-    amount: amounts[(seed + i) % amounts.length],
-  }));
-}
-
 // ── Chart period change delta ─────────────────────────────────
 
 function getPeriodDelta(prices: PricePoint[]): string {
@@ -222,25 +128,9 @@ function getPeriodDelta(prices: PricePoint[]): string {
 
 // ── Contextual hero tagline ───────────────────────────────────
 
-function getHeroTagline(sector: string | null, rec: string | null): { kicker: string; title: string } {
-  const isBuy = rec === 'AL' || rec === 'GÜÇLÜ AL';
-  const isSell = rec === 'SAT' || rec === 'GÜÇLÜ SAT';
-
-  if (isBuy) {
-    const sectorLines: Record<string, { kicker: string; title: string }> = {
-      'Savunma': { kicker: 'Savunma harcamaları rüzgârı', title: 'kanatlarına' },
-      'Havacılık': { kicker: 'Sezonsal momentum başlıyor', title: 'yüksekten uçuyor' },
-      'Bankacılık': { kicker: 'Faiz indirim döngüsü', title: 'marjları açıyor' },
-      'Teknoloji': { kicker: 'Dijital dönüşüm ivmesi', title: 'öne çıkıyor' },
-    };
-    return sectorLines[sector ?? ''] ?? { kicker: `${sector ?? 'Sektör'} momentumu`, title: 'öne çıkıyor' };
-  }
-
-  if (isSell) {
-    return { kicker: 'Risk faktörleri gündemde', title: 'değerlemesi baskı altında' };
-  }
-
-  return { kicker: `${sector ?? 'Sektör'} gelişmeleri`, title: 'odakta' };
+function getScoreReasonRows(breakdown: ScoreBreakdownResponse['breakdown'] | null) {
+  if (!breakdown) return [];
+  return breakdown.components.filter((component) => component.reason).slice(0, 6);
 }
 
 // ── Main Page ────────────────────────────────────────────────
@@ -259,6 +149,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
   const [loading, setLoading] = useState(true);
   const [inWatchlist, setInWatchlist] = useState(false);
   const [period, setPeriod] = useState('6m');
+  const [analysis, setAnalysis] = useState<string | null>(null);
+  const [analyzeLoading, setAnalyzeLoading] = useState(false);
 
   // ── Load watchlist state ──────────────────────────────────
   useEffect(() => {
@@ -271,6 +163,19 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     const newList = inWatchlist ? list.filter((s) => s !== symbol) : [...list, symbol];
     localStorage.setItem('stalize-watchlist', JSON.stringify(newList));
     setInWatchlist(!inWatchlist);
+  }
+
+  async function handleAnalyze() {
+    if (analysis !== null || analyzeLoading) return; // LLM-02: session cache guard
+    setAnalyzeLoading(true);
+    try {
+      const result: StockAnalysisResponse = await api.analyzeStock(symbol);
+      setAnalysis(result.analysis);
+    } catch {
+      setAnalysis('Analiz alınamadı. Lütfen tekrar deneyin.');
+    } finally {
+      setAnalyzeLoading(false);
+    }
   }
 
   // ── Parallel data load ────────────────────────────────────
@@ -358,15 +263,13 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
   const s = detail.stock;
   const bd = scoreBreakdown?.breakdown ?? null;
 
-  // 52-week high/low from price data
+  // Current period high/low from loaded price data
   const allPrices = prices?.prices ?? detail.recent_prices ?? [];
   const highs = allPrices.map((p) => p.high).filter(Boolean);
   const lows = allPrices.map((p) => p.low).filter(Boolean);
   const high52 = highs.length ? Math.max(...highs) : null;
   const low52 = lows.length ? Math.min(...lows) : null;
 
-  // AI confidence from overall score
-  const aiConfidence = s.overall_score != null ? Math.round(s.overall_score) : null;
   const recommendation = bd?.recommendation ?? s.recommendation ?? null;
 
   // score components
@@ -391,10 +294,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     { key: '5y', label: '5Y' },
   ];
 
-  const tagline = getHeroTagline(s.sector, recommendation);
-  const bullTheses = getBullTheses(s.sector, s.symbol, recommendation);
-  const bearTheses = getBearTheses(s.sector, s.symbol);
-  const insiderMoves = getInsiderMoves(s.symbol);
+  const scoreReasonRows = getScoreReasonRows(bd);
   const periodDelta = getPeriodDelta(allPrices);
 
   // target price & upside potential
@@ -431,9 +331,6 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             >
               {inWatchlist ? '★' : '☆'} {inWatchlist ? 'Takipte' : 'Takibe Al'}
             </button>
-            <Link href="#" className={styles.tradeBtn} onClick={(e) => e.preventDefault()}>
-              Al / Sat
-            </Link>
           </div>
         </div>
 
@@ -446,24 +343,22 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             </p>
 
             <h1 className={styles.heroTitle}>
-              <span className={styles.heroTitleLine}>{tagline.kicker},</span>
+              <span className={styles.heroTitleLine}>{s.symbol}</span>
               <br />
-              <em className={styles.heroSymbolItalic}>{s.symbol}</em>
-              {' '}<span>{tagline.title}</span>
+              <em className={styles.heroSymbolItalic}>{s.name}</em>
             </h1>
 
             <p className={styles.heroDesc}>
-              {s.sector ? `${s.sector} sektöründe faaliyet gösteren` : ''} {s.name},{' '}
-              BIST&apos;te işlem gören önemli hisseler arasında yer almaktadır.{' '}
-              {aiConfidence != null && recommendation ? (
+              {s.sector ? `${s.sector} sektöründe sınıflandırılıyor. ` : ''}
+              {recommendation ? (
                 <>
-                  AI modelimiz bu hisseyi{' '}
+                  Güncel model çıktısı{' '}
                   <span className={styles.confidenceBadge}>
-                    %{aiConfidence} güvenle {recommendation}
+                    {recommendation}
                   </span>{' '}
-                  olarak işaretliyor.
+                  sinyali üretiyor.
                 </>
-              ) : null}
+              ) : 'Bu hisse için güncel model sinyali yok.'}
             </p>
 
             <div className={styles.heroPrice}>
@@ -494,7 +389,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 <div className={styles.scoreCardIconWrap}>
                   <span className={styles.scoreCardIcon}>✦</span>
                 </div>
-                <span className={styles.scoreCardTitle}>AI Skor Kartı</span>
+                <span className={styles.scoreCardTitle}>Model Skor Kartı</span>
               </div>
 
               <div className={styles.scoreCardSignal}>
@@ -512,12 +407,6 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 )}
               </div>
 
-              {s.overall_score != null && (
-                <div className={styles.signalConfidence}>
-                  %{Math.round(s.overall_score)} güven
-                </div>
-              )}
-
               <div className={styles.scoreBars}>
                 <ScoreBar label="Teknik" value={techScore} />
                 <ScoreBar label="Temel" value={fundScore} />
@@ -530,24 +419,39 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
               <div className={styles.scoreCardRows}>
                 <div className={styles.scoreCardRow}>
-                  <span className={styles.scoreCardRowLabel}>12 ay hedef</span>
+                  <span className={styles.scoreCardRowLabel}>Teknik hedef</span>
                   <span className={styles.scoreCardRowValue}>
                     {targetPrice != null ? `₺${formatPrice(targetPrice)}` : '—'}
                   </span>
                 </div>
                 <div className={styles.scoreCardRow}>
-                  <span className={styles.scoreCardRowLabel}>Yukarı potansiyel</span>
+                  <span className={styles.scoreCardRowLabel}>Teknik potansiyel</span>
                   <span className={styles.scoreCardRowValue} style={{ color: 'var(--accent-green)' }}>
                     {upsidePct ?? '—'}
                   </span>
                 </div>
                 <div className={styles.scoreCardRow}>
-                  <span className={styles.scoreCardRowLabel}>Stop-loss önerisi</span>
+                  <span className={styles.scoreCardRowLabel}>ATR stop seviyesi</span>
                   <span className={styles.scoreCardRowValue} style={{ color: 'var(--accent-red)' }}>
                     {stopLoss != null ? `₺${formatPrice(stopLoss)}` : '—'}
                   </span>
                 </div>
               </div>
+
+              {/* ── Analiz Et ─────────────────────────────────── */}
+              <div className={styles.scoreCardDivider} />
+              <button
+                className={styles.analyzeBtn}
+                onClick={handleAnalyze}
+                disabled={analyzeLoading || analysis !== null}
+              >
+                {analyzeLoading ? 'Analiz ediliyor...' : analysis !== null ? 'Analiz Tamamlandı' : '✦ Analiz Et'}
+              </button>
+              {analysis !== null && (
+                <div className={styles.analyzePanel}>
+                  <p className={styles.analyzeText}>{analysis}</p>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -590,13 +494,13 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
             <div className={styles.chartStats}>
               <div className={styles.chartStat}>
-                <span className={styles.chartStatLabel}>52H Yüksek</span>
+                <span className={styles.chartStatLabel}>Dönem Yüksek</span>
                 <span className={styles.chartStatValue}>
                   {high52 != null ? `₺${formatPrice(high52)}` : '—'}
                 </span>
               </div>
               <div className={styles.chartStat}>
-                <span className={styles.chartStatLabel}>52H Düşük</span>
+                <span className={styles.chartStatLabel}>Dönem Düşük</span>
                 <span className={styles.chartStatValue}>
                   {low52 != null ? `₺${formatPrice(low52)}` : '—'}
                 </span>
@@ -623,68 +527,26 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
           </div>
         </section>
 
-        {/* ── 3-column analysis section ───────────────────── */}
-        <section className={styles.analysisSection}>
-          {/* Bull Theses */}
-          <div className={styles.analysisCard}>
-            <div className={styles.analysisEyebrow} style={{ color: 'var(--accent-green)' }}>
-              ▲ Boğa Tezleri
-            </div>
-            <div className={styles.analysisList}>
-              {bullTheses.map((thesis, i) => (
-                <div key={i} className={styles.analysisItem}>
-                  <div className={styles.analysisItemTitle}>{thesis.title}</div>
-                  <div className={styles.analysisItemBody}>{thesis.body}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Bear Theses */}
-          <div className={styles.analysisCard}>
-            <div className={styles.analysisEyebrow} style={{ color: 'var(--accent-red)' }}>
-              ▼ Ayı Tezleri
-            </div>
-            <div className={styles.analysisList}>
-              {bearTheses.map((thesis, i) => (
-                <div key={i} className={styles.analysisItem}>
-                  <div className={styles.analysisItemTitle}>{thesis.title}</div>
-                  <div className={styles.analysisItemBody}>{thesis.body}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Insider Moves */}
-          <div className={styles.analysisCard}>
-            <div className={styles.analysisEyebrow} style={{ color: 'var(--accent)' }}>
-              ◆ İçeriden Hareketler
-            </div>
-            <div className={styles.insiderList}>
-              {insiderMoves.map((move, i) => (
-                <div key={i} className={styles.insiderRow}>
-                  <div className={styles.insiderAvatar}>{move.initials}</div>
-                  <div className={styles.insiderInfo}>
-                    <div className={styles.insiderName}>{move.name}</div>
-                    <div className={styles.insiderMeta}>{move.role} · {move.date}</div>
+        {/* ── Model rationale section ───────────────────── */}
+        {scoreReasonRows.length > 0 && (
+          <section className={styles.analysisSection}>
+            <div className={styles.analysisCard}>
+              <div className={styles.analysisEyebrow} style={{ color: 'var(--accent)' }}>
+                ◆ Model Gerekçeleri
+              </div>
+              <div className={styles.analysisList}>
+                {scoreReasonRows.map((component, index) => (
+                  <div key={`${component.key}-${index}`} className={styles.analysisItem}>
+                    <div className={styles.analysisItemTitle}>
+                      {component.label} · {component.raw_score.toFixed(1)}
+                    </div>
+                    <div className={styles.analysisItemBody}>{component.reason}</div>
                   </div>
-                  <div className={styles.insiderRight}>
-                    <span
-                      className={styles.insiderBadge}
-                      style={{
-                        background: move.action === 'AL' ? 'rgba(16,185,129,.15)' : 'rgba(239,68,68,.15)',
-                        color: move.action === 'AL' ? 'var(--accent-green)' : 'var(--accent-red)',
-                      }}
-                    >
-                      {move.action}
-                    </span>
-                    <div className={styles.insiderAmount}>{move.amount}</div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* ── Temel Analiz + Benzer Hisseler ───────────────── */}
         <section className={styles.bottomSection}>
@@ -696,31 +558,31 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             </div>
             <div className={styles.fundGrid}>
               <div className={styles.fundItem}>
-                <span className={styles.fundLabel}>F/K</span>
+                <span className={styles.fundLabel} title="Fiyat/Kazanç — hisse fiyatının hisse başı kâra oranı. Düşük değer ucuz hisseye işaret edebilir.">F/K</span>
                 <span className={styles.fundValue}>
                   {fundamentals?.pe_ratio != null ? fundamentals.pe_ratio.toFixed(1) : '—'}
                 </span>
               </div>
               <div className={styles.fundItem}>
-                <span className={styles.fundLabel}>PD/DD</span>
+                <span className={styles.fundLabel} title="Piyasa Değeri/Defter Değeri — şirket değerinin özkaynaklara oranı. 1'in altı genellikle ucuz sayılır.">PD/DD</span>
                 <span className={styles.fundValue}>
                   {fundamentals?.pb_ratio != null ? fundamentals.pb_ratio.toFixed(2) : '—'}
                 </span>
               </div>
               <div className={styles.fundItem}>
-                <span className={styles.fundLabel}>ROE</span>
+                <span className={styles.fundLabel} title="Özkaynak Kârlılığı — şirketin özkaynaklarıyla ne kadar kâr ettiği. Yüksek değer iyidir.">ROE</span>
                 <span className={styles.fundValue}>
                   {fundamentals?.roe != null ? formatPercentage(fundamentals.roe) : '—'}
                 </span>
               </div>
               <div className={styles.fundItem}>
-                <span className={styles.fundLabel}>Net Marj</span>
+                <span className={styles.fundLabel} title="Net Kâr Marjı — gelirin yüzde kaçının kâra dönüştüğü. Yüksek değer iyidir.">Net Marj</span>
                 <span className={styles.fundValue}>
                   {fundamentals?.net_margin != null ? formatPercentage(fundamentals.net_margin) : '—'}
                 </span>
               </div>
               <div className={styles.fundItem}>
-                <span className={styles.fundLabel}>Borç/Özkaynak</span>
+                <span className={styles.fundLabel} title="Kaldıraç oranı. Düşük değer daha az finansal risk anlamına gelir.">Borç/Özkaynak</span>
                 <span className={styles.fundValue}>
                   {fundamentals?.debt_to_equity != null
                     ? fundamentals.debt_to_equity.toFixed(2)
@@ -728,7 +590,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 </span>
               </div>
               <div className={styles.fundItem}>
-                <span className={styles.fundLabel}>EV/FAVÖK</span>
+                <span className={styles.fundLabel} title="Şirket Değeri/FAVÖK — değerleme çarpanı. Düşük değer ucuzluğa işaret edebilir.">EV/FAVÖK</span>
                 <span className={styles.fundValue}>
                   {fundamentals?.ev_ebitda != null
                     ? fundamentals.ev_ebitda.toFixed(1)
@@ -774,8 +636,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                   <span className={styles.peersRight}>Skor</span>
                   <span className={styles.peersRight}>%</span>
                 </div>
-                {peers.map((peer) => (
-                  <Link key={peer.symbol} href={`/stocks/${peer.symbol}`} className={styles.peerRow}>
+                {peers.map((peer, index) => (
+                  <Link key={`${peer.symbol}-${index}`} href={`/stocks/${peer.symbol}`} className={styles.peerRow}>
                     <div className={styles.peerSymbolWrap}>
                       <span className={styles.peerSymbol}>{peer.symbol}</span>
                       {peer.name && <span className={styles.peerName}>{peer.name}</span>}
