@@ -51,7 +51,7 @@
 
 - [x] **LLM-01**: Backend'de Gemini 2.0 Flash servis katmanı çalışır (google-generativeai SDK, quota aşılırsa graceful fallback)
 - [ ] **LLM-02**: Kullanıcı hisse detay sayfasında "Analiz Et" butonu ile on-demand Türkçe Gemini analizi alır; önbellek ile tekrar istek gitmez
-- [ ] **LLM-03**: Sistem her sabah otomatik olarak Gemini'den kısa günlük piyasa özeti üretir; dashboard'da ve haberler sayfasında görünür
+- [x] **LLM-03**: Sistem her sabah otomatik olarak Gemini'den kısa günlük piyasa özeti üretir; dashboard'da ve haberler sayfasında görünür
 - [ ] **LLM-04**: Model portföy haftalık karar döngüsünde Gemini portföy değişikliklerini Türkçe gerekçeyle açıklar
 
 ### Frontend Tasarım
@@ -114,7 +114,7 @@
 | STCK-05 | Phase 37 | Pending (haberler sayfasında, detay sayfasında değil) |
 | STCK-06 | Phase 37 | Pending (haberler sayfasında, detay sayfasında değil) |
 | NEWS-01 | Phase 37 | Pending |
-| LLM-03 | Phase 37 | Pending |
+| LLM-03 | Phase 37 | Complete |
 | PORT-01 | Phase 38 | Pending |
 | PORT-02 | Phase 38 | Pending |
 | PORT-03 | Phase 38 | Pending |

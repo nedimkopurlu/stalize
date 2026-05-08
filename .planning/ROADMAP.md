@@ -85,7 +85,7 @@ Phases 30–33 (Keşif, Haberler, Portföy, Model Portföy) planned in v4.0 but 
 - [x] **Phase 34: Frontend Tasarım Düzeltmeleri** — 6 tasarım tutarsızlığı giderildi (completed 2026-05-08)
 - [x] **Phase 35: Gemini LLM Altyapısı** — Backend Gemini 2.0 Flash servis katmanı; quota fallback; async generate (completed 2026-05-08)
 - [ ] **Phase 36: Hisse Detay + AI Analizi** — `/stocks/[symbol]` sayfası tamamen doldurulur: fiyat grafiği, temel + teknik metrik kartları (Türkçe tooltipli), on-demand Gemini analizi
-- [ ] **Phase 37: Haberler + Günlük AI Özeti** — `/intelligence` sayfası KAP + basın verisiyle doldurulur; dashboard'a ve haberler sayfasına günlük Gemini piyasa özeti kartı eklenir
+- [x] **Phase 37: Haberler + Günlük AI Özeti** — `/intelligence` sayfası KAP + basın verisiyle doldurulur; dashboard'a ve haberler sayfasına günlük Gemini piyasa özeti kartı eklenir (completed 2026-05-08)
 - [ ] **Phase 38: Portföy + Takip Listesi** — `/portfolio` sayfası: alım-satım girişi, gerçek P&L hesaplama, BIST100 karşılaştırması; `/watchlist`: hisse ekleme/çıkarma, canlı fiyat
 - [ ] **Phase 39: Model Portföy AI Kararları** — `/model-portfolio` sayfasına Gemini haftalık özerk kararlar + Türkçe gerekçe + karar geçmişi
 
@@ -266,7 +266,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 37-01-PLAN.md — Günlük Gemini piyasa özeti: /intelligence/daily-summary endpoint, APScheduler 09:05 cache reset, dashboard + haberler banner (LLM-03)
+- [x] 37-01-PLAN.md — Günlük Gemini piyasa özeti: /intelligence/daily-summary endpoint, APScheduler 09:05 cache reset, dashboard + haberler banner (LLM-03)
 
 ### Phase 38: Portföy + Takip Listesi
 **Goal**: Mevcut `/portfolio` sayfasının tam tasarımı çalışır hale getirilir: alım-satım girişi, gerçek P&L hesaplama, BIST100 karşılaştırması. Mevcut `/watchlist` sayfası hisse ekleme/çıkarma ve canlı fiyatla çalışır.
