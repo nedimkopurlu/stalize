@@ -588,51 +588,61 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
               <div className={styles.fundEyebrow}>Temel Analiz</div>
               <div className={styles.fundCardTitle}>Anahtar oranlar</div>
             </div>
+            {fundamentals === null ? (
+            <div className={styles.fundGrid}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className={styles.fundItemLoading}>
+                  <div className={styles.fundLoadingBar} />
+                  <div className={styles.fundLoadingVal} />
+                </div>
+              ))}
+            </div>
+          ) : (
             <div className={styles.fundGrid}>
               <div className={styles.fundItem}>
                 <span className={styles.fundLabel} title="Fiyat/Kazanç — hisse fiyatının hisse başı kâra oranı. Düşük değer ucuz hisseye işaret edebilir.">F/K</span>
-                <span className={styles.fundValue}>
-                  {fundamentals?.pe_ratio != null ? fundamentals.pe_ratio.toFixed(1) : '—'}
+                <span className={fundamentals?.pe_ratio != null ? styles.fundValue : styles.fundValueMissing}>
+                  {fundamentals?.pe_ratio != null ? fundamentals.pe_ratio.toFixed(1) : 'Yok'}
                 </span>
               </div>
               <div className={styles.fundItem}>
                 <span className={styles.fundLabel} title="Piyasa Değeri/Defter Değeri — şirket değerinin özkaynaklara oranı. 1'in altı genellikle ucuz sayılır.">PD/DD</span>
-                <span className={styles.fundValue}>
-                  {fundamentals?.pb_ratio != null ? fundamentals.pb_ratio.toFixed(2) : '—'}
+                <span className={fundamentals?.pb_ratio != null ? styles.fundValue : styles.fundValueMissing}>
+                  {fundamentals?.pb_ratio != null ? fundamentals.pb_ratio.toFixed(2) : 'Yok'}
                 </span>
               </div>
               <div className={styles.fundItem}>
                 <span className={styles.fundLabel} title="Özkaynak Kârlılığı — şirketin özkaynaklarıyla ne kadar kâr ettiği. Yüksek değer iyidir.">ROE</span>
-                <span className={styles.fundValue}>
-                  {fundamentals?.roe != null ? formatPercentage(fundamentals.roe) : '—'}
+                <span className={fundamentals?.roe != null ? styles.fundValue : styles.fundValueMissing}>
+                  {fundamentals?.roe != null ? formatPercentage(fundamentals.roe) : 'Yok'}
                 </span>
               </div>
               <div className={styles.fundItem}>
                 <span className={styles.fundLabel} title="Net Kâr Marjı — gelirin yüzde kaçının kâra dönüştüğü. Yüksek değer iyidir.">Net Marj</span>
-                <span className={styles.fundValue}>
-                  {fundamentals?.net_margin != null ? formatPercentage(fundamentals.net_margin) : '—'}
+                <span className={fundamentals?.net_margin != null ? styles.fundValue : styles.fundValueMissing}>
+                  {fundamentals?.net_margin != null ? formatPercentage(fundamentals.net_margin) : 'Yok'}
                 </span>
               </div>
               <div className={styles.fundItem}>
                 <span className={styles.fundLabel} title="Kaldıraç oranı. Düşük değer daha az finansal risk anlamına gelir.">Borç/Özkaynak</span>
-                <span className={styles.fundValue}>
+                <span className={fundamentals?.debt_to_equity != null ? styles.fundValue : styles.fundValueMissing}>
                   {fundamentals?.debt_to_equity != null
                     ? fundamentals.debt_to_equity.toFixed(2)
-                    : '—'}
+                    : 'Yok'}
                 </span>
               </div>
               <div className={styles.fundItem}>
                 <span className={styles.fundLabel} title="Şirket Değeri/FAVÖK — değerleme çarpanı. Düşük değer ucuzluğa işaret edebilir.">EV/FAVÖK</span>
-                <span className={styles.fundValue}>
+                <span className={fundamentals?.ev_ebitda != null ? styles.fundValue : styles.fundValueMissing}>
                   {fundamentals?.ev_ebitda != null
                     ? fundamentals.ev_ebitda.toFixed(1)
-                    : '—'}
+                    : 'Yok'}
                 </span>
               </div>
               <div className={styles.fundItem}>
                 <span className={styles.fundLabel}>Temel Skor</span>
                 <span
-                  className={styles.fundValue}
+                  className={fundamentals?.fundamental_score != null ? styles.fundValue : styles.fundValueMissing}
                   style={{
                     color:
                       fundamentals?.fundamental_score != null
@@ -648,10 +658,11 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 >
                   {fundamentals?.fundamental_score != null
                     ? fundamentals.fundamental_score.toFixed(1)
-                    : '—'}
+                    : 'Yok'}
                 </span>
               </div>
             </div>
+          )}
           </div>
 
           {/* Peers */}

@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Kapsamlı Bug Fix & Kalite İyileştirme
 status: in_progress
-last_updated: "2026-05-08T21:30:00.000Z"
+last_updated: "2026-05-08T23:00:00.000Z"
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 2
   total_plans: 0
   completed_plans: 0
 ---
@@ -24,12 +24,12 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: 40 — UI/UX Kapsamlı Görsel İyileştirme
-Status: v5.1 roadmap oluşturuldu — 2026-05-08
-Last activity: 2026-05-08 — v5.1 roadmap yazıldı (Phase 40-42), planlama hazır
+Phase: 42 — AI Kalite & Sistem Güvenilirliği
+Status: Phase 41 tamamlandı — 2026-05-08
+Last activity: 2026-05-08 — Phase 41 veri doğruluğu ve eksik fonksiyonlar tamamlandı
 
 ```
-Progress: [░░░░░░░░░░] 0/3 phases complete
+Progress: [██████░░░░] 2/3 phases complete
 ```
 
 ## v5.0 Phases
@@ -43,10 +43,10 @@ Progress: [░░░░░░░░░░] 0/3 phases complete
 
 ## v5.1 Phases
 
-- [ ] Phase 40: UI/UX Kapsamlı Görsel İyileştirme ⬜ Not started
+- [x] Phase 40: UI/UX Kapsamlı Görsel İyileştirme ✅ (2026-05-08)
   - Requirements: UI-01, UI-02, UI-03, UI-04, UI-05
   - Goal: Tüm 7 sayfada sistematik görsel geçiş, mobile responsive düzeltmeleri, empty state standardizasyonu
-- [ ] Phase 41: Veri Doğruluğu & Eksik Fonksiyonlar ⬜ Not started
+- [x] Phase 41: Veri Doğruluğu & Eksik Fonksiyonlar ✅ (2026-05-08)
   - Requirements: DATA-01, DATA-02, DATA-03, FEAT-01, FEAT-02, FEAT-03
   - Goal: Hesaplama hatalarını düzelt, null güvenliği ekle, watchlist/portföy eksik fonksiyonlarını tamamla
 - [ ] Phase 42: AI Kalite & Sistem Güvenilirliği ⬜ Not started
@@ -66,7 +66,8 @@ Phase 39 (v5.0 tamamlandı)
 
 | Phase | Plan | Key Deliverables |
 |-------|------|-----------------|
-| (none yet — v5.1 başlıyor) | — | — |
+| Phase 40 | UI/UX | Mobile responsive, empty states, hardcoded colors |
+| Phase 41 | DATA/FEAT | NaN guards, null safety, fundGrid skeleton, BistComparisonChart |
 
 ## Requirements Satisfied (v5.0)
 
@@ -89,11 +90,11 @@ Phase 39 (v5.0 tamamlandı)
 
 | Req | Phase | Status |
 |-----|-------|--------|
-| UI-01 | Phase 40 | ⬜ Pending |
-| UI-02 | Phase 40 | ⬜ Pending |
-| UI-03 | Phase 40 | ⬜ Pending |
-| UI-04 | Phase 40 | ⬜ Pending |
-| UI-05 | Phase 40 | ⬜ Pending |
+| UI-01 | Phase 40 | ✅ Complete |
+| UI-02 | Phase 40 | ✅ Complete |
+| UI-03 | Phase 40 | ✅ Complete |
+| UI-04 | Phase 40 | ✅ Complete |
+| UI-05 | Phase 40 | ✅ Complete |
 | DATA-01 | Phase 41 | ⬜ Pending |
 | DATA-02 | Phase 41 | ⬜ Pending |
 | DATA-03 | Phase 41 | ⬜ Pending |

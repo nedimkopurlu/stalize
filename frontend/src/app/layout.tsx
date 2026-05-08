@@ -18,7 +18,7 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "Stalize — Borsa İstanbul Analiz Terminali",
   description: "BIST hisselerini teknik ve temel analiz ile değerlendirin — 400+ hisse, tarama motoru, portföy takibi",
-  keywords: ["BIST100", "BIST30", "BIST250", "borsa", "hisse analiz", "teknik analiz", "temel analiz", "KAP", "screener"],
+  keywords: ["BIST100", "BIST30", "BIST250", "borsa", "hisse analiz", "teknik analiz", "temel analiz", "KAP"],
 };
 
 export default function RootLayout({
@@ -30,6 +30,7 @@ export default function RootLayout({
     <html
       lang="tr"
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
       className={`${inter.variable} ${fraunces.variable}`}
       style={
         {

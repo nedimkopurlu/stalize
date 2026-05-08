@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import AppShell from '@/components/AppShell';
 import { formatPrice } from '@/components/StockHelpers';
+import BistComparisonChart from '@/components/BistComparisonChart';
 import api, { PortfolioHistoryResponse, PortfolioPosition } from '@/lib/api';
 import styles from './page.module.css';
 
@@ -37,7 +38,7 @@ const EMPTY_FORM: PositionForm = {
 // ─── Helpers ───
 
 function formatTRY(value: number | null | undefined): string {
-  if (value == null) return '--';
+  if (value == null || isNaN(value) || !isFinite(value)) return '—';
   return new Intl.NumberFormat('tr-TR', {
     style: 'currency',
     currency: 'TRY',
@@ -46,7 +47,7 @@ function formatTRY(value: number | null | undefined): string {
 }
 
 function formatPct(value: number | null | undefined, sign = true): string {
-  if (value == null) return '--';
+  if (value == null || isNaN(value) || !isFinite(value)) return '—';
   const prefix = sign && value > 0 ? '+' : '';
   return `${prefix}${value.toFixed(2)}%`;
 }
@@ -365,6 +366,8 @@ export default function PortfolioPage() {
   // Risk summary
   const risk = history?.risk_summary;
   const portfolioSeries = history?.comparison?.portfolio_series ?? [];
+  const benchmarkSeries = history?.comparison?.benchmark_series ?? [];
+  const benchmarkLabel = history?.comparison?.benchmark_label ?? 'BIST100';
 
   // Position weights — only active positions
   const positionsWithWeight = useMemo(() => {
@@ -585,7 +588,7 @@ export default function PortfolioPage() {
                         <td>{formatPrice(pos.current_price)}</td>
                         <td>{formatTRY(pos.currentVal)}</td>
                         <td className={pnlClass(pnlAbs)}>
-                          {pnlAbs >= 0 ? '+' : ''}{formatTRY(pnlAbs)}
+                          {isNaN(pnlAbs) ? '—' : `${pnlAbs >= 0 ? '+' : ''}${formatTRY(pnlAbs)}`}
                         </td>
                         <td className={pnlClass(pos.pnl_pct)}>
                           {formatPct(pos.pnl_pct)}
@@ -716,6 +719,15 @@ export default function PortfolioPage() {
               </table>
             </div>
           </div>
+        )}
+
+        {/* ─── BIST100 Karşılaştırma Grafiği (PORT-04 / FEAT-03) ─── */}
+        {(portfolioSeries.length > 0 || benchmarkSeries.length > 0) && (
+          <BistComparisonChart
+            portfolioSeries={portfolioSeries}
+            benchmarkSeries={benchmarkSeries}
+            benchmarkLabel={benchmarkLabel}
+          />
         )}
 
         {/* ─── Bottom 2-col ─── */}

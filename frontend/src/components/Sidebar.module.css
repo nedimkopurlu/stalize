@@ -159,50 +159,6 @@
   padding-top: 16px;
 }
 
-/* AI Asistan card */
-.aiCard {
-  background: var(--bg-elevated);
-  border-radius: 12px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.aiCardLabel {
-  font-size: 11px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 600;
-}
-
-.aiCardTitle {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.upgradeBtn {
-  display: block;
-  width: 100%;
-  background: #f59e0b;
-  color: #0d0e10;
-  border: none;
-  border-radius: 8px;
-  padding: 7px 0;
-  font-size: 12px;
-  font-weight: 600;
-  text-align: center;
-  cursor: pointer;
-  transition: opacity 150ms ease;
-}
-
-.upgradeBtn:hover {
-  opacity: 0.88;
-}
-
 /* Theme toggle row */
 .themeRow {
   display: flex;

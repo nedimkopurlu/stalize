@@ -152,14 +152,6 @@ export default function Sidebar() {
 
         {/* Bottom section */}
         <div className={styles.bottom}>
-          {/* AI Asistan card */}
-          <div className={styles.aiCard}>
-            <div className={styles.aiCardLabel}>AI Asistan</div>
-            <div className={styles.aiCardTitle}>Sınırsız tahmin</div>
-            <button type="button" className={styles.upgradeBtn}>Yükselt</button>
-          </div>
-
-          {/* Theme toggle row */}
           <div className={styles.themeRow}>
             <ThemeToggle />
           </div>
