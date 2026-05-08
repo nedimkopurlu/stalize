@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v5.1
 milestone_name: Kapsamlı Bug Fix & Kalite İyileştirme
 status: in_progress
-last_updated: "2026-05-08T21:00:00.000Z"
+last_updated: "2026-05-08T21:30:00.000Z"
 progress:
   total_phases: 3
   completed_phases: 0
@@ -24,9 +24,13 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Status: v5.1 milestone başlatıldı — 2026-05-08
-Last activity: 2026-05-08 — v5.1 requirements tanımlandı, roadmap bekleniyor
+Phase: 40 — UI/UX Kapsamlı Görsel İyileştirme
+Status: v5.1 roadmap oluşturuldu — 2026-05-08
+Last activity: 2026-05-08 — v5.1 roadmap yazıldı (Phase 40-42), planlama hazır
+
+```
+Progress: [░░░░░░░░░░] 0/3 phases complete
+```
 
 ## v5.0 Phases
 
@@ -37,31 +41,32 @@ Last activity: 2026-05-08 — v5.1 requirements tanımlandı, roadmap bekleniyor
 - [x] Phase 38: Portföy — PORT-02 pozisyon kapatma + gerçek K/Z ✅ (2026-05-08)
 - [x] Phase 39: Model Portföy + AI Kararları ✅ (2026-05-08)
 
+## v5.1 Phases
+
+- [ ] Phase 40: UI/UX Kapsamlı Görsel İyileştirme ⬜ Not started
+  - Requirements: UI-01, UI-02, UI-03, UI-04, UI-05
+  - Goal: Tüm 7 sayfada sistematik görsel geçiş, mobile responsive düzeltmeleri, empty state standardizasyonu
+- [ ] Phase 41: Veri Doğruluğu & Eksik Fonksiyonlar ⬜ Not started
+  - Requirements: DATA-01, DATA-02, DATA-03, FEAT-01, FEAT-02, FEAT-03
+  - Goal: Hesaplama hatalarını düzelt, null güvenliği ekle, watchlist/portföy eksik fonksiyonlarını tamamla
+- [ ] Phase 42: AI Kalite & Sistem Güvenilirliği ⬜ Not started
+  - Requirements: AI-01, AI-02, AI-03, AI-04
+  - Goal: Tüm AI prompt'larını derinleştir, hata yönetimini standardize et, sistem kararlılığını sağla
+
 ## Phase Dependency Map
 
 ```
-Phase 29 (tamamlandı)
-    └── Phase 34: Tasarım Düzeltmeleri
-            └── Phase 35: Gemini LLM Altyapısı
-                    ├── Phase 36: Hisse Detay + AI Analizi
-                    └── Phase 37: Haberler + Günlük Piyasa Özeti
-
-Phase 29 (tamamlandı)
-    └── Phase 38: Portföy
-            └── Phase 39: Model Portföy + AI Kararları
-                    └── (depends on Phase 35)
+Phase 39 (v5.0 tamamlandı)
+    └── Phase 40: UI/UX Kapsamlı Görsel İyileştirme
+            └── Phase 41: Veri Doğruluğu & Eksik Fonksiyonlar
+                    └── Phase 42: AI Kalite & Sistem Güvenilirliği
 ```
 
 ## Delivered This Milestone
 
 | Phase | Plan | Key Deliverables |
 |-------|------|-----------------|
-| 34 | 34-01, 34-02 | BIST100 grafik 6 periyot, sparkline, model portföy kartları, light mode hover, dead code cleanup |
-| 35 | 35-01 | GeminiService singleton, async generate(), Turkish FALLBACK_MESSAGE, TDD 4/4 tests |
-| 36 | 36-01 | POST /stocks/{symbol}/analyze, "Analiz Et" butonu, session cache, 6 temel metrik tooltip |
-| 37 | 37-01 | GET /intelligence/daily-summary, in-memory cache, APScheduler 09:05 reset, AI özet banner |
-| 38 | 38-01 | Alembic migration 004, PATCH /portfolio/positions/{id}/close, "Kapat" butonu, Geçmiş Pozisyonlar tablosu |
-| 39 | 39-01 | _generate_gemini_rationale(), Gemini weekly review_summary, ModelPortfolioHistory, ComparisonCard |
+| (none yet — v5.1 başlıyor) | — | — |
 
 ## Requirements Satisfied (v5.0)
 
@@ -74,9 +79,31 @@ Phase 29 (tamamlandı)
 | STCK-02 | ✅ (temel metrikler + tooltip) |
 | STCK-03 | ✅ (teknik göstergeler mevcut) |
 | STCK-04 | ✅ (Analiz Et + session cache) |
+| STCK-05 | ✅ (intelligence sayfasında) |
+| STCK-06 | ✅ (intelligence sayfasında) |
 | NEWS-01 | ✅ (intelligence sayfası mevcut) |
 | PORT-01..05 | ✅ |
 | MODEL-01..04 | ✅ |
+
+## v5.1 Requirements to Satisfy
+
+| Req | Phase | Status |
+|-----|-------|--------|
+| UI-01 | Phase 40 | ⬜ Pending |
+| UI-02 | Phase 40 | ⬜ Pending |
+| UI-03 | Phase 40 | ⬜ Pending |
+| UI-04 | Phase 40 | ⬜ Pending |
+| UI-05 | Phase 40 | ⬜ Pending |
+| DATA-01 | Phase 41 | ⬜ Pending |
+| DATA-02 | Phase 41 | ⬜ Pending |
+| DATA-03 | Phase 41 | ⬜ Pending |
+| FEAT-01 | Phase 41 | ⬜ Pending |
+| FEAT-02 | Phase 41 | ⬜ Pending |
+| FEAT-03 | Phase 41 | ⬜ Pending |
+| AI-01 | Phase 42 | ⬜ Pending |
+| AI-02 | Phase 42 | ⬜ Pending |
+| AI-03 | Phase 42 | ⬜ Pending |
+| AI-04 | Phase 42 | ⬜ Pending |
 
 ## Accumulated Context
 
@@ -90,6 +117,7 @@ Phase 29 (tamamlandı)
 - LLM güvenli fallback — Gemini quota dolsa endpoint hata değil placeholder döner
 - In-memory cache günlük özet için — server restart temizler, basit ve yeterli
 - Closed positions: yfinance fetch skip, activePositions-only for live calculations
+- v5.1 watchlist sync: localStorage üzerinden — DB'ye taşıma v2'ye bırakıldı
 
 ### Known Technical Debt
 
@@ -105,7 +133,7 @@ None.
 ## Session Continuity
 
 **Last session:** 2026-05-08
-**Completed:** All v5.0 phases (34-39)
-**Next action:** `/gsd:audit-milestone` → `/gsd:complete-milestone v5.0`
+**Completed:** All v5.0 phases (34-39); v5.1 roadmap created (Phase 40-42)
+**Next action:** `/gsd:plan-phase 40`
 
 ---

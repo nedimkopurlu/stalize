@@ -1,7 +1,7 @@
 # Requirements: Yatırım Asistanı
 
 **Defined:** 2026-05-04
-**Updated:** 2026-05-08 — v5.0: LLM (Gemini 2.0 Flash) ve Frontend Tasarım gereksinimleri eklendi
+**Updated:** 2026-05-08 — v5.1: UI-01..05, DATA-01..03, FEAT-01..03, AI-01..04 eklendi; traceability güncellendi
 **Core Value:** Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıklamayla cevap vermek — karar kullanıcıda, anlayış asistanda.
 
 ## v1 Requirements
@@ -152,12 +152,29 @@
 | MODEL-03 | Phase 39 | Pending |
 | MODEL-04 | Phase 39 | Pending |
 | LLM-04 | Phase 39 | Pending |
+| UI-01 | Phase 40 | Pending |
+| UI-02 | Phase 40 | Pending |
+| UI-03 | Phase 40 | Pending |
+| UI-04 | Phase 40 | Pending |
+| UI-05 | Phase 40 | Pending |
+| DATA-01 | Phase 41 | Pending |
+| DATA-02 | Phase 41 | Pending |
+| DATA-03 | Phase 41 | Pending |
+| FEAT-01 | Phase 41 | Pending |
+| FEAT-02 | Phase 41 | Pending |
+| FEAT-03 | Phase 41 | Pending |
+| AI-01 | Phase 42 | Pending |
+| AI-02 | Phase 42 | Pending |
+| AI-03 | Phase 42 | Pending |
+| AI-04 | Phase 42 | Pending |
 
 **Coverage:**
 - v1 requirements: 33 total (23 original + 4 LLM + 6 DESIGN)
-- Mapped to phases: 33/33 ✓
+- v5.1 requirements: 12 total (5 UI + 3 DATA + 3 FEAT + 4 AI — wait: 5+3+3+4=15)
+- v5.1 mapped: 15/15 ✓
+- Total mapped: 48/48 ✓
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-05-04*
-*Last updated: 2026-05-08 — v5.0: LLM-01..04, DESIGN-01..06 eklendi; faz numaraları 34-39 olarak güncellendi*
+*Last updated: 2026-05-08 — v5.1: UI-01..05, DATA-01..03, FEAT-01..03, AI-01..04 eklendi; Phase 40-42 traceability güncellendi*
