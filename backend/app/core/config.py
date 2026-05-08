@@ -31,6 +31,7 @@ class Settings(BaseSettings):
 
     # Security
     API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
     ENVIRONMENT: str = "development"
 
     # Database
@@ -108,19 +109,20 @@ class Settings(BaseSettings):
         "TCMB",
         "TUIK",
         "Hazine ve Maliye Bakanligi",
-        "Reuters",
-        "Bloomberg",
-        "Financial Times",
-        "CNBC",
-        "Yahoo Finance",
-        "MarketWatch",
-        "Investing",
-        "TradingView",
         "Bloomberg HT",
         "Ekonomim",
+        "Dunya",
         "Dunya Gazetesi",
         "CNBC-e",
+        "Bigpara",
+        "A Para",
+        "Borsa Gundem",
+        "Finans Gundem",
+        "Para Analiz",
+        "Mynet Finans",
         "Foreks",
+        "Borsa Direkt",
+        "InvestAZ Arastirma",
         "Fintables",
         "Finnet",
         "Takasbank",
