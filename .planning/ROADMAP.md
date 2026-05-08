@@ -296,8 +296,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 39-01: Model portföy özerk karar motoru — Gemini haftalık analiz + Türkçe gerekçe + DB kaydı (MODEL-01, MODEL-02, LLM-04)
-- [ ] 39-02: Model portföy frontend — mevcut pozisyonlar, karar geçmişi, kullanıcı portföyü karşılaştırması (MODEL-03, MODEL-04)
+- [ ] 39-01-PLAN.md — Gemini haftalık özet entegrasyonu + model portföy geçmişi + kullanıcı karşılaştırma kartı (MODEL-02, MODEL-03, MODEL-04, LLM-04)
 
 ## Progress Table
 
