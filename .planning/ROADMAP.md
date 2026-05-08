@@ -281,8 +281,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 38-01: Portföy backend — alım-satım CRUD, P&L hesaplama, risk metrikleri, BIST100 karşılaştırma (PORT-01, PORT-02, PORT-03, PORT-04)
-- [ ] 38-02: Portföy frontend — "/portfolio" sayfası tam işlevsel; watchlist backend + frontend entegrasyonu (PORT-05)
+- [ ] 38-01-PLAN.md — PORT-02 pozisyon kapatma: DB migration, PATCH endpoint, frontend Kapat butonu + Geçmiş Pozisyonlar tablosu
 
 ### Phase 39: Model Portföy AI Kararları
 **Goal**: Mevcut `/model-portfolio` sayfası Gemini tarafından haftalık özerk olarak yönetilen gerçek bir model portföyle doldurulur; her karar Türkçe gerekçesiyle tarihli olarak kaydedilir.
