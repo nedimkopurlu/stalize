@@ -114,107 +114,6 @@ export interface HealthResponse {
   timestamp: string;
 }
 
-export interface SourceCatalogItem {
-  key: string;
-  name: string;
-  url: string;
-  category: string;
-  ingest_status: 'active' | 'planned' | string;
-  priority: string;
-  scan_mode: string;
-  status_note: string;
-  api_endpoint?: string;
-  runner_available: boolean;
-  health_status: 'fresh' | 'failing' | 'stale' | 'missing' | 'not_run' | string;
-  health: Record<string, unknown>;
-  health_detail: HealthSourceStatus;
-}
-
-export interface SourceCatalogResponse {
-  sources: SourceCatalogItem[];
-  summary: {
-    total: number;
-    active: number;
-    planned: number;
-    scheduler_or_manual: number;
-    on_demand: number;
-    needs_attention: number;
-    health: {
-      fresh: number;
-      failing: number;
-      stale: number;
-      missing: number;
-      not_run: number;
-    };
-  };
-  timestamp: string;
-}
-
-export interface SourceHealthHistoryItem {
-  id: number;
-  source_key: string;
-  status: 'success' | 'failure' | string;
-  error: string | null;
-  detail: Record<string, unknown>;
-  recorded_at: string | null;
-}
-
-export interface SourceHealthHistoryResponse {
-  items: SourceHealthHistoryItem[];
-  source_key: string | null;
-  limit: number;
-  count: number;
-  timestamp: string;
-}
-
-export interface SourceHealthAlertItem {
-  id: string;
-  severity: 'critical' | 'high' | 'medium' | 'planned' | string;
-  title: string;
-  detail: string;
-  note: string;
-  score: number;
-}
-
-export interface SourceHealthRollupItem {
-  source: SourceCatalogItem;
-  history: SourceHealthHistoryItem[];
-  failure_count: number;
-  success_count: number;
-  latest_event: SourceHealthHistoryItem | null;
-  risk_score: number;
-  success_ratio: number | null;
-  freshness_rank: number;
-  incident_state: 'open' | 'recovering' | 'watch' | 'stable' | 'planned' | string;
-}
-
-export interface SourceHealthDashboardResponse {
-  source_catalog: SourceCatalogResponse;
-  ledger: {
-    total_events: number;
-    success_count: number;
-    failure_count: number;
-    failure_rate: number | null;
-    recent_events: SourceHealthHistoryItem[];
-  };
-  counts: {
-    at_risk_sources: number;
-    planned_sources: number;
-  };
-  metrics: {
-    open_incidents: number;
-    watchlist_sources: number;
-    recovering_sources: number;
-    max_failure_streak: number;
-    average_success_rate: number | null;
-  };
-  alerts: SourceHealthAlertItem[];
-  unstable_sources: SourceHealthRollupItem[];
-  recovery_candidates: SourceHealthRollupItem[];
-  healthy_sources: SourceHealthRollupItem[];
-  timestamp: string;
-}
-
 export interface StockListResponse {
   stocks: StockSummary[];
   total: number;
@@ -612,6 +511,16 @@ export interface IntelligenceOverview {
   source_summary: Record<string, number>;
   priority_mode: string;
   primary_source: string;
+  scope?: {
+    language: string;
+    region: string;
+    source_policy: string;
+  };
+  cache?: {
+    status: 'hit' | 'miss' | string;
+    age_seconds: number;
+    ttl_seconds: number;
+  };
 }
 
 export interface MacroIndicators {
@@ -634,16 +543,6 @@ export interface KapNotification {
   title: string;
   published_at: string;
   kap_url: string | null;
-}
-
-export interface SparklinePoint {
-  date: string;
-  close: number;
-}
-
-export interface SparklineResponse {
-  symbol: string;
-  points: SparklinePoint[];
 }
 
 export interface MacroEventItem {
@@ -772,7 +671,6 @@ export interface MarketGoldResponse {
 export const api = {
   // Dashboard
   getDashboard: () => apiFetch<DashboardData>('/dashboard'),
-  getSourceCatalog: () => apiFetch<SourceCatalogResponse>('/sources/catalog'),
 
   // Stocks
   getStocks: (params?: {
@@ -811,18 +709,8 @@ export const api = {
   getStockTechnical: (symbol: string) =>
     apiFetch<TechnicalResult>(`/stocks/${symbol}/technical`),
 
-  runTechnicalAnalysis: () =>
-    apiFetch<{ status: string; analyzed: number }>('/analysis/technical/run', { method: 'POST' }),
-
-  // Scoring
-  updateScores: () =>
-    apiFetch<{ status: string; updated: number }>('/scoring/update', { method: 'POST' }),
-
   getStockScoreBreakdown: (symbol: string) =>
     apiFetch<ScoreBreakdownResponse>(`/stocks/${symbol}/score-breakdown`),
-
-  getStockNews: (symbol: string, limit: number = 10) =>
-    apiFetch<StockNewsResponse>(`/stocks/${symbol}/news?limit=${limit}`),
 
   getStockFundamentals: (symbol: string) =>
     apiFetch<StockFundamentals>(`/stocks/${symbol}/fundamentals`),
@@ -830,41 +718,8 @@ export const api = {
   getStockPeers: (symbol: string) =>
     apiFetch<StockPeersResponse>(`/stocks/${symbol}/peers`),
 
-  getRankings: (params?: { sort_by?: string; limit?: number; sector?: string; bist30?: boolean }) => {
-    const searchParams = new URLSearchParams();
-    if (params?.sort_by) searchParams.set('sort_by', params.sort_by);
-    if (params?.limit) searchParams.set('limit', String(params.limit));
-    if (params?.sector) searchParams.set('sector', params.sector);
-    if (params?.bist30) searchParams.set('bist30', 'true');
-    return apiFetch<{ rankings: StockSummary[]; sort_by: string; count: number }>(`/rankings?${searchParams.toString()}`);
-  },
-
-  // Sectors
-  getSectors: () =>
-    apiFetch<{ sectors: SectorSummary[] }>('/sectors'),
-
   getStockSectors: () =>
     apiFetch<StockSectorsResponse>('/stocks/sectors'),
-
-  screenStocks: (params: Record<string, string>) => {
-    const qs = new URLSearchParams(params).toString();
-    return apiFetch<{ stocks?: StockSummary[]; count?: number }>(`/screener?${qs}`);
-  },
-
-  // Health
-  health: () =>
-    apiFetch<HealthResponse>('/health'),
-  getSourceHealthHistory: (params?: { source_key?: string; limit?: number }) => {
-    const searchParams = new URLSearchParams();
-    if (params?.source_key) searchParams.set('source_key', params.source_key);
-    if (params?.limit) searchParams.set('limit', String(params.limit));
-    return apiFetch<SourceHealthHistoryResponse>(`/sources/health/history?${searchParams.toString()}`);
-  },
-  getSourceHealthDashboard: (params?: { limit?: number }) => {
-    const searchParams = new URLSearchParams();
-    if (params?.limit) searchParams.set('limit', String(params.limit));
-    return apiFetch<SourceHealthDashboardResponse>(`/sources/health/dashboard?${searchParams.toString()}`);
-  },
 
   // Portfolio
   getPortfolioPositions: () =>
@@ -887,11 +742,6 @@ export const api = {
       body: data,
     }),
 
-  closePosition: (positionId: number) =>
-    apiFetch<{ status: string; symbol: string }>(`/portfolio/positions/${positionId}`, {
-      method: 'DELETE',
-    }),
-
   getCurrentModelPortfolio: () =>
     apiFetch<ModelPortfolioCurrentResponse>('/model-portfolio/current'),
 
@@ -903,53 +753,14 @@ export const api = {
       method: 'POST',
     }),
 
+  getHealth: () =>
+    apiFetch<HealthResponse>('/health'),
+
   getIntelligenceOverview: (limit: number = 10) =>
     apiFetch<IntelligenceOverview>(`/intelligence/overview?limit=${limit}`),
 
-  // ─── FAZ 9: TCMB, TUIK, EVENT FUSION, KORELASYON ───
-
-  // Makro Olaylar
-  getMacroEvents: (params?: { limit?: number; days?: number }) => {
-    const searchParams = new URLSearchParams();
-    if (params?.limit) searchParams.set('limit', String(params.limit));
-    if (params?.days) searchParams.set('days', String(params.days));
-    return apiFetch<MacroEventsResponse>(`/macro/events?${searchParams.toString()}`);
-  },
-
-  triggerTCMBScan: () =>
-    apiFetch<{ status: string; stored: number; source: string; timestamp: string }>('/macro/tcmb/scan', {
-      method: 'POST',
-    }),
-
-  triggerTUIKScan: () =>
-    apiFetch<{ status: string; stored: number; source: string; timestamp: string }>('/macro/tuik/scan', {
-      method: 'POST',
-    }),
-
-  // Dinamik Korelasyon
-  getCorrelationMatrix: (window_days: number = 30) =>
-    apiFetch<CorrelationMatrixResponse>(`/correlation/matrix?window_days=${window_days}`),
-
-  getCrisisMode: () =>
-    apiFetch<CrisisModeResponse>('/correlation/crisis'),
-
-  getDiversificationAdvice: () =>
-    apiFetch<DiversificationAdviceResponse>('/correlation/diversification-advice'),
-
-  getLowCorrelationPairs: (params?: { threshold?: number; limit?: number }) => {
-    const searchParams = new URLSearchParams();
-    if (params?.threshold) searchParams.set('threshold', String(params.threshold));
-    if (params?.limit) searchParams.set('limit', String(params.limit));
-    return apiFetch<LowCorrelationPairsResponse>(`/correlation/low-correlation-pairs?${searchParams.toString()}`);
-  },
-
-  getMacroIndicators: () => apiFetch<MacroIndicators>('/macro/indicators'),
-
   getKapFeed: (limit: number = 10) =>
     apiFetch<KapNotification[]>(`/stocks/kap-feed?limit=${limit}`),
-
-  getSparklineData: (symbol: string, days: number = 30) =>
-    apiFetch<SparklineResponse>(`/stocks/sparkline?symbol=${encodeURIComponent(symbol)}&days=${days}`),
 
   // ── Market Endpoints (Phase 29) ─────────────────────────
   getMarketBist100: () => apiFetch<MarketBist100Response>('/market/bist100'),
