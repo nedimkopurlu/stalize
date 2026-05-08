@@ -46,197 +46,6 @@
   max-width: 600px;
 }
 
-/* ── Strategy Grid ───────────────────────────────────────────── */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-/* ── Strategy Card ───────────────────────────────────────────── */
-.card {
-  background: var(--bg-elevated, #1c1f24);
-  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.06));
-  border-radius: 16px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
-}
-
-.card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
-}
-
-/* Card header: icon + tag */
-.cardHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.iconCircle {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  flex-shrink: 0;
-  font-style: normal;
-}
-
-.tag {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  padding: 3px 10px;
-  border-radius: 20px;
-  border: 1px solid;
-}
-
-/* Card name */
-.cardName {
-  font-family: var(--font-fraunces, 'Fraunces', Georgia, serif);
-  font-size: 19px;
-  font-weight: 700;
-  color: var(--text-primary, #f5f5f7);
-  margin: 0;
-  line-height: 1.2;
-}
-
-/* Card description */
-.cardDesc {
-  font-size: 12.5px;
-  color: var(--text-muted, #8b8d93);
-  line-height: 1.65;
-  margin: 0;
-  min-height: 56px;
-}
-
-/* ── Stats Row ───────────────────────────────────────────────── */
-.statsRow {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  border-top: 1px solid var(--border-primary, rgba(255, 255, 255, 0.06));
-  border-bottom: 1px solid var(--border-primary, rgba(255, 255, 255, 0.06));
-  padding: 12px 0;
-  margin: 0 -2px;
-}
-
-.statItem {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 0 4px;
-}
-
-.statValue {
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.statLabel {
-  font-size: 10px;
-  color: var(--text-muted, #8b8d93);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 500;
-}
-
-.statDivider {
-  width: 1px;
-  height: 28px;
-  background: var(--border-primary, rgba(255, 255, 255, 0.06));
-  flex-shrink: 0;
-}
-
-/* ── Holdings Chips ──────────────────────────────────────────── */
-.holdingsRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  min-height: 28px;
-}
-
-.holdingChip {
-  font-size: 11px;
-  font-weight: 700;
-  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
-  color: var(--text-primary, #f5f5f7);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
-  padding: 3px 8px;
-  text-decoration: none;
-  transition: background 0.12s ease, border-color 0.12s ease;
-  white-space: nowrap;
-}
-
-.holdingChip:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.16);
-}
-
-.holdingChipMuted {
-  font-size: 11.5px;
-  color: var(--text-muted, #8b8d93);
-  font-style: italic;
-  padding: 3px 0;
-}
-
-/* ── Card Action Buttons ─────────────────────────────────────── */
-.cardActions {
-  display: flex;
-  gap: 10px;
-  margin-top: auto;
-}
-
-.btnGhost {
-  flex: 1;
-  padding: 9px 0;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 8px;
-  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.1));
-  background: transparent;
-  color: var(--text-primary, #f5f5f7);
-  cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease;
-  letter-spacing: 0.01em;
-}
-
-.btnGhost:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.18);
-}
-
-.btnAccent {
-  flex: 1;
-  padding: 9px 0;
-  font-size: 13px;
-  font-weight: 700;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: opacity 0.12s ease, transform 0.1s ease;
-  letter-spacing: 0.01em;
-}
-
-.btnAccent:hover {
-  opacity: 0.88;
-  transform: translateY(-1px);
-}
-
 /* ── AI Weekly Portfolio Section ─────────────────────────────── */
 .aiSection {
   background: var(--bg-elevated, #1c1f24);
@@ -398,13 +207,72 @@
   margin: 0;
 }
 
-/* ── Responsive ──────────────────────────────────────────────── */
-@media (max-width: 1024px) {
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+/* ── Strategy Templates ──────────────────────────────────────── */
+.strategiesSection {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
+.strategiesHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.strategiesTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.strategiesSub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.strategyGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 900px) { .strategyGrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .strategyGrid { grid-template-columns: 1fr; } }
+
+.strategyCard {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.strategyCard:hover { transform: translateY(-2px); }
+
+.strategyIcon { font-size: 22px; line-height: 1; }
+.strategyName { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+.strategyDesc { font-size: 13px; line-height: 1.5; color: var(--text-muted); }
+.strategyBadge {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  margin-top: 4px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 700px) {
   .page {
     padding: 24px 16px 60px;
@@ -415,20 +283,11 @@
     font-size: 26px;
   }
 
-  .grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
   .aiSection {
     padding: 20px 18px;
   }
 
   .aiSectionTitle {
     font-size: 18px;
-  }
-
-  .statsRow {
-    gap: 0;
   }
 }
