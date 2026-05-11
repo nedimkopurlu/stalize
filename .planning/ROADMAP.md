@@ -7,7 +7,8 @@
 - ✅ **v3.1 Audit Düzeltmeleri** — Phases 22–27 (shipped 2026-04-29)
 - ✅ **v4.0 Kişisel Yatırım Asistanı** — Phases 28–29 (completed); Phases 30–33 absorbed into v5.0
 - ✅ **v5.0 LLM Entegrasyonlu Yatırım Asistanı** — Phases 34–39 (completed 2026-05-08)
-- 🚧 **v5.1 Kapsamlı Bug Fix & Kalite İyileştirme** — Phases 40–42 (aktif)
+- ✅ **v5.1 Kapsamlı Bug Fix & Kalite İyileştirme** — Phases 40–42 (completed 2026-05-08)
+- 🚧 **v6.0 Karar Güvenliği & Sistem Olgunlaşması** — Phases 43–47 (aktif)
 
 ## Phases
 
@@ -335,11 +336,79 @@ Plans:
   4. Tüm AI endpoint'lerinde (hisse analizi, günlük özet, model portföy kararı) hata durumunda kullanıcı dostu Türkçe fallback mesajı gösterilir; HTTP 500 kullanıcıya hiçbir zaman ham olarak iletilmez
 **Plans**: TBD
 
+---
+
+## v6.0 Phases
+
+### Phase 43: Karar Dili Güvenliği & Skor Açıklanabilirliği
+**Goal**: "GÜÇLÜ AL/SAT" gibi direktif etiketler direktif olmayan güvenli dile çevrilir; hisse detay sayfasında skor bileşen dökümü ve veri bütünlüğü göstergesi eklenir.
+**Depends on**: Phase 42 (v5.1 tamamlandı)
+**Requirements**: KARAR-01, KARAR-02, KARAR-03, KARAR-04, SKOR-01, SKOR-02, SKOR-03
+**Success Criteria** (what must be TRUE):
+  1. Hisse listesinde ve hisse detay sayfasında "GÜÇLÜ AL" / "AL" / "TUT" / "SAT" / "GÜÇLÜ SAT" etiketleri artık görünmez; yerine "Yüksek Öncelikli İzleme" / "Pozitif Görünüm" / "Nötr İzleme" / "Zayıflayan Görünüm" / "Riskli Görünüm" etiketleri gösterilir
+  2. Etiketin üzerine hover edildiğinde veya bilgi ikonuna tıklandığında "Bu karar destek notudur — nihai karar kullanıcıya aittir" içerikli tooltip/not görünür
+  3. Hisse detay sayfasında veri bütünlüğü göstergesi bulunur: "3/3 bileşen mevcut" veya "2/3 — temel veri eksik" şeklinde
+  4. Temel verisi eksik veya volatilitesi yüksek hisselerde görsel uyarı işareti (sarı ikon veya metin) görünür
+  5. Hisse detay sayfasında skor bileşen dökümü gösterilir: Temel %45 → 29.2 puan, Teknik %40 → 28.8 puan, Sentiment %15 → 8.1 puan formatında; veriler backend score-breakdown API'den gelir
+  6. Bileşen eksikse (ör. temel veri yok) "Ağırlık yeniden dağıtıldı — temel veri mevcut değil" uyarısı gösterilir
+**Plans**: TBD
+
+### Phase 44: Backtest & Sinyal Performans Dashboard
+**Goal**: Mevcut sinyal snapshot + outcome evaluation altyapısı kullanıcıya görünür hale getirilir; hit ratio ve getiri istatistikleri ile birlikte sinyal performans tablosu sunulur.
+**Depends on**: Phase 43
+**Requirements**: BACKTEST-01, BACKTEST-02, BACKTEST-03, BACKTEST-04
+**Success Criteria** (what must be TRUE):
+  1. Portfolio veya Intelligence sayfasında "Sinyal Performansı" bölümü bulunur; tablo: sinyal tarihi, hisse sembolü, etiket, 1 haftalık getiri (%), 1 aylık getiri (%), BIST100'e göre fark, başarılı mı sütunlarını içerir
+  2. Dönem filtresi çalışır: son 1 ay / 3 ay / 6 ay seçimlerinde tablo ilgili sinyalleri gösterir
+  3. Etiket filtresi çalışır: "Pozitif Görünüm", "Yüksek Öncelikli İzleme" gibi seçimle tablo filtrelenir
+  4. Özet satırı gösterilir: "toplam X sinyal, %Y tuttu, ortalama 1 haftalık getiri: +Z%"
+  5. Veri yoksa "Henüz değerlendirilebilir sinyal yok — sistem sinyaller ürettikçe burada görünecek" mesajı gösterilir
+  6. Backend'den sinyal verisi alınırken hata oluşursa kullanıcı dostu Türkçe mesaj gösterilir
+**Plans**: TBD
+
+### Phase 45: Veri Tazeliği & Sistem Sağlığı
+**Goal**: Tüm sayfalarda verinin ne zaman güncellendiği gösterilir; stale data görsel uyarısı eklenir; AI analizine veri tarihi notu eklenir.
+**Depends on**: Phase 43
+**Requirements**: VERI-01, VERI-02, VERI-03, VERI-04
+**Success Criteria** (what must be TRUE):
+  1. Hisse listesindeki her hisse satırında (veya tablonun üstünde) son fiyat güncelleme zamanı gösterilir: "Son güncelleme: 14:32" veya "Son güncelleme: 3 saat önce" formatında
+  2. Hisse detay sayfasında fundamental veri dönemi etiketi görünür: "Temel Veriler — 2024-Q3 dönemi" gibi
+  3. Son güncelleme 8 saatten eski olan hisselerde sarı renkli veya "⚠ Eski veri" metniyle görsel uyarı gösterilir
+  4. Hisse AI analiz sonucunun altında "Bu analiz [tarih] verilerine dayanmaktadır" notu yer alır
+  5. Uyarılar kullanıcı deneyimini bozmadan sade ve okunabilir şekilde gösterilir (tabloya dikey alan eklemeden)
+**Plans**: TBD
+
+### Phase 46: Portföy Risk Yönetimi
+**Goal**: Portföy sayfasına sektör dağılımı görselleştirmesi ve yoğunlaşma uyarısı eklenir; özet karta risk bilgileri entegre edilir.
+**Depends on**: Phase 44
+**Requirements**: RISK-01, RISK-02, RISK-03, RISK-04
+**Success Criteria** (what must be TRUE):
+  1. Portföy sayfasında sektör dağılımı bölümü yer alır: her sektörün adı ve portföydeki ağırlığı (%) listelenir veya yatay bar grafik ile gösterilir
+  2. Herhangi bir sektörün ağırlığı %35'i geçtiğinde görsel uyarı (turuncu/sarı renk veya ikon) gösterilir: "Bankacılık sektöründe yoğunlaşma: %42 ⚠"
+  3. Herhangi bir hissenin portföy ağırlığı %20'yi geçtiğinde görsel uyarı gösterilir: "AKBNK tek hisse ağırlığı: %24 ⚠"
+  4. Portföy özet kartına "Açık pozisyon: X hisse" ve "En büyük 3 sektör: Bankacılık %42, Enerji %18, Sanayi %15" bilgisi eklenir
+  5. Uyarılar pozisyon listesinin üstünde veya ayrı bir risk özeti bölümünde gösterilir; K/Z tablosuna müdahale etmez
+**Plans**: TBD
+
+### Phase 47: İşlem Disiplini & Günlüğü
+**Goal**: Pozisyon açma formuna disiplin alanları eklenir; pozisyon kapatmada çıkış nedeni zorunlu hale gelir; kapalı pozisyon istatistikleri gösterilir.
+**Depends on**: Phase 46
+**Requirements**: GUNLUK-01, GUNLUK-02, GUNLUK-03, GUNLUK-04
+**Success Criteria** (what must be TRUE):
+  1. Pozisyon ekleme formunda "Kararı bozan koşul" metin alanı bulunur (zorunlu değil, placeholder açıklayıcı: "Ör. MACD negatif geçerse veya 90 TL altına sararsa")
+  2. Pozisyon kapatma diyaloğunda çıkış nedeni seçimi zorunludur: Stop Tetiklendi / Hedefe Ulaştı / Senaryo Bozuldu / Diğer
+  3. Kapalı pozisyonlar listesinde her pozisyon için giriş gerekçesi (varsa) ve çıkış nedeni görünür
+  4. Portfolio sayfasında kapalı pozisyon istatistik özeti gösterilir: toplam kapatılan pozisyon sayısı, ortalama K/Z (%), planlı çıkış oranı (stop+hedef / toplam)
+  5. "Diğer" seçildiğinde kısa açıklama metin alanı açılır
+  6. Backend'e exit_reason ve invalidation_condition alanları eklenir ve kaydedilir
+**Plans**: TBD
+
 ## Progress Table
 
 **Execution Order:**
-v5.0 phases executed: 34 → 35 → 36 → 37 → 38 → 39 (all complete)
-v5.1 phases execute in numeric order: 40 → 41 → 42
+v5.0 phases: 34 → 35 → 36 → 37 → 38 → 39 (complete)
+v5.1 phases: 40 → 41 → 42 (complete)
+v6.0 phases: 43 → 44+45 (parallel) → 46 → 47
 
 | Phase | Milestone | Sayfalar | Plans | Status | Tamamlandı |
 |-------|-----------|----------|-------|--------|-----------|
@@ -357,9 +426,14 @@ v5.1 phases execute in numeric order: 40 → 41 → 42
 | 37. Haberler + Günlük AI Özeti | v5.0 | `/intelligence` + `/` | 1/1 | ✅ Complete | 2026-05-08 |
 | 38. Portföy + Takip Listesi | v5.0 | `/portfolio` + `/watchlist` | 1/1 | ✅ Complete | 2026-05-08 |
 | 39. Model Portföy AI Kararları | v5.0 | `/model-portfolio` | 1/1 | ✅ Complete | 2026-05-08 |
-| 40. UI/UX Kapsamlı Görsel İyileştirme | v5.1 | tüm 7 sayfa | 0/? | ⬜ Not started | — |
-| 41. Veri Doğruluğu & Eksik Fonksiyonlar | v5.1 | `/portfolio` + `/watchlist` + `/stocks/[symbol]` | 0/? | ⬜ Not started | — |
-| 42. AI Kalite & Sistem Güvenilirliği | v5.1 | backend + tüm AI endpoint'ler | 0/? | ⬜ Not started | — |
+| 40. UI/UX Kapsamlı Görsel İyileştirme | v5.1 | tüm 7 sayfa | 1/1 | ✅ Complete | 2026-05-08 |
+| 41. Veri Doğruluğu & Eksik Fonksiyonlar | v5.1 | `/portfolio` + `/stocks/[symbol]` | 1/1 | ✅ Complete | 2026-05-08 |
+| 42. AI Kalite & Sistem Güvenilirliği | v5.1 | backend + AI endpoint'ler | 1/1 | ✅ Complete | 2026-05-08 |
+| 43. Karar Dili & Skor Açıklanabilirliği | v6.0 | `/stocks` + `/stocks/[symbol]` | 0/? | ⬜ Not started | — |
+| 44. Backtest & Sinyal Dashboard | v6.0 | `/intelligence` veya `/portfolio` | 0/? | ⬜ Not started | — |
+| 45. Veri Tazeliği & Sistem Sağlığı | v6.0 | `/stocks` + `/stocks/[symbol]` + AI | 0/? | ⬜ Not started | — |
+| 46. Portföy Risk Yönetimi | v6.0 | `/portfolio` | 0/? | ⬜ Not started | — |
+| 47. İşlem Disiplini & Günlüğü | v6.0 | `/portfolio` + backend | 0/? | ⬜ Not started | — |
 
 ## Kuzey Yıldızı
 

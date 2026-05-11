@@ -57,15 +57,17 @@ Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıkl
 - Otomatik alım-satım — karar her zaman kullanıcıda
 - BIST100 dışı hisseler — v1 için likit evren yeterli
 
-## Current Milestone: v5.1 — Kapsamlı Bug Fix & Kalite İyileştirme
+## Current Milestone: v6.0 — Karar Güvenliği & Sistem Olgunlaşması
 
-**Goal:** v5.0'da gönderilen tüm özellikleri olgunlaştır; görsel hatalar, veri doğruluğu, eksik fonksiyonlar ve AI kalitesi olmak üzere 4 alanda kapsamlı düzeltme yap.
+**Goal:** Kapsamlı audit bulgularına dayanarak sistemi gerçek bir kişisel yatırım karar asistanına dönüştür — direktif olmayan karar dili, sinyal backtest şeffaflığı, veri tazeliği göstergeleri, portföy risk uyarıları, işlem disiplini günlüğü ve skor açıklanabilirliği.
 
 **Target features:**
-- UI/UX: 7 sayfanın tamamında piksel düzeyinde görsel geçiş, mobile responsive düzeltmeler, empty state standardizasyonu
-- Veri & Hesaplama: portföy K/Z doğruluğu, null/undefined güvenliği, teknik/temel metrik fallback'ler
-- Eksik Fonksiyonlar: watchlist add/remove, portföy form validasyon, karşılaştırma grafiği
-- AI Kalite: hisse analizi + günlük özet + model portföy gerekçe prompt'ları derinleştirilir; Groq birincil sağlayıcı
+- Karar Dili: "GÜÇLÜ AL/SAT" → direktif olmayan güvenli etiket sistemi; tooltip ile açıklamalı
+- Backtest: Sinyal performans tablosu (altyapı mevcut, kullanıcıya gösterilmiyor); hit ratio özeti
+- Veri Tazeliği: Son güncelleme zamanı UI'da; stale data uyarısı; AI analizine veri tarihi notu
+- Portföy Risk: Sektör dağılımı görsel; >%35 sektör / >%20 hisse yoğunlaşma uyarısı
+- İşlem Günlüğü: Kararı bozan koşul alanı; pozisyon kapatmada çıkış nedeni; kapalı pozisyon istatistiği
+- Skor Şeffaflığı: Bileşen dökümü (temel/teknik/sentiment katkısı); eksik veri uyarısı
 
 ## Context
 
@@ -112,4 +114,4 @@ Bu döküman her fazda ve milestone sınırında güncellenir.
 3. Out of Scope'daki gerekçeler hâlâ geçerli mi?
 
 ---
-*Last updated: 2026-05-08 after v5.1 milestone start — kapsamlı bug fix + kalite iyileştirme*
+*Last updated: 2026-05-08 after v6.0 milestone start — karar güvenliği & sistem olgunlaşması (audit bulgularına dayalı)*

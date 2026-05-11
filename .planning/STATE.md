@@ -1,12 +1,12 @@
 ---
 gsd_state_version: 1.0
-milestone: v5.1
-milestone_name: Kapsamlı Bug Fix & Kalite İyileştirme
+milestone: v6.0
+milestone_name: Karar Güvenliği & Sistem Olgunlaşması
 status: in_progress
-last_updated: "2026-05-08T23:00:00.000Z"
+last_updated: "2026-05-08T23:30:00.000Z"
 progress:
-  total_phases: 3
-  completed_phases: 3
+  total_phases: 5
+  completed_phases: 0
   total_plans: 0
   completed_plans: 0
 ---
@@ -18,18 +18,18 @@ progress:
 See: `.planning/PROJECT.md`
 
 **Core value:** Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıklamayla cevap vermek — karar kullanıcıda, anlayış asistanda.
-**Current milestone:** v5.1 — Kapsamlı Bug Fix & Kalite İyileştirme 🔄 IN PROGRESS
+**Current milestone:** v6.0 — Karar Güvenliği & Sistem Olgunlaşması 🔄 IN PROGRESS
+**Previous milestone:** v5.1 — Kapsamlı Bug Fix & Kalite İyileştirme ✅ COMPLETE (Phases 40-42)
 **Previous milestone:** v5.0 — LLM Entegrasyonlu Yatırım Asistanı ✅ COMPLETE
-**Previous milestone:** v4.0 — Kişisel Yatırım Asistanı (Phases 28-29 tamamlandı)
 
 ## Current Position
 
-Phase: 42 — AI Kalite & Sistem Güvenilirliği
-Status: Phase 42 tamamlandı — 2026-05-08
-Last activity: 2026-05-08 — Phase 42 AI kalite ve sistem güvenilirliği tamamlandı
+Phase: 43 — Karar Dili Güvenliği & Skor Açıklanabilirliği
+Status: Milestone v6.0 başlatıldı — 2026-05-08
+Last activity: 2026-05-08 — v6.0 roadmap oluşturuldu (23 requirement, 5 faz)
 
 ```
-Progress: [██████████] 3/3 phases complete
+Progress: [░░░░░░░░░░] 0/5 phases complete
 ```
 
 ## v5.0 Phases
@@ -41,19 +41,42 @@ Progress: [██████████] 3/3 phases complete
 - [x] Phase 38: Portföy — PORT-02 pozisyon kapatma + gerçek K/Z ✅ (2026-05-08)
 - [x] Phase 39: Model Portföy + AI Kararları ✅ (2026-05-08)
 
-## v5.1 Phases
+## v5.1 Phases (Tamamlandı)
 
 - [x] Phase 40: UI/UX Kapsamlı Görsel İyileştirme ✅ (2026-05-08)
-  - Requirements: UI-01, UI-02, UI-03, UI-04, UI-05
-  - Goal: Tüm 7 sayfada sistematik görsel geçiş, mobile responsive düzeltmeleri, empty state standardizasyonu
 - [x] Phase 41: Veri Doğruluğu & Eksik Fonksiyonlar ✅ (2026-05-08)
-  - Requirements: DATA-01, DATA-02, DATA-03, FEAT-01, FEAT-02, FEAT-03
-  - Goal: Hesaplama hatalarını düzelt, null güvenliği ekle, watchlist/portföy eksik fonksiyonlarını tamamla
 - [x] Phase 42: AI Kalite & Sistem Güvenilirliği ✅ (2026-05-08)
-  - Requirements: AI-01, AI-02, AI-03, AI-04
-  - Goal: Tüm AI prompt'larını derinleştir, hata yönetimini standardize et, sistem kararlılığını sağla
+
+## v6.0 Phases
+
+- [ ] Phase 43: Karar Dili Güvenliği & Skor Açıklanabilirliği ⬜ Not started
+  - Requirements: KARAR-01, KARAR-02, KARAR-03, KARAR-04, SKOR-01, SKOR-02, SKOR-03
+  - Goal: "GÜÇLÜ AL/SAT" direktif etiketler güvenli dile çevrilir; hisse detay sayfasında skor bileşen dökümü ve veri bütünlüğü göstergesi eklenir
+- [ ] Phase 44: Backtest & Sinyal Performans Dashboard ⬜ Not started
+  - Requirements: BACKTEST-01, BACKTEST-02, BACKTEST-03, BACKTEST-04
+  - Goal: Mevcut sinyal altyapısı kullanıcıya görünür; hit ratio ve getiri tablosu sunulur
+- [ ] Phase 45: Veri Tazeliği & Sistem Sağlığı ⬜ Not started
+  - Requirements: VERI-01, VERI-02, VERI-03, VERI-04
+  - Goal: Son güncelleme zamanı UI'da; stale data uyarısı; AI analizine veri tarihi notu
+- [ ] Phase 46: Portföy Risk Yönetimi ⬜ Not started
+  - Requirements: RISK-01, RISK-02, RISK-03, RISK-04
+  - Goal: Sektör dağılımı görsel; yoğunlaşma uyarıları; risk özeti kartı
+- [ ] Phase 47: İşlem Disiplini & Günlüğü ⬜ Not started
+  - Requirements: GUNLUK-01, GUNLUK-02, GUNLUK-03, GUNLUK-04
+  - Goal: Kararı bozan koşul alanı; çıkış nedeni kaydı; kapalı pozisyon istatistiği
 
 ## Phase Dependency Map
+
+```
+Phase 42 (v5.1 tamamlandı)
+    └── Phase 43: Karar Dili & Skor Açıklanabilirliği
+            ├── Phase 44: Backtest Dashboard
+            ├── Phase 45: Veri Tazeliği (parallel with 44)
+            └── Phase 46: Portföy Risk Yönetimi
+                    └── Phase 47: İşlem Disiplini & Günlüğü
+```
+
+## v5.x Phase Dependency Map (Arşiv)
 
 ```
 Phase 39 (v5.0 tamamlandı)
@@ -69,6 +92,7 @@ Phase 39 (v5.0 tamamlandı)
 | Phase 40 | UI/UX | Mobile responsive, empty states, hardcoded colors |
 | Phase 41 | DATA/FEAT | NaN guards, null safety, fundGrid skeleton, BistComparisonChart |
 | Phase 42 | AI | Groq birincil sağlayıcı, derinleştirilmiş promptlar, model portföy gerekçe kalitesi |
+| (v6.0 başlıyor) | — | — |
 
 ## Requirements Satisfied (v5.0)
 
@@ -96,16 +120,44 @@ Phase 39 (v5.0 tamamlandı)
 | UI-03 | Phase 40 | ✅ Complete |
 | UI-04 | Phase 40 | ✅ Complete |
 | UI-05 | Phase 40 | ✅ Complete |
-| DATA-01 | Phase 41 | ⬜ Pending |
-| DATA-02 | Phase 41 | ⬜ Pending |
-| DATA-03 | Phase 41 | ⬜ Pending |
-| FEAT-01 | Phase 41 | ⬜ Pending |
-| FEAT-02 | Phase 41 | ⬜ Pending |
-| FEAT-03 | Phase 41 | ⬜ Pending |
-| AI-01 | Phase 42 | ⬜ Pending |
-| AI-02 | Phase 42 | ⬜ Pending |
-| AI-03 | Phase 42 | ⬜ Pending |
-| AI-04 | Phase 42 | ⬜ Pending |
+| DATA-01 | Phase 41 | ✅ Complete |
+| DATA-02 | Phase 41 | ✅ Complete |
+| DATA-03 | Phase 41 | ✅ Complete |
+| FEAT-01 | Phase 41 | ✅ Complete |
+| FEAT-02 | Phase 41 | ✅ Complete |
+| FEAT-03 | Phase 41 | ✅ Complete |
+| AI-01 | Phase 42 | ✅ Complete |
+| AI-02 | Phase 42 | ✅ Complete |
+| AI-03 | Phase 42 | ✅ Complete |
+| AI-04 | Phase 42 | ✅ Complete |
+
+## v6.0 Requirements to Satisfy
+
+| Req | Phase | Status |
+|-----|-------|--------|
+| KARAR-01 | Phase 43 | ⬜ Pending |
+| KARAR-02 | Phase 43 | ⬜ Pending |
+| KARAR-03 | Phase 43 | ⬜ Pending |
+| KARAR-04 | Phase 43 | ⬜ Pending |
+| SKOR-01 | Phase 43 | ⬜ Pending |
+| SKOR-02 | Phase 43 | ⬜ Pending |
+| SKOR-03 | Phase 43 | ⬜ Pending |
+| BACKTEST-01 | Phase 44 | ⬜ Pending |
+| BACKTEST-02 | Phase 44 | ⬜ Pending |
+| BACKTEST-03 | Phase 44 | ⬜ Pending |
+| BACKTEST-04 | Phase 44 | ⬜ Pending |
+| VERI-01 | Phase 45 | ⬜ Pending |
+| VERI-02 | Phase 45 | ⬜ Pending |
+| VERI-03 | Phase 45 | ⬜ Pending |
+| VERI-04 | Phase 45 | ⬜ Pending |
+| RISK-01 | Phase 46 | ⬜ Pending |
+| RISK-02 | Phase 46 | ⬜ Pending |
+| RISK-03 | Phase 46 | ⬜ Pending |
+| RISK-04 | Phase 46 | ⬜ Pending |
+| GUNLUK-01 | Phase 47 | ⬜ Pending |
+| GUNLUK-02 | Phase 47 | ⬜ Pending |
+| GUNLUK-03 | Phase 47 | ⬜ Pending |
+| GUNLUK-04 | Phase 47 | ⬜ Pending |
 
 ## Accumulated Context
 
