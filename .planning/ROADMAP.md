@@ -351,7 +351,11 @@ Plans:
   4. Temel verisi eksik veya volatilitesi yüksek hisselerde görsel uyarı işareti (sarı ikon veya metin) görünür
   5. Hisse detay sayfasında skor bileşen dökümü gösterilir: Temel %45 → 29.2 puan, Teknik %40 → 28.8 puan, Sentiment %15 → 8.1 puan formatında; veriler backend score-breakdown API'den gelir
   6. Bileşen eksikse (ör. temel veri yok) "Ağırlık yeniden dağıtıldı — temel veri mevcut değil" uyarısı gösterilir
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 43-01-PLAN.md — Guvenli etiket mapping + tooltip (KARAR-01, KARAR-04) — stocks, stock detail, model-portfolio, dashboard
+- [ ] 43-02-PLAN.md — Skor doküm bölümü + veri bütünlüğü göstergesi (KARAR-02, KARAR-03, SKOR-01, SKOR-02, SKOR-03)
 
 ### Phase 44: Backtest & Sinyal Performans Dashboard
 **Goal**: Mevcut sinyal snapshot + outcome evaluation altyapısı kullanıcıya görünür hale getirilir; hit ratio ve getiri istatistikleri ile birlikte sinyal performans tablosu sunulur.
