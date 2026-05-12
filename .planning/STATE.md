@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Karar Güvenliği & Sistem Olgunlaşması
-status: in_progress
-last_updated: "2026-05-08T23:30:00.000Z"
+status: unknown
+last_updated: "2026-05-12T18:10:09.458Z"
 progress:
-  total_phases: 5
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 22
+  completed_phases: 9
+  total_plans: 16
+  completed_plans: 20
 ---
 
 # Project State
@@ -24,13 +24,8 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: 43 — Karar Dili Güvenliği & Skor Açıklanabilirliği
-Status: Milestone v6.0 başlatıldı — 2026-05-08
-Last activity: 2026-05-08 — v6.0 roadmap oluşturuldu (23 requirement, 5 faz)
-
-```
-Progress: [░░░░░░░░░░] 0/5 phases complete
-```
+Phase: 43 (Karar Dili Güvenliği & Skor Açıklanabilirliği) — EXECUTING
+Plan: 2 of 2
 
 ## v5.0 Phases
 
@@ -135,10 +130,10 @@ Phase 39 (v5.0 tamamlandı)
 
 | Req | Phase | Status |
 |-----|-------|--------|
-| KARAR-01 | Phase 43 | ⬜ Pending |
+| KARAR-01 | Phase 43 | ✅ Complete |
 | KARAR-02 | Phase 43 | ⬜ Pending |
 | KARAR-03 | Phase 43 | ⬜ Pending |
-| KARAR-04 | Phase 43 | ⬜ Pending |
+| KARAR-04 | Phase 43 | ✅ Complete |
 | SKOR-01 | Phase 43 | ⬜ Pending |
 | SKOR-02 | Phase 43 | ⬜ Pending |
 | SKOR-03 | Phase 43 | ⬜ Pending |
@@ -172,6 +167,8 @@ Phase 39 (v5.0 tamamlandı)
 - In-memory cache günlük özet için — server restart temizler, basit ve yeterli
 - Closed positions: yfinance fetch skip, activePositions-only for live calculations
 - v5.1 watchlist sync: localStorage üzerinden — DB'ye taşıma v2'ye bırakıldı
+- Display-layer label mapping (v6.0 43-01): DB recommendation stringleri değiştirilmedi, display katmanında güvenli etikete çevrildi (KARAR-01)
+- Dosya bazlı helper kopyalama (v6.0 43-01): ortak lib yerine her sayfada yerel safeLabel — mevcut proje paterni
 
 ### Known Technical Debt
 
@@ -186,8 +183,8 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-08
-**Completed:** All v5.0 phases (34-39); v5.1 roadmap created (Phase 40-42)
-**Next action:** `/gsd:plan-phase 40`
+**Last session:** 2026-05-12
+**Completed:** Phase 43 Plan 01 — karar dili güvenliği safeLabel 4 sayfada
+**Next action:** Execute Phase 43 Plan 02
 
 ---
