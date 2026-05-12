@@ -462,6 +462,20 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
   const scoreReasonRows = getScoreReasonRows(bd);
   const periodDelta = getPeriodDelta(allPrices);
 
+  // Volatilite uyarısı: son 20 günlük fiyat değişimi >%15 (KARAR-03)
+  const volatilityAlert = (() => {
+    const last20 = allPrices.slice(-20);
+    if (last20.length < 2) return false;
+    const first = last20[0].close;
+    const last = last20[last20.length - 1].close;
+    if (!first || !last) return false;
+    return Math.abs((last - first) / first) * 100 > 15;
+  })();
+
+  // Veri bütünlüğü: kaç bileşen mevcut (KARAR-02)
+  const totalComponentCount = bd?.summary ? (bd.summary.available_component_count + bd.summary.missing_component_count) : null;
+  const availableComponentCount = bd?.summary?.available_component_count ?? null;
+
   // target price & upside potential
   const targetPrice = technical?.target_price ?? s.target_price ?? null;
   const stopLoss = technical?.stop_loss ?? s.stop_loss ?? null;
@@ -685,6 +699,27 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 <ScoreBar label="Likidite" value={liquidityScore} />
               </div>
 
+              {availableComponentCount !== null && totalComponentCount !== null && (
+                <div className={styles.componentIntegrity}>
+                  <span
+                    title={availableComponentCount < totalComponentCount
+                      ? 'Bazı bileşenler eksik; ağırlıklar mevcut veriye göre yeniden dağıtıldı.'
+                      : 'Tüm bileşenler eksiksiz mevcut.'}
+                  >
+                    {availableComponentCount < totalComponentCount ? '⚠ ' : ''}
+                    {availableComponentCount}/{totalComponentCount} bileşen mevcut
+                  </span>
+                  {volatilityAlert && (
+                    <span
+                      className={styles.volatilityWarning}
+                      title="Yüksek volatilite — sinyaller daha az güvenilir"
+                    >
+                      ⚠ Yüksek volatilite
+                    </span>
+                  )}
+                </div>
+              )}
+
               <div className={styles.scoreCardDivider} />
 
               <div className={styles.scoreCardRows}>
@@ -731,6 +766,67 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             </div>
           </div>
         </section>
+
+        {/* ── Score breakdown section ──────────────────────── */}
+        {bd && bd.components.length > 0 && (
+          <section className={styles.breakdownSection}>
+            <h2 className={styles.breakdownTitle}>Skor Dökümü</h2>
+            <p className={styles.breakdownSubtitle}>
+              Her bileşenin genel skora katkısı — toplam 100 üzerinden
+            </p>
+
+            {bd.summary.missing_component_count > 0 && (
+              <div className={styles.breakdownMissingAlert}>
+                <span>⚠</span>
+                <span>Eksik veri — ağırlık yeniden dağıtıldı</span>
+              </div>
+            )}
+
+            <div className={styles.breakdownBars}>
+              {bd.components.map((comp) => {
+                const pct = Math.max(0, Math.min(100, comp.raw_score ?? 0));
+                const katkiPct = Math.round(comp.normalized_weight * 100);
+                const barColor =
+                  pct >= 65 ? 'var(--accent-green)'
+                  : pct >= 40 ? 'var(--accent)'
+                  : 'var(--accent-red)';
+
+                const labelMap: Record<string, string> = {
+                  fundamental_score: 'Temel',
+                  technical_score: 'Teknik',
+                  sentiment_score: 'Haber',
+                  company_event_score: 'Şirket Olayı',
+                  macro_regime_score: 'Makro Rejim',
+                  risk_overlay_score: 'Risk Katmanı',
+                };
+                const displayLabel = labelMap[comp.key] ?? comp.label;
+
+                return (
+                  <div key={comp.key} className={styles.breakdownBar} title={comp.reason}>
+                    <div className={styles.breakdownBarHeader}>
+                      <span className={styles.breakdownBarLabel}>{displayLabel}</span>
+                      <span className={styles.breakdownBarMeta}>
+                        <strong style={{ color: barColor }}>{comp.raw_score != null ? comp.raw_score.toFixed(0) : '—'}</strong>
+                        {' '}
+                        <span className={styles.breakdownBarKatki}>— %{katkiPct} katkı</span>
+                      </span>
+                    </div>
+                    <div className={styles.breakdownBarTrack}>
+                      <div
+                        className={styles.breakdownBarFill}
+                        style={{ width: `${pct}%`, background: barColor }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className={styles.breakdownNote}>
+              Skor, mevcut bileşenlerin normalize edilmiş ağırlıklı ortalamasıdır. Eksik bileşen varsa ağırlıklar yeniden dağıtılır.
+            </p>
+          </section>
+        )}
 
         {/* ── Investment thesis ───────────────────────────── */}
         <section className={styles.thesisSection}>

@@ -147,7 +147,7 @@
   font-size: 56px;
   font-weight: 800;
   line-height: 1.05;
-  letter-spacing: -0.035em;
+  letter-spacing: 0;
   margin: 0;
   color: var(--text-primary);
 }
@@ -202,7 +202,7 @@
   font-family: var(--font-fraunces);
   font-size: 64px;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   line-height: 0.95;
   color: var(--text-primary);
 }
@@ -265,7 +265,7 @@
 .scoreCard {
   background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-surface) 100%);
   border: 1px solid var(--border-primary);
-  border-radius: 18px;
+  border-radius: 8px;
   padding: 22px;
 }
 
@@ -379,6 +379,7 @@
 .scoreCardDivider {
   height: 1px;
   background: var(--border-primary);
+  margin-top: 14px;
   margin-bottom: 14px;
 }
 
@@ -406,6 +407,148 @@
   color: var(--text-primary);
 }
 
+/* ── Investment thesis ───────────────────────────────────── */
+.thesisSection {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.9fr) minmax(260px, 0.9fr);
+  padding: 0 40px 32px;
+}
+
+.tradePlanCard,
+.reasonCard,
+.dossierCard,
+.newsDossier {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  padding: 22px;
+}
+
+.cardHeaderLine {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.cardHeaderLine h2,
+.reasonCard h2 {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  line-height: 1.2;
+  margin: 6px 0 0;
+}
+
+.sectionEyebrow {
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.actionPill,
+.scoreChip {
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  color: var(--text-primary);
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 7px 10px;
+}
+
+.decisionBuy {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.28);
+  color: var(--accent-green);
+}
+
+.decisionWatch {
+  background: var(--accent-soft);
+  border-color: rgba(245, 158, 11, 0.28);
+  color: var(--accent);
+}
+
+.decisionAvoid {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.28);
+  color: var(--accent-red);
+}
+
+.planMetrics {
+  border-top: 1px solid var(--border-primary);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.planMetric {
+  border-bottom: 1px solid var(--border-primary);
+  display: grid;
+  gap: 5px;
+  min-height: 76px;
+  padding: 14px 10px 14px 0;
+}
+
+.planMetric span,
+.watchBox span {
+  color: var(--text-dim);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.planMetric strong {
+  color: var(--text-primary);
+  font-size: 0.94rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+
+.planMetric strong[data-tone='success'] {
+  color: var(--accent-green);
+}
+
+.planMetric strong[data-tone='danger'] {
+  color: var(--accent-red);
+}
+
+.positionStrip {
+  display: grid;
+  gap: 6px;
+  padding-top: 16px;
+}
+
+.positionStrip span {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.positionStrip strong {
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.cleanList {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+}
+
+.cleanList li {
+  border-top: 1px solid var(--border-primary);
+  color: var(--text-secondary, var(--text-muted));
+  font-size: 0.9rem;
+  line-height: 1.55;
+  padding-top: 12px;
+}
+
 /* ── Chart section ────────────────────────────────────────── */
 .chartSection {
   padding: 0 40px 32px;
@@ -414,7 +557,7 @@
 .chartCard {
   background: var(--bg-surface);
   border: 1px solid var(--border-primary);
-  border-radius: 20px;
+  border-radius: 8px;
   padding: 28px;
 }
 
@@ -446,7 +589,7 @@
   gap: 3px;
   background: var(--bg-elevated);
   padding: 3px;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .periodBtn {
@@ -510,6 +653,169 @@
   color: var(--text-primary);
 }
 
+/* ── Dossiers ────────────────────────────────────────────── */
+.dossierSection {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  padding: 0 40px 32px;
+}
+
+.indicatorGrid,
+.fundamentalRows {
+  border-top: 1px solid var(--border-primary);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.indicatorRow,
+.fundamentalRow {
+  border-bottom: 1px solid var(--border-primary);
+  display: grid;
+  gap: 5px;
+  min-height: 92px;
+  padding: 14px 14px 14px 0;
+}
+
+.indicatorRow span,
+.fundamentalRow span {
+  color: var(--text-dim);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.indicatorRow strong,
+.fundamentalRow strong {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.indicatorRow small,
+.fundamentalRow small {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.signalRows {
+  display: grid;
+  gap: 0;
+  margin-top: 16px;
+}
+
+.signalRow {
+  align-items: center;
+  border-top: 1px solid var(--border-primary);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) 82px 66px;
+  padding: 11px 0;
+}
+
+.signalRow span {
+  color: var(--text-primary);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.signalRow strong {
+  color: var(--accent);
+  font-size: 0.78rem;
+}
+
+.signalRow strong[data-direction='bullish'] {
+  color: var(--accent-green);
+}
+
+.signalRow strong[data-direction='bearish'] {
+  color: var(--accent-red);
+}
+
+.signalRow small {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  text-align: right;
+}
+
+.watchBox {
+  border-top: 1px solid var(--border-primary);
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.watchBox p {
+  color: var(--text-secondary, var(--text-muted));
+  line-height: 1.5;
+  margin: 0;
+}
+
+.inlineEmpty {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  margin: 0;
+}
+
+.newsDossier {
+  margin: 0 40px 32px;
+}
+
+.stockNewsList {
+  border-top: 1px solid var(--border-primary);
+  display: grid;
+  max-height: 540px;
+  overflow: auto;
+}
+
+.stockNewsRow {
+  border-bottom: 1px solid var(--border-primary);
+  color: inherit;
+  display: grid;
+  gap: 8px;
+  padding: 14px 0;
+  text-decoration: none;
+}
+
+.stockNewsRow:hover strong {
+  color: var(--accent);
+}
+
+.newsRowMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.newsRowMeta span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.newsRowMeta span[data-sentiment='positive'] {
+  color: var(--accent-green);
+}
+
+.newsRowMeta span[data-sentiment='negative'] {
+  color: var(--accent-red);
+}
+
+.stockNewsRow strong {
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  line-height: 1.42;
+}
+
+.stockNewsRow p {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
 /* ── 3-column analysis section ──────────────────────────── */
 .analysisSection {
   display: grid;
@@ -519,7 +825,9 @@
 }
 
 @media (max-width: 1024px) {
-  .analysisSection {
+  .analysisSection,
+  .thesisSection,
+  .dossierSection {
     grid-template-columns: 1fr;
   }
 }
@@ -533,7 +841,7 @@
 .analysisCard {
   background: var(--bg-surface);
   border: 1px solid var(--border-primary);
-  border-radius: 18px;
+  border-radius: 8px;
   padding: 22px;
 }
 
@@ -574,7 +882,7 @@
 /* ── Bottom section: fundamentals + peers ──────────────── */
 .bottomSection {
   display: grid;
-  grid-template-columns: 1.3fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 24px;
   padding: 0 40px 48px;
 }
@@ -589,7 +897,7 @@
 .peersCard {
   background: var(--bg-surface);
   border: 1px solid var(--border-primary);
-  border-radius: 18px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -826,14 +1134,63 @@
   white-space: pre-wrap;
 }
 
+.errorPanel {
+  max-width: 760px;
+  margin: 96px auto 0;
+  padding: 32px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.errorPanel h1 {
+  margin: 8px 0 12px;
+  font-size: 34px;
+  line-height: 1.05;
+  color: var(--text-primary);
+}
+
+.errorPanel p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.errorActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 700;
+  background: var(--surface-muted);
+}
+
 /* ── Responsive hero adjustments ─────────────────────────── */
 @media (max-width: 768px) {
   .hero,
   .chartSection,
+  .thesisSection,
+  .dossierSection,
   .analysisSection,
   .bottomSection {
     padding-left: 20px;
     padding-right: 20px;
+  }
+
+  .newsDossier {
+    margin-left: 20px;
+    margin-right: 20px;
   }
 
   .topNav {
@@ -860,6 +1217,11 @@
     gap: 16px;
   }
 
+  .indicatorGrid,
+  .fundamentalRows {
+    grid-template-columns: 1fr;
+  }
+
   .periodBar {
     flex-wrap: wrap;
   }
@@ -871,6 +1233,10 @@
 }
 
 @media (max-width: 480px) {
+  .planMetrics {
+    grid-template-columns: 1fr;
+  }
+
   .fundGrid {
     grid-template-columns: 1fr 1fr;
   }
@@ -881,5 +1247,113 @@
 
   .heroPriceValue {
     font-size: 36px;
+  }
+}
+
+/* ── Component integrity badge ───────────────────────────── */
+.componentIntegrity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 4px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.volatilityWarning {
+  color: var(--accent);
+  font-size: 0.72rem;
+  cursor: default;
+}
+
+/* ── Score breakdown section ─────────────────────────────── */
+.breakdownSection {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 48px 40px 0;
+}
+
+.breakdownTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.breakdownSubtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0 0 20px;
+}
+
+.breakdownMissingAlert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(245, 158, 11, 0.10);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+.breakdownBars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.breakdownBar {
+  cursor: default;
+}
+
+.breakdownBarHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.breakdownBarLabel {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.breakdownBarMeta {
+  font-size: 0.82rem;
+  color: var(--text-primary);
+}
+
+.breakdownBarKatki {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.breakdownBarTrack {
+  height: 6px;
+  background: var(--bg-elevated);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.breakdownBarFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.breakdownNote {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  margin-top: 16px;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .breakdownSection {
+    padding: 32px 20px 0;
   }
 }
