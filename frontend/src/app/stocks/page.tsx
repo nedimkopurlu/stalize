@@ -48,6 +48,21 @@ function recSafeColor(rec: string | null): string {
   return 'var(--accent)';
 }
 
+// Veri bütünlüğü: 3 temel bileşeni say (KARAR-02)
+function componentCount(stock: StockSummary): { available: number; total: number } {
+  const total = 3;
+  const available = [stock.fundamental_score, stock.technical_score, stock.sentiment_score]
+    .filter((v) => v !== null && v !== undefined).length;
+  return { available, total };
+}
+
+// 20 günlük volatilite proxy: StockSummary'de fiyat geçmişi yok
+// Volatilite için daily_change_pct kullanilir: abs(daily_change_pct) > 4 eşiği
+// (günlük %4+ hareket yüksek volatilite sinyali)
+function isHighDailyVolatility(stock: StockSummary): boolean {
+  return stock.daily_change_pct !== null && Math.abs(stock.daily_change_pct) > 4;
+}
+
 function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
   if (col !== sortKey) {
     return <span className={styles.sortIconInactive}>↕</span>;
@@ -269,8 +284,29 @@ export default function StocksPage() {
                           ? `${isUp ? '+' : ''}${stock.daily_change_pct.toFixed(2)}%`
                           : '—'}
                       </td>
-                      <td className={`${styles.td} ${styles.tdRight} ${styles.mono} ${styles.muted} ${styles.hideMobile}`}>
-                        {stock.fundamental_score !== null ? stock.fundamental_score.toFixed(0) : '—'}
+                      <td className={`${styles.td} ${styles.tdRight} ${styles.hideMobile}`}>
+                        <div className={styles.integrityCell}>
+                          <span className={`${styles.mono} ${styles.muted}`}>
+                            {stock.fundamental_score !== null ? stock.fundamental_score.toFixed(0) : '—'}
+                          </span>
+                          <span
+                            className={styles.componentBadge}
+                            title={componentCount(stock).available < componentCount(stock).total
+                              ? 'Bazı bileşenler eksik; genel skor kısmi veriye dayanıyor.'
+                              : 'Tüm bileşenler mevcut.'}
+                            data-incomplete={componentCount(stock).available < componentCount(stock).total || undefined}
+                          >
+                            {componentCount(stock).available}/{componentCount(stock).total}
+                          </span>
+                          {isHighDailyVolatility(stock) && (
+                            <span
+                              className={styles.volWarn}
+                              title="Yüksek volatilite — sinyaller daha az güvenilir"
+                            >
+                              ⚠
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className={`${styles.td} ${styles.tdRight} ${styles.mono} ${styles.muted} ${styles.hideTablet}`}>
                         {formatMarketCap(stock.market_cap)}

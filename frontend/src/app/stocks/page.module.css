@@ -311,3 +311,33 @@
 .header {
   margin-bottom: 4px;
 }
+
+/* ── Integrity cell (hisse listesi) ──────────────────────── */
+.integrityCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.componentBadge {
+  font-size: 0.67rem;
+  color: var(--text-dim);
+  background: var(--bg-elevated);
+  border-radius: 3px;
+  padding: 1px 5px;
+  white-space: nowrap;
+  cursor: default;
+  border: 1px solid var(--border-primary);
+}
+
+.componentBadge[data-incomplete] {
+  color: var(--accent);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.volWarn {
+  font-size: 0.72rem;
+  color: var(--accent);
+  cursor: default;
+}
