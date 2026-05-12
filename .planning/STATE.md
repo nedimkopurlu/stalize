@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Karar Güvenliği & Sistem Olgunlaşması
 status: unknown
-last_updated: "2026-05-12T18:13:36.504Z"
+last_updated: "2026-05-12T18:16:54.479Z"
 progress:
   total_phases: 22
   completed_phases: 10
@@ -24,8 +24,8 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: 43 (Karar Dili Güvenliği & Skor Açıklanabilirliği) — COMPLETE
-Plan: 2 of 2 (complete)
+Phase: 44
+Plan: Not started
 
 ## v5.0 Phases
 
