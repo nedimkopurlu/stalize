@@ -14,6 +14,40 @@ type SortDir = 'asc' | 'desc';
 
 // ── Helpers ────────────────────────────────────────────────
 
+// ── Safe label mapping (KARAR-01) ─────────────────────────
+const SAFE_LABEL_MAP: Record<string, string> = {
+  'GÜÇLÜ AL': 'Yüksek Öncelikli İzleme',
+  'AL': 'Pozitif Görünüm',
+  'TUT': 'Nötr İzleme',
+  'SAT': 'Zayıflayan Görünüm',
+  'GÜÇLÜ SAT': 'Riskli Görünüm',
+};
+
+const SAFE_LABEL_TOOLTIP: Record<string, string> = {
+  'GÜÇLÜ AL': 'Teknik ve temel göstergeler güçlü; yakından takip edilebilir.',
+  'AL': 'Göstergeler genel olarak olumlu; dikkatli değerlendirilebilir.',
+  'TUT': 'Karma sinyaller; net yön için bekleme önerilir.',
+  'SAT': 'Göstergeler baskı altında; dikkatli olunmalı.',
+  'GÜÇLÜ SAT': 'Yüksek risk sinyalleri mevcut; değerlendirme önerilmez.',
+};
+
+function safeLabel(rec: string | null): string {
+  if (!rec) return '—';
+  return SAFE_LABEL_MAP[rec] ?? rec;
+}
+
+function safeLabelTooltip(rec: string | null): string {
+  if (!rec) return '';
+  return SAFE_LABEL_TOOLTIP[rec] ?? '';
+}
+
+function recSafeColor(rec: string | null): string {
+  if (!rec) return 'var(--text-muted)';
+  if (rec === 'GÜÇLÜ AL' || rec === 'AL') return 'var(--accent-green)';
+  if (rec === 'GÜÇLÜ SAT' || rec === 'SAT') return 'var(--accent-red)';
+  return 'var(--accent)';
+}
+
 function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
   if (col !== sortKey) {
     return <span className={styles.sortIconInactive}>↕</span>;
@@ -28,7 +62,7 @@ function SkeletonRows() {
     <>
       {Array.from({ length: 12 }).map((_, i) => (
         <tr key={i} className={styles.skeletonRow}>
-          {Array.from({ length: 8 }).map((__, j) => (
+          {Array.from({ length: 9 }).map((__, j) => (
             <td key={j}>
               <div className={styles.skeletonCell} style={{ width: j === 1 ? 140 : j === 2 ? 100 : 60 }} />
             </td>
@@ -63,9 +97,7 @@ export default function StocksPage() {
 
   // Fetch stocks on mount
   useEffect(() => {
-    setLoading(true);
-    setLoadError(null);
-    api.getStocks({ sort_by: 'overall_score', limit: 100 })
+    api.getStocks({ sort_by: 'overall_score', limit: 1000 })
       .then((res) => {
         setStocks(res.stocks);
         setTotal(res.total);
@@ -208,6 +240,7 @@ export default function StocksPage() {
                 <th className={`${styles.th} ${styles.thRight} ${styles.hideMobile}`} onClick={() => toggleSort('volume')}>
                   Hacim <SortIcon col="volume" sortKey={sortKey} sortDir={sortDir} />
                 </th>
+                <th className={styles.th} style={{ textAlign: 'center' }}>Görünüm</th>
                 <th className={styles.th} style={{ textAlign: 'center' }}>☆</th>
               </tr>
             </thead>
@@ -244,6 +277,15 @@ export default function StocksPage() {
                       </td>
                       <td className={`${styles.td} ${styles.tdRight} ${styles.mono} ${styles.muted} ${styles.hideMobile}`}>
                         {formatVolume(stock.volume)}
+                      </td>
+                      <td
+                        className={styles.td}
+                        style={{ textAlign: 'center' }}
+                        title={safeLabelTooltip(stock.recommendation)}
+                      >
+                        <span style={{ fontSize: '0.72rem', color: recSafeColor(stock.recommendation) }}>
+                          {safeLabel(stock.recommendation)}
+                        </span>
                       </td>
                       <td className={styles.tdStar}>☆</td>
                     </tr>

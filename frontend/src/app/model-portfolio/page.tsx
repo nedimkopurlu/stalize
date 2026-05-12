@@ -1,298 +1,355 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import AppShell from '@/components/AppShell';
-import api, { ModelPortfolioCurrentResponse, ModelPortfolioHistoryResponse } from '@/lib/api';
+import api, {
+  ModelPortfolioCurrentResponse,
+  ModelPortfolioHistoryResponse,
+  ModelPortfolioHolding,
+  PortfolioHistoryResponse,
+} from '@/lib/api';
 import styles from './page.module.css';
 
-// ── Strategy Templates ────────────────────────────────────────
-
-const STRATEGIES = [
-  { id: 'temettu',  icon: '💰', name: 'Temettü Avcısı',         desc: 'Yüksek ve istikrarlı temettü ödeyen hisseler; pasif gelir odaklı.',          badge: 'Defansif',   accent: 'var(--accent-green)' },
-  { id: 'buyume',   icon: '🚀', name: 'Büyüme Lokomotifleri',   desc: 'Güçlü gelir büyümesi ve pazar payı kazanan sektör liderleri.',                badge: 'Agresif',    accent: 'var(--accent-blue)' },
-  { id: 'defansif', icon: '🛡️', name: 'Defansif Kalkan',        desc: 'Dayanıklı tüketim ve kamu hizmetleri; piyasa dalgalanmalarına karşı koruma.', badge: 'Düşük Risk', accent: 'var(--accent-indigo)' },
-  { id: 'momentum', icon: '⚡', name: 'Momentum',                desc: 'Son 3-6 ayda güçlü fiyat ivmesi gösteren, trend sürebilecek hisseler.',       badge: 'Aktif',      accent: 'var(--accent)' },
-  { id: 'deger',    icon: '📊', name: 'Değer Yatırımı',          desc: 'Düşük F/K ve PD/DD ile gerçek değerinin altında işlem gören hisseler.',       badge: 'Uzun Vade',  accent: 'var(--accent-purple)' },
-  { id: 'karma',    icon: '🎯', name: 'Karma',                   desc: 'Temettü, büyüme ve değer unsurlarını dengeleyen çeşitli portföy.',            badge: 'Dengeli',    accent: 'var(--text-muted)' },
-] as const;
-
-// ── Helpers ──────────────────────────────────────────────────
-
-function formatPct(value: number | null | undefined, showPlus = true): string {
-  if (value === null || value === undefined) return '—';
-  const sign = value >= 0 && showPlus ? '+' : '';
-  return `${sign}${value.toFixed(1)}%`;
+function formatPct(value: number | null | undefined, digits = 1, showPlus = true): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return '-';
+  const sign = value > 0 && showPlus ? '+' : '';
+  return `${sign}${value.toFixed(digits)}%`;
 }
 
-function AiPortfolioSection() {
-  const [data, setData] = useState<ModelPortfolioCurrentResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [userReturnPct, setUserReturnPct] = useState<number | null>(null);
+function formatPrice(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return '-';
+  return value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
 
-  useEffect(() => {
-    void (async () => {
-      try {
-        const res = await api.getCurrentModelPortfolio();
-        setData(res);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Yüklenemedi');
-      } finally {
-        setLoading(false);
-      }
-    })();
-    // Non-blocking: kullanıcı portföy getirisi (MODEL-04)
-    api.getPortfolioHistory(30)
-      .then((r) => setUserReturnPct(r.risk_summary?.latest_portfolio_return_pct ?? null))
-      .catch(() => null);
-  }, []);
+function formatDate(value: string | null | undefined): string {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' });
+}
 
-  const holdings = data?.holdings ?? [];
+function toneClass(value: number | null | undefined): string {
+  if (value === null || value === undefined) return styles.neutral;
+  return value >= 0 ? styles.positive : styles.negative;
+}
 
+function score(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '-';
+  return Math.round(value).toString();
+}
+
+// ── Safe label mapping (KARAR-01) ─────────────────────────
+const SAFE_LABEL_MAP: Record<string, string> = {
+  'GÜÇLÜ AL': 'Yüksek Öncelikli İzleme',
+  'AL': 'Pozitif Görünüm',
+  'TUT': 'Nötr İzleme',
+  'SAT': 'Zayıflayan Görünüm',
+  'GÜÇLÜ SAT': 'Riskli Görünüm',
+};
+
+const SAFE_LABEL_TOOLTIP: Record<string, string> = {
+  'GÜÇLÜ AL': 'Teknik ve temel göstergeler güçlü; yakından takip edilebilir.',
+  'AL': 'Göstergeler genel olarak olumlu; dikkatli değerlendirilebilir.',
+  'TUT': 'Karma sinyaller; net yön için bekleme önerilir.',
+  'SAT': 'Göstergeler baskı altında; dikkatli olunmalı.',
+  'GÜÇLÜ SAT': 'Yüksek risk sinyalleri mevcut; değerlendirme önerilmez.',
+};
+
+function safeLabel(rec: string | null): string {
+  if (!rec) return '—';
+  return SAFE_LABEL_MAP[rec] ?? rec;
+}
+
+function safeLabelTooltip(rec: string | null): string {
+  if (!rec) return '';
+  return SAFE_LABEL_TOOLTIP[rec] ?? '';
+}
+
+function safeColor(rec: string | null): string {
+  if (!rec) return 'var(--text-muted)';
+  if (rec === 'GÜÇLÜ AL' || rec === 'AL') return 'var(--accent-green)';
+  if (rec === 'GÜÇLÜ SAT' || rec === 'SAT') return 'var(--accent-red)';
+  return 'var(--accent)';
+}
+
+function HoldingRow({ holding }: { holding: ModelPortfolioHolding }) {
   return (
-    <section className={styles.aiSection}>
-      <div className={styles.aiSectionHeader}>
-        <div className={styles.aiSectionMeta}>
-          <span className={styles.eyebrow}>CANLI MODEL ÇIKTISI</span>
-          <h2 className={styles.aiSectionTitle}>Haftalık Model Portföy</h2>
-        </div>
-        {data?.week && (
-          <span className={styles.weekBadge}>
-            {new Date(data.week.week_start).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
-            {' – '}
-            {new Date(data.week.week_end).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })}
-          </span>
-        )}
+    <Link href={`/stocks/${holding.symbol}`} className={styles.holdingRow}>
+      <div className={styles.symbolCell}>
+        <strong>{holding.symbol}</strong>
+        <span>{holding.name ?? holding.sector ?? '-'}</span>
       </div>
-
-      {loading && (
-        <div className={styles.aiSkeleton}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className={styles.aiSkeletonChip} />
-          ))}
-        </div>
-      )}
-
-      {error && (
-        <div className={styles.aiError}>{error}</div>
-      )}
-
-      {!loading && !error && holdings.length === 0 && (
-        <div className={styles.aiEmptyState}>
-          <div className={styles.aiEmptyIcon}>🤖</div>
-          <p className={styles.aiEmptyTitle}>AI portföy henüz oluşturulmadı</p>
-          <p className={styles.aiEmpty}>Model portföy her hafta otomatik olarak güncellenir.</p>
-        </div>
-      )}
-
-      {!loading && holdings.length > 0 && (
-        <>
-          <div className={styles.aiHoldings}>
-            {holdings.map((h, index) => {
-              const weeklyReturn = h.weekly_return_pct ?? 0;
-              const isGreen = weeklyReturn >= 0;
-              return (
-                <Link key={`${h.id}-${h.symbol}-${index}`} href={`/stocks/${h.symbol}`} className={styles.aiHoldingCard}>
-                  <span className={styles.aiHoldingSymbol}>{h.symbol}</span>
-                  <span className={styles.aiHoldingAlloc}>{h.allocation_pct.toFixed(1)}%</span>
-                  {h.weekly_return_pct !== null && (
-                    <span
-                      className={styles.aiHoldingReturn}
-                      style={{ color: isGreen ? 'var(--accent-green)' : 'var(--accent-red)' }}
-                    >
-                      {formatPct(h.weekly_return_pct)}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-          {data?.week && (
-            <div className={styles.aiStats}>
-              {data.week.portfolio_return_pct !== null && (
-                <span className={styles.aiStat}>
-                  <span className={styles.aiStatLabel}>Portföy Getirisi</span>
-                  <span
-                    className={styles.aiStatValue}
-                    style={{
-                      color: (data.week.portfolio_return_pct ?? 0) >= 0
-                        ? 'var(--accent-green)'
-                        : 'var(--accent-red)',
-                    }}
-                  >
-                    {formatPct(data.week.portfolio_return_pct)}
-                  </span>
-                </span>
-              )}
-              {data.week.benchmark_return_pct !== null && (
-                <span className={styles.aiStat}>
-                  <span className={styles.aiStatLabel}>BIST100</span>
-                  <span className={styles.aiStatValue}>{formatPct(data.week.benchmark_return_pct)}</span>
-                </span>
-              )}
-              {data.week.active_return_spread !== null && (
-                <span className={styles.aiStat}>
-                  <span className={styles.aiStatLabel}>Aktif Getiri</span>
-                  <span
-                    className={styles.aiStatValue}
-                    style={{
-                      color: (data.week.active_return_spread ?? 0) >= 0
-                        ? 'var(--accent-green)'
-                        : 'var(--accent-red)',
-                    }}
-                  >
-                    {formatPct(data.week.active_return_spread)}
-                  </span>
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* ── Gemini haftalık gerekçe (LLM-04) ── */}
-          {data?.week?.review_summary && (
-            <div className={styles.reviewSummary}>
-              <span className={styles.reviewSummaryIcon}>✦</span>
-              <p className={styles.reviewSummaryText}>{data.week.review_summary}</p>
-            </div>
-          )}
-
-          {/* ── Getiri karşılaştırması (MODEL-04) ── */}
-          <div className={styles.comparisonCard}>
-            <div className={styles.comparisonTitle}>Getiri Karşılaştırması</div>
-            <div className={styles.comparisonRow}>
-              <div className={styles.comparisonCol}>
-                <div className={styles.comparisonLabel}>Portföyüm</div>
-                <div
-                  className={styles.comparisonValue}
-                  style={{ color: (userReturnPct ?? 0) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}
-                >
-                  {userReturnPct != null ? `${userReturnPct >= 0 ? '+' : ''}${userReturnPct.toFixed(1)}%` : '—'}
-                </div>
-              </div>
-              <div className={styles.comparisonCol}>
-                <div className={styles.comparisonLabel}>Model Portföy</div>
-                <div
-                  className={styles.comparisonValue}
-                  style={{ color: (data?.week?.portfolio_return_pct ?? 0) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}
-                >
-                  {data?.week?.portfolio_return_pct != null
-                    ? `${(data.week.portfolio_return_pct ?? 0) >= 0 ? '+' : ''}${data.week.portfolio_return_pct.toFixed(1)}%`
-                    : '—'}
-                </div>
-              </div>
-              <div className={styles.comparisonCol}>
-                <div className={styles.comparisonLabel}>BIST100</div>
-                <div className={styles.comparisonValue}>
-                  {data?.week?.benchmark_return_pct != null
-                    ? `${(data.week.benchmark_return_pct ?? 0) >= 0 ? '+' : ''}${data.week.benchmark_return_pct.toFixed(1)}%`
-                    : '—'}
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-    </section>
+      <span>{holding.sector ?? '-'}</span>
+      <strong>{formatPct(holding.allocation_pct, 1, false)}</strong>
+      <span>{formatPrice(holding.current_price)}</span>
+      <strong className={toneClass(holding.weekly_return_pct)}>{formatPct(holding.weekly_return_pct)}</strong>
+      <span
+        title={safeLabelTooltip(holding.recommendation)}
+        style={{ fontSize: '0.78rem', color: safeColor(holding.recommendation) }}
+      >
+        {safeLabel(holding.recommendation)}
+      </span>
+      <div className={styles.scoreStack}>
+        <span>Genel {score(holding.overall_score)}</span>
+        <span>Teknik {score(holding.technical_score)}</span>
+        <span>Temel {score(holding.fundamental_score)}</span>
+      </div>
+      <p>{holding.rationale ?? 'Model bu hisseyi skor, sektör dengesi ve fiyat davranışı nedeniyle listede tutuyor.'}</p>
+    </Link>
   );
 }
-
-// ── Model Portfolio History (MODEL-03) ─────────────────────────
-
-function ModelPortfolioHistory() {
-  const [history, setHistory] = useState<ModelPortfolioHistoryResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    api.getModelPortfolioHistory(8)
-      .then((r) => setHistory(r))
-      .catch(() => null)
-      .finally(() => setLoading(false));
-  }, []);
-
-  const weeks = history?.weeks ?? [];
-
-  if (loading) return <div className={styles.historyLoading}>Geçmiş yükleniyor…</div>;
-  if (weeks.length === 0) return null;
-
-  return (
-    <section className={styles.historySection}>
-      <h2 className={styles.historySectionTitle}>Geçmiş Haftalar</h2>
-      <div className={styles.historyTable}>
-        {weeks.map((week, i) => {
-          const isGreen = (week.portfolio_return_pct ?? 0) >= 0;
-          const bIsGreen = (week.benchmark_return_pct ?? 0) >= 0;
-          return (
-            <div key={`${week.id}-${i}`} className={styles.historyRow}>
-              <span className={styles.historyDate}>
-                {new Date(week.week_start).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
-                {' – '}
-                {new Date(week.week_end).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
-              </span>
-              <span
-                className={styles.historyReturn}
-                style={{ color: isGreen ? 'var(--accent-green)' : 'var(--accent-red)' }}
-              >
-                {week.portfolio_return_pct != null
-                  ? `${isGreen ? '+' : ''}${week.portfolio_return_pct.toFixed(1)}%`
-                  : '—'}
-              </span>
-              <span
-                className={styles.historyBenchmark}
-                style={{ color: 'var(--text-muted)' }}
-              >
-                BIST100: {week.benchmark_return_pct != null
-                  ? `${bIsGreen ? '+' : ''}${week.benchmark_return_pct.toFixed(1)}%`
-                  : '—'}
-              </span>
-              {(week.review_summary ?? week.change_summary) && (
-                <p className={styles.historyReview}>
-                  {week.review_summary ?? week.change_summary}
-                </p>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-// ── Page ─────────────────────────────────────────────────────
 
 export default function ModelPortfolioPage() {
+  const [current, setCurrent] = useState<ModelPortfolioCurrentResponse | null>(null);
+  const [history, setHistory] = useState<ModelPortfolioHistoryResponse | null>(null);
+  const [userHistory, setUserHistory] = useState<PortfolioHistoryResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+      const [currentResult, historyResult, userHistoryResult] = await Promise.allSettled([
+        api.getCurrentModelPortfolio(),
+        api.getModelPortfolioHistory(10),
+        api.getPortfolioHistory(30),
+      ]);
+      if (cancelled) return;
+
+      if (currentResult.status === 'fulfilled') {
+        setCurrent(currentResult.value);
+      } else {
+        setError(currentResult.reason instanceof Error ? currentResult.reason.message : 'Model portföy alınamadı');
+      }
+      if (historyResult.status === 'fulfilled') setHistory(historyResult.value);
+      if (userHistoryResult.status === 'fulfilled') setUserHistory(userHistoryResult.value);
+      setLoading(false);
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const holdings = useMemo(() => current?.holdings ?? [], [current]);
+  const week = current?.week ?? null;
+  const decision = current?.decision_band ?? null;
+  const changes = current?.changes ?? null;
+  const reviewNotes = week?.review_notes ?? null;
+  const userReturn = userHistory?.risk_summary.latest_portfolio_return_pct ?? null;
+
+  const sectorWeights = useMemo(() => {
+    const map = holdings.reduce<Record<string, number>>((acc, holding) => {
+      const sector = holding.sector ?? 'Bilinmeyen';
+      acc[sector] = (acc[sector] ?? 0) + holding.allocation_pct;
+      return acc;
+    }, {});
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  }, [holdings]);
+
+  const totalAllocation = holdings.reduce((sum, holding) => sum + holding.allocation_pct, 0);
+  const bestHolding = current?.summary?.best_holding;
+  const worstHolding = current?.summary?.worst_holding;
+
   return (
     <AppShell>
-      <div className={styles.page}>
-
-        {/* ── Page Header ── */}
-        <div className={styles.header}>
-          <span className={styles.eyebrow}>MODEL PORTFÖY</span>
-          <h1 className={styles.title}>Model Portföyler</h1>
-        </div>
-
-        <AiPortfolioSection />
-        <ModelPortfolioHistory />
-
-        {/* ── Strategy Templates ── */}
-        <section className={styles.strategiesSection}>
-          <div className={styles.strategiesHeader}>
-            <h2 className={styles.strategiesTitle}>Strateji Şablonları</h2>
-            <p className={styles.strategiesSub}>Yatırım amacına göre hazırlanmış altı şablon. Yakında tıklanabilir hale gelecek.</p>
-          </div>
-          <div className={styles.strategyGrid}>
-            {STRATEGIES.map((s) => (
-              <div key={s.id} className={styles.strategyCard} style={{ borderTopColor: s.accent }}>
-                <div className={styles.strategyIcon} aria-hidden="true">{s.icon}</div>
-                <div className={styles.strategyName}>{s.name}</div>
-                <div className={styles.strategyDesc}>{s.desc}</div>
-                <div className={styles.strategyBadge} style={{ color: s.accent }}>{s.badge}</div>
+      <main className={styles.page}>
+        <section className={styles.hero}>
+          <div className={styles.heroCopy}>
+            <span className={styles.eyebrow}>Model Portföy</span>
+            <h1>Haftanın seçilmiş BIST portföyü</h1>
+            <p>
+              {decision?.headline || week?.review_summary || 'Model portföy hazırlanıyor. Uygun hisseler skor, sektör dengesi ve risk kontrolüyle seçilecek.'}
+            </p>
+            <div className={styles.heroFacts}>
+              <div>
+                <span>Model getiri</span>
+                <strong className={toneClass(week?.portfolio_return_pct)}>{formatPct(week?.portfolio_return_pct)}</strong>
               </div>
-            ))}
+              <div>
+                <span>BIST100</span>
+                <strong className={toneClass(week?.benchmark_return_pct)}>{formatPct(week?.benchmark_return_pct)}</strong>
+              </div>
+              <div>
+                <span>Aktif fark</span>
+                <strong className={toneClass(week?.active_return_spread)}>{formatPct(week?.active_return_spread)}</strong>
+              </div>
+            </div>
           </div>
+
+          <aside className={styles.sideCard}>
+            <span className={styles.eyebrow}>Karar bandı</span>
+            <strong>{decision?.focus || 'Dengeli takip'}</strong>
+            <p>{week ? `${formatDate(week.week_start)} - ${formatDate(week.week_end)}` : 'Hafta verisi bekleniyor'}</p>
+            <div className={styles.sideRows}>
+              <div>
+                <span>Pozisyon</span>
+                <strong>{holdings.length || '-'}</strong>
+              </div>
+              <div>
+                <span>Portföyüm</span>
+                <strong className={toneClass(userReturn)}>{formatPct(userReturn)}</strong>
+              </div>
+              <div>
+                <span>Ağırlık</span>
+                <strong>{totalAllocation.toFixed(0)}%</strong>
+              </div>
+            </div>
+          </aside>
         </section>
 
-      </div>
+        {error && <div className={styles.errorMsg}>{error}</div>}
+
+        {loading ? (
+          <section className={styles.loadingPanel}>
+            <span />
+            <span />
+            <span />
+          </section>
+        ) : holdings.length === 0 ? (
+          <section className={styles.emptyPanel}>
+            <strong>Model portföy henüz oluşmadı</strong>
+            <p>Skorlar ve fiyat verileri hazır olduğunda haftalık portföy burada görünecek.</p>
+          </section>
+        ) : (
+          <>
+            <section className={styles.holdingsPanel}>
+              <div className={styles.panelHeader}>
+                <div>
+                  <span className={styles.eyebrow}>Hisseler</span>
+                  <h2>Modelin aldığı hisseler</h2>
+                </div>
+                <span>{holdings.length} hisse</span>
+              </div>
+
+              <div className={styles.tableHeader}>
+                <span>Hisse</span>
+                <span>Sektör</span>
+                <span>Ağırlık</span>
+                <span>Fiyat</span>
+                <span>Hafta</span>
+                <span>Karar</span>
+                <span>Skorlar</span>
+                <span>Gerekçe</span>
+              </div>
+              <div className={styles.holdingList}>
+                {holdings.map((holding) => (
+                  <HoldingRow key={`${holding.id}-${holding.symbol}`} holding={holding} />
+                ))}
+              </div>
+            </section>
+
+            <section className={styles.analysisGrid}>
+              <article className={styles.panel}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <span className={styles.eyebrow}>AI Denetçi</span>
+                    <h2>Neyi neden tutuyor?</h2>
+                  </div>
+                </div>
+                <p className={styles.reviewText}>
+                  {week?.review_summary || 'AI denetçi bu hafta için ek gerekçe üretmedi; deterministik skor ve risk dağılımı geçerli.'}
+                </p>
+                {decision?.actions?.length ? (
+                  <div className={styles.actionList}>
+                    {decision.actions.map((action) => <span key={action}>{action}</span>)}
+                  </div>
+                ) : null}
+              </article>
+
+              <article className={styles.panel}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <span className={styles.eyebrow}>Risk ve Dağılım</span>
+                    <h2>Sektör ağırlığı</h2>
+                  </div>
+                </div>
+                <div className={styles.sectorList}>
+                  {sectorWeights.map(([sector, allocation]) => (
+                    <div key={sector} className={styles.sectorRow}>
+                      <div>
+                        <span>{sector}</span>
+                        <strong>{formatPct(allocation, 1, false)}</strong>
+                      </div>
+                      <div className={styles.barTrack}>
+                        <span style={{ width: `${Math.min(100, allocation)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {reviewNotes?.weakest_dimension && (
+                  <p className={styles.smallNote}>Zayıf halka: {reviewNotes.weakest_dimension}</p>
+                )}
+              </article>
+            </section>
+
+            <section className={styles.analysisGrid}>
+              <article className={styles.panel}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <span className={styles.eyebrow}>Performans</span>
+                    <h2>En iyi ve en zayıf</h2>
+                  </div>
+                </div>
+                <div className={styles.extremeGrid}>
+                  <div>
+                    <span>En iyi</span>
+                    <strong>{bestHolding?.symbol ?? '-'}</strong>
+                    <b className={toneClass(bestHolding?.weekly_return_pct)}>{formatPct(bestHolding?.weekly_return_pct)}</b>
+                  </div>
+                  <div>
+                    <span>En zayıf</span>
+                    <strong>{worstHolding?.symbol ?? '-'}</strong>
+                    <b className={toneClass(worstHolding?.weekly_return_pct)}>{formatPct(worstHolding?.weekly_return_pct)}</b>
+                  </div>
+                </div>
+              </article>
+
+              <article className={styles.panel}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <span className={styles.eyebrow}>Değişiklikler</span>
+                    <h2>Bu hafta ne değişti?</h2>
+                  </div>
+                </div>
+                <p className={styles.reviewText}>{changes?.summary || 'Önceki haftaya göre karşılaştırma verisi bekleniyor.'}</p>
+                {changes && (
+                  <div className={styles.changeChips}>
+                    {changes.added.slice(0, 4).map((symbol) => <span key={`a-${symbol}`}>Eklendi {symbol}</span>)}
+                    {changes.removed.slice(0, 4).map((symbol) => <span key={`r-${symbol}`}>Çıktı {symbol}</span>)}
+                  </div>
+                )}
+              </article>
+            </section>
+
+            <section className={styles.historyPanel}>
+              <div className={styles.panelHeader}>
+                <div>
+                  <span className={styles.eyebrow}>Geçmiş</span>
+                  <h2>Haftalık model performansı</h2>
+                </div>
+                <span>{history?.count ?? 0} hafta</span>
+              </div>
+
+              <div className={styles.historyList}>
+                {(history?.weeks ?? []).map((item) => (
+                  <div key={item.id} className={styles.historyRow}>
+                    <span>{formatDate(item.week_start)} - {formatDate(item.week_end)}</span>
+                    <strong className={toneClass(item.portfolio_return_pct)}>{formatPct(item.portfolio_return_pct)}</strong>
+                    <span>BIST100 {formatPct(item.benchmark_return_pct)}</span>
+                    <span className={toneClass(item.active_return_spread)}>Fark {formatPct(item.active_return_spread)}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
+      </main>
     </AppShell>
   );
 }
