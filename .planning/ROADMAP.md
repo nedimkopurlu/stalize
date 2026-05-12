@@ -355,7 +355,7 @@ Plans:
 
 Plans:
 - [x] 43-01-PLAN.md — Guvenli etiket mapping + tooltip (KARAR-01, KARAR-04) — stocks, stock detail, model-portfolio, dashboard
-- [ ] 43-02-PLAN.md — Skor doküm bölümü + veri bütünlüğü göstergesi (KARAR-02, KARAR-03, SKOR-01, SKOR-02, SKOR-03)
+- [x] 43-02-PLAN.md — Skor doküm bölümü + veri bütünlüğü göstergesi (KARAR-02, KARAR-03, SKOR-01, SKOR-02, SKOR-03)
 
 ### Phase 44: Backtest & Sinyal Performans Dashboard
 **Goal**: Mevcut sinyal snapshot + outcome evaluation altyapısı kullanıcıya görünür hale getirilir; hit ratio ve getiri istatistikleri ile birlikte sinyal performans tablosu sunulur.

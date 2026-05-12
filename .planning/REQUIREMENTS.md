@@ -98,8 +98,8 @@
 ### Karar Dili Güvenliği (KARAR)
 
 - [x] **KARAR-01**: Sistem "GÜÇLÜ AL/AL/TUT/SAT/GÜÇLÜ SAT" etiketleri yerine direktif olmayan güvenli etiketler kullanır — "Yüksek Öncelikli İzleme / Pozitif Görünüm / Nötr İzleme / Zayıflayan Görünüm / Riskli Görünüm"
-- [ ] **KARAR-02**: Skor gösteriminin yanında veri bütünlüğü göstergesi yer alır — kaç bileşen mevcut, kaçı eksik bilgisi gösterilir
-- [ ] **KARAR-03**: Yüksek volatilite veya eksik fundamental verisi olan hisseler için görsel uyarı işareti gösterilir
+- [x] **KARAR-02**: Skor gösteriminin yanında veri bütünlüğü göstergesi yer alır — kaç bileşen mevcut, kaçı eksik bilgisi gösterilir
+- [x] **KARAR-03**: Yüksek volatilite veya eksik fundamental verisi olan hisseler için görsel uyarı işareti gösterilir
 - [x] **KARAR-04**: Her karar etiketinin yanında etiketin ne anlama geldiğini açıklayan tooltip veya bilgi notu yer alır
 
 ### Backtest & Sinyal Performansı (BACKTEST)
@@ -132,9 +132,9 @@
 
 ### Skor Açıklanabilirliği (SKOR)
 
-- [ ] **SKOR-01**: Hisse detay sayfasında skor bileşen dökümü görünür: temel/teknik/sentiment'in puana katkısı yüzde ve rakam olarak
-- [ ] **SKOR-02**: Bileşen eksikse "Eksik veri — ağırlık yeniden dağıtıldı" uyarısı gösterilir
-- [ ] **SKOR-03**: Skor dökümü backend `score-breakdown` API'den dinamik olarak render edilir
+- [x] **SKOR-01**: Hisse detay sayfasında skor bileşen dökümü görünür: temel/teknik/sentiment'in puana katkısı yüzde ve rakam olarak
+- [x] **SKOR-02**: Bileşen eksikse "Eksik veri — ağırlık yeniden dağıtıldı" uyarısı gösterilir
+- [x] **SKOR-03**: Skor dökümü backend `score-breakdown` API'den dinamik olarak render edilir
 
 ## v2 Requirements (Ertelendi)
 
@@ -171,12 +171,12 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | KARAR-01 | Phase 43 | Complete |
-| KARAR-02 | Phase 43 | Pending |
-| KARAR-03 | Phase 43 | Pending |
+| KARAR-02 | Phase 43 | Complete |
+| KARAR-03 | Phase 43 | Complete |
 | KARAR-04 | Phase 43 | Complete |
-| SKOR-01 | Phase 43 | Pending |
-| SKOR-02 | Phase 43 | Pending |
-| SKOR-03 | Phase 43 | Pending |
+| SKOR-01 | Phase 43 | Complete |
+| SKOR-02 | Phase 43 | Complete |
+| SKOR-03 | Phase 43 | Complete |
 | BACKTEST-01 | Phase 44 | Pending |
 | BACKTEST-02 | Phase 44 | Pending |
 | BACKTEST-03 | Phase 44 | Pending |

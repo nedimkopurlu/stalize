@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Karar Güvenliği & Sistem Olgunlaşması
 status: unknown
-last_updated: "2026-05-12T18:10:09.458Z"
+last_updated: "2026-05-12T18:13:36.504Z"
 progress:
   total_phases: 22
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 16
-  completed_plans: 20
+  completed_plans: 21
 ---
 
 # Project State
@@ -24,8 +24,8 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: 43 (Karar Dili Güvenliği & Skor Açıklanabilirliği) — EXECUTING
-Plan: 2 of 2
+Phase: 43 (Karar Dili Güvenliği & Skor Açıklanabilirliği) — COMPLETE
+Plan: 2 of 2 (complete)
 
 ## v5.0 Phases
 
@@ -44,7 +44,7 @@ Plan: 2 of 2
 
 ## v6.0 Phases
 
-- [ ] Phase 43: Karar Dili Güvenliği & Skor Açıklanabilirliği ⬜ Not started
+- [x] Phase 43: Karar Dili Güvenliği & Skor Açıklanabilirliği ✅ (2026-05-12)
   - Requirements: KARAR-01, KARAR-02, KARAR-03, KARAR-04, SKOR-01, SKOR-02, SKOR-03
   - Goal: "GÜÇLÜ AL/SAT" direktif etiketler güvenli dile çevrilir; hisse detay sayfasında skor bileşen dökümü ve veri bütünlüğü göstergesi eklenir
 - [ ] Phase 44: Backtest & Sinyal Performans Dashboard ⬜ Not started
@@ -87,7 +87,7 @@ Phase 39 (v5.0 tamamlandı)
 | Phase 40 | UI/UX | Mobile responsive, empty states, hardcoded colors |
 | Phase 41 | DATA/FEAT | NaN guards, null safety, fundGrid skeleton, BistComparisonChart |
 | Phase 42 | AI | Groq birincil sağlayıcı, derinleştirilmiş promptlar, model portföy gerekçe kalitesi |
-| (v6.0 başlıyor) | — | — |
+| Phase 43 | KARAR/SKOR | safeLabel 4 sayfada, skor dökümü progress bar, bileşen sayacı, volatilite uyarısı |
 
 ## Requirements Satisfied (v5.0)
 
@@ -131,12 +131,12 @@ Phase 39 (v5.0 tamamlandı)
 | Req | Phase | Status |
 |-----|-------|--------|
 | KARAR-01 | Phase 43 | ✅ Complete |
-| KARAR-02 | Phase 43 | ⬜ Pending |
-| KARAR-03 | Phase 43 | ⬜ Pending |
+| KARAR-02 | Phase 43 | ✅ Complete |
+| KARAR-03 | Phase 43 | ✅ Complete |
 | KARAR-04 | Phase 43 | ✅ Complete |
-| SKOR-01 | Phase 43 | ⬜ Pending |
-| SKOR-02 | Phase 43 | ⬜ Pending |
-| SKOR-03 | Phase 43 | ⬜ Pending |
+| SKOR-01 | Phase 43 | ✅ Complete |
+| SKOR-02 | Phase 43 | ✅ Complete |
+| SKOR-03 | Phase 43 | ✅ Complete |
 | BACKTEST-01 | Phase 44 | ⬜ Pending |
 | BACKTEST-02 | Phase 44 | ⬜ Pending |
 | BACKTEST-03 | Phase 44 | ⬜ Pending |
@@ -169,6 +169,8 @@ Phase 39 (v5.0 tamamlandı)
 - v5.1 watchlist sync: localStorage üzerinden — DB'ye taşıma v2'ye bırakıldı
 - Display-layer label mapping (v6.0 43-01): DB recommendation stringleri değiştirilmedi, display katmanında güvenli etikete çevrildi (KARAR-01)
 - Dosya bazlı helper kopyalama (v6.0 43-01): ortak lib yerine her sayfada yerel safeLabel — mevcut proje paterni
+- Volatilite proxy listede daily_change_pct >%4 (v6.0 43-02): 20g fiyat geçmişi hisse listesinde mevcut değil, günlük hareket proxy olarak kullanıldı
+- Skor Dökümü bölümü hero'dan sonra ayrı section (v6.0 43-02): scoreCard içinde değil, tam genişlikte editorial düzende
 
 ### Known Technical Debt
 
@@ -183,7 +185,7 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-12
+**Last session:** 2026-05-12T18:13:36.501Z
 **Completed:** Phase 43 Plan 01 — karar dili güvenliği safeLabel 4 sayfada
 **Next action:** Execute Phase 43 Plan 02
 
