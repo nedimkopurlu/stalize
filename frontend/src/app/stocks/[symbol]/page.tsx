@@ -8,14 +8,15 @@ import {
   formatPrice,
   formatVolume,
   formatMarketCap,
-  formatPercentage,
 } from '@/components/StockHelpers';
 import api, {
+  InvestmentDecision,
   PricePoint,
   ScoreBreakdownResponse,
   StockAnalysisResponse,
   StockDetail,
   StockFundamentals,
+  StockNewsItem,
   StockPeer,
   StockPricesResponse,
   TechnicalResult,
@@ -42,7 +43,7 @@ function LineChart({
   const range = max - min || 1;
   const pts = closes
     .map((c, i) => {
-      const x = (i / (closes.length - 1)) * width;
+      const x = closes.length === 1 ? width / 2 : (i / (closes.length - 1)) * width;
       const y = height - ((c - min) / range) * (height - 4) - 2;
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     })
@@ -64,6 +65,47 @@ function LineChart({
       />
     </svg>
   );
+}
+
+function PlanMetric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: React.ReactNode;
+  tone?: 'success' | 'danger';
+}) {
+  return (
+    <div className={styles.planMetric}>
+      <span>{label}</span>
+      <strong data-tone={tone}>{value}</strong>
+    </div>
+  );
+}
+
+function NewsRow({ item }: { item: StockNewsItem }) {
+  const content = (
+    <>
+      <div className={styles.newsRowMeta}>
+        <span>{formatCompactDate(item.published_at)}</span>
+        <span>{item.source || 'Kaynak yok'}</span>
+        <span data-sentiment={item.sentiment_label || 'neutral'}>{sentimentLabel(item)}</span>
+      </div>
+      <strong>{item.title}</strong>
+      {item.summary && <p>{item.summary}</p>}
+    </>
+  );
+
+  if (item.url) {
+    return (
+      <a className={styles.stockNewsRow} href={item.url} target="_blank" rel="noreferrer">
+        {content}
+      </a>
+    );
+  }
+
+  return <div className={styles.stockNewsRow}>{content}</div>;
 }
 
 // ── Score Bar ────────────────────────────────────────────────
@@ -104,6 +146,33 @@ function recColor(rec: string | null): string {
   return 'var(--accent)';
 }
 
+// ── Safe label mapping (KARAR-01) ─────────────────────────
+const SAFE_LABEL_MAP: Record<string, string> = {
+  'GÜÇLÜ AL': 'Yüksek Öncelikli İzleme',
+  'AL': 'Pozitif Görünüm',
+  'TUT': 'Nötr İzleme',
+  'SAT': 'Zayıflayan Görünüm',
+  'GÜÇLÜ SAT': 'Riskli Görünüm',
+};
+
+const SAFE_LABEL_TOOLTIP: Record<string, string> = {
+  'GÜÇLÜ AL': 'Teknik ve temel göstergeler güçlü; yakından takip edilebilir.',
+  'AL': 'Göstergeler genel olarak olumlu; dikkatli değerlendirilebilir.',
+  'TUT': 'Karma sinyaller; net yön için bekleme önerilir.',
+  'SAT': 'Göstergeler baskı altında; dikkatli olunmalı.',
+  'GÜÇLÜ SAT': 'Yüksek risk sinyalleri mevcut; değerlendirme önerilmez.',
+};
+
+function safeLabel(rec: string | null): string {
+  if (!rec) return '—';
+  return SAFE_LABEL_MAP[rec] ?? rec;
+}
+
+function safeLabelTooltip(rec: string | null): string {
+  if (!rec) return '';
+  return SAFE_LABEL_TOOLTIP[rec] ?? '';
+}
+
 // ── Skeleton ─────────────────────────────────────────────────
 
 function Skeleton({ height = 16, width = '100%' }: { height?: number; width?: string | number }) {
@@ -133,6 +202,90 @@ function getScoreReasonRows(breakdown: ScoreBreakdownResponse['breakdown'] | nul
   return breakdown.components.filter((component) => component.reason).slice(0, 6);
 }
 
+function formatFinancialPct(value: number | null | undefined) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '—';
+  return `${(value * 100).toLocaleString('tr-TR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+}
+
+function formatSignedPct(value: number | null | undefined) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '—';
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${value.toFixed(2)}%`;
+}
+
+function formatCompactDate(value: string | null | undefined) {
+  if (!value) return 'Tarih yok';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function decisionPrimaryLabel(decision: InvestmentDecision | null, recommendation: string | null) {
+  if (!decision) {
+    if (!recommendation) return 'İZLE';
+    if (recommendation.includes('AL')) return 'AL';
+    if (recommendation.includes('SAT')) return 'UZAK DUR';
+    return 'İZLE';
+  }
+  if (decision.action === 'strong_buy' || decision.action === 'buy') return 'AL';
+  if (decision.action === 'reduce' || decision.action === 'exit') return 'UZAK DUR';
+  return 'İZLE';
+}
+
+function decisionToneClass(label: string) {
+  if (label === 'AL') return styles.decisionBuy;
+  if (label === 'UZAK DUR') return styles.decisionAvoid;
+  return styles.decisionWatch;
+}
+
+function riskLabel(value: string | null | undefined) {
+  if (value === 'low') return 'Düşük';
+  if (value === 'medium') return 'Orta';
+  if (value === 'high') return 'Yüksek';
+  return '—';
+}
+
+function trendLabel(value: string | null | undefined) {
+  const map: Record<string, string> = {
+    bullish: 'Yükselen',
+    constructive: 'Yapıcı',
+    neutral: 'Nötr',
+    weak: 'Zayıf',
+    bearish: 'Düşen',
+    unknown: 'Belirsiz',
+  };
+  return value ? map[value] ?? value : '—';
+}
+
+function horizonLabel(value: string | null | undefined) {
+  if (value === 'swing_2_8_weeks') return '2-8 hafta';
+  return value || '—';
+}
+
+function sentimentLabel(item: StockNewsItem) {
+  if (item.sentiment_label === 'positive') return 'Olumlu';
+  if (item.sentiment_label === 'negative') return 'Olumsuz';
+  if (item.sentiment_label === 'neutral') return 'Nötr';
+  return item.sentiment_score != null ? formatSignedPct(item.sentiment_score * 100) : 'Etki yok';
+}
+
+function indicatorValue(value: number | null | undefined, suffix = '', digits = 2) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '—';
+  return `${value.toLocaleString('tr-TR', { minimumFractionDigits: digits, maximumFractionDigits: digits })}${suffix}`;
+}
+
+function formatScoreNumber(value: number | null | undefined, digits = 1) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '—';
+  return value.toFixed(digits);
+}
+
+function marketUniverseLabel(stock: StockDetail['stock']) {
+  if (stock.is_bist30) return 'BIST 30';
+  if (stock.is_bist100) return 'BIST 100';
+  if (stock.is_bist250) return 'BIST 250';
+  return stock.market_tier ? `BIST · ${stock.market_tier}` : 'BIST';
+}
+
 // ── Main Page ────────────────────────────────────────────────
 
 export default function StockDetailPage({ params }: { params: Promise<{ symbol: string }> }) {
@@ -145,6 +298,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
   const [fundamentals, setFundamentals] = useState<StockFundamentals | null>(null);
   const [peers, setPeers] = useState<StockPeer[]>([]);
   const [prices, setPrices] = useState<StockPricesResponse | null>(null);
+  const [decision, setDecision] = useState<InvestmentDecision | null>(null);
+  const [news, setNews] = useState<StockNewsItem[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [chartError, setChartError] = useState<string | null>(null);
@@ -205,6 +360,14 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     api.getStockPeers(symbol)
       .then((r) => setPeers(r.peers))
       .catch(() => null);
+
+    api.getStockDecision(symbol, 100000, 1, false)
+      .then((r) => setDecision(r))
+      .catch(() => setDecision(null));
+
+    api.getStockNews(symbol, 50)
+      .then((r) => setNews(r.items))
+      .catch(() => setNews([]));
   }, [symbol]);
 
   useEffect(() => {
@@ -267,8 +430,9 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
   // Current period high/low from loaded price data
   const allPrices = prices?.prices ?? detail.recent_prices ?? [];
-  const highs = allPrices.map((p) => p.high).filter(Boolean);
-  const lows = allPrices.map((p) => p.low).filter(Boolean);
+  const latestPoint = allPrices.at(-1) ?? null;
+  const highs = allPrices.map((p) => p.high).filter((value) => Number.isFinite(value));
+  const lows = allPrices.map((p) => p.low).filter((value) => Number.isFinite(value));
   const high52 = highs.length ? Math.max(...highs) : null;
   const low52 = lows.length ? Math.min(...lows) : null;
 
@@ -284,7 +448,6 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
   // chart color
   const chartPositive = (s.daily_change_pct ?? 0) >= 0;
   const chartColor = chartPositive ? 'var(--accent-green)' : 'var(--accent-red)';
-  const changeArrow = chartPositive ? '▲' : '▼';
 
   const PERIODS = [
     { key: '1d', label: '1G' },
@@ -305,10 +468,86 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
   const upsidePct = (() => {
     if (targetPrice && s.current_price && s.current_price > 0) {
       const pct = ((targetPrice - s.current_price) / s.current_price) * 100;
+      if (!Number.isFinite(pct)) return null;
       return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`;
     }
     return null;
   })();
+  const primaryDecision = decisionPrimaryLabel(decision, recommendation);
+  const entryLow = decision?.entry_zone.low ?? (s.current_price != null ? s.current_price * 0.985 : null);
+  const entryHigh = decision?.entry_zone.high ?? (s.current_price != null ? s.current_price * 1.015 : null);
+  const planStop = decision?.stop_loss ?? stopLoss;
+  const planTarget = decision?.target_price ?? targetPrice;
+  const planRiskReward = decision?.risk_reward ?? null;
+  const thesisRows = decision?.thesis?.length
+    ? decision.thesis
+    : scoreReasonRows.map((row) => row.reason).slice(0, 3);
+  const watchRows = decision?.watch_items?.length
+    ? decision.watch_items
+    : ['BIST100 genel yönü', 'hacim teyidi', 'haber/KAP akışı'];
+  const riskRows = [
+    decision?.invalidation,
+    fundamentals?.debt_to_equity != null && fundamentals.debt_to_equity > 2
+      ? 'Borç/özkaynak oranı yüksek; faiz ve kur şoklarına duyarlılık artabilir.'
+      : null,
+    (s.fundamental_score ?? 50) < 45
+      ? 'Temel skor zayıf; teknik görünüm tek başına yeterli olmayabilir.'
+      : null,
+    (s.technical_score ?? 50) < 45
+      ? 'Teknik skor zayıf; fiyat planı teyit bekliyor.'
+      : null,
+  ].filter(Boolean) as string[];
+  const technicalRows = [
+    {
+      label: 'RSI 14',
+      value: indicatorValue(technical?.indicators.rsi_14 ?? latestPoint?.rsi_14, '', 1),
+      note: '30 altı aşırı satım, 70 üstü aşırı alım bölgesi.',
+    },
+    {
+      label: 'MACD',
+      value: indicatorValue(technical?.indicators.macd ?? latestPoint?.macd, '', 2),
+      note: 'Sinyal çizgisi üstünde kalması momentum teyidi verir.',
+    },
+    {
+      label: 'MACD Sinyal',
+      value: indicatorValue(technical?.indicators.macd_signal ?? latestPoint?.macd_signal, '', 2),
+      note: 'MACD ile kesişim yön değişimini gösterir.',
+    },
+    {
+      label: 'SMA 50',
+      value: latestPoint?.sma_50 != null ? `₺${formatPrice(latestPoint.sma_50)}` : indicatorValue(technical?.indicators.sma_50, ' TL', 2),
+      note: 'Orta vadeli trend filtresi.',
+    },
+    {
+      label: 'SMA 200',
+      value: latestPoint?.sma_200 != null ? `₺${formatPrice(latestPoint.sma_200)}` : indicatorValue(technical?.indicators.sma_200, ' TL', 2),
+      note: 'Ana trend filtresi.',
+    },
+    {
+      label: 'ATR 14',
+      value: latestPoint?.atr_14 != null ? indicatorValue(latestPoint.atr_14, '', 2) : '—',
+      note: 'Stop mesafesini belirlerken volatilite ölçüsü.',
+    },
+    {
+      label: 'Destek',
+      value: technical?.support != null ? `₺${formatPrice(technical.support)}` : '—',
+      note: 'Fiyatın tutunması beklenen bölge.',
+    },
+    {
+      label: 'Direnç',
+      value: technical?.resistance != null ? `₺${formatPrice(technical.resistance)}` : '—',
+      note: 'Kâr alma veya kırılım teyidi bölgesi.',
+    },
+  ];
+  const fundamentalRows = [
+    { label: 'F/K', value: formatScoreNumber(fundamentals?.pe_ratio), note: 'Kâr çarpanı' },
+    { label: 'PD/DD', value: formatScoreNumber(fundamentals?.pb_ratio, 2), note: 'Defter değeri çarpanı' },
+    { label: 'FD/FAVÖK', value: formatScoreNumber(fundamentals?.ev_ebitda), note: 'Operasyonel değerleme' },
+    { label: 'ROE', value: formatFinancialPct(fundamentals?.roe), note: 'Özkaynak kârlılığı' },
+    { label: 'Net Marj', value: formatFinancialPct(fundamentals?.net_margin), note: 'Kârlılık kalitesi' },
+    { label: 'Borç/Özkaynak', value: formatScoreNumber(fundamentals?.debt_to_equity, 2), note: 'Bilanço riski' },
+    { label: 'Temel Skor', value: formatScoreNumber(fundamentals?.fundamental_score), note: 'Modelin temel analiz notu' },
+  ];
 
   return (
     <AppShell>
@@ -341,7 +580,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
           {/* Left column */}
           <div className={styles.heroLeft}>
             <p className={styles.eyebrow}>
-              {s.symbol} · {s.name} · {s.is_bist30 ? 'BIST 30' : 'BIST 100'}
+              {s.symbol} · {s.name} · {marketUniverseLabel(s)}
             </p>
 
             <h1 className={styles.heroTitle}>
@@ -352,13 +591,13 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
             <p className={styles.heroDesc}>
               {s.sector ? `${s.sector} sektöründe sınıflandırılıyor. ` : ''}
-              {recommendation ? (
+              {primaryDecision ? (
                 <>
-                  Güncel model çıktısı{' '}
+                  Güncel işlem kararı{' '}
                   <span className={styles.confidenceBadge}>
-                    {recommendation}
+                    {primaryDecision}
                   </span>{' '}
-                  sinyali üretiyor.
+                  olarak okunuyor; gerekçe teknik, temel ve haber akışında aşağıda açılıyor.
                 </>
               ) : 'Bu hisse için güncel model sinyali yok.'}
             </p>
@@ -376,7 +615,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     className={styles.heroPriceChangePct}
                     style={{ color: chartPositive ? 'var(--accent-green)' : 'var(--accent-red)' }}
                   >
-                    {changeArrow} {s.daily_change_pct >= 0 ? '+' : ''}{s.daily_change_pct.toFixed(2)}%
+                    {formatSignedPct(s.daily_change_pct)}
                   </span>
                   <span className={styles.heroPriceChangeDate}>Bugün · itibarıyla</span>
                 </div>
@@ -419,21 +658,22 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 <div className={styles.scoreCardIconWrap}>
                   <span className={styles.scoreCardIcon}>✦</span>
                 </div>
-                <span className={styles.scoreCardTitle}>Model Skor Kartı</span>
+                <span className={styles.scoreCardTitle}>AI Karar Kartı</span>
               </div>
 
               <div className={styles.scoreCardSignal}>
                 <div>
-                  <div className={styles.signalLabelSmall}>Sinyal</div>
+                  <div className={styles.signalLabelSmall}>Karar</div>
                   <div
                     className={styles.signalLabel}
                     style={{ color: recColor(recommendation) }}
+                    title={safeLabelTooltip(recommendation)}
                   >
-                    {recommendation ?? 'VERİ YOK'}
+                    {safeLabel(recommendation)}
                   </div>
                 </div>
                 {s.overall_score != null && (
-                  <span className={styles.signalScore}>{s.overall_score.toFixed(1)}</span>
+                  <span className={styles.signalScore}>{formatScoreNumber(s.overall_score)}</span>
                 )}
               </div>
 
@@ -449,9 +689,15 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
 
               <div className={styles.scoreCardRows}>
                 <div className={styles.scoreCardRow}>
+                  <span className={styles.scoreCardRowLabel}>Güven skoru</span>
+                  <span className={styles.scoreCardRowValue}>
+                    {decision?.confidence != null ? `${decision.confidence}/100` : '—'}
+                  </span>
+                </div>
+                <div className={styles.scoreCardRow}>
                   <span className={styles.scoreCardRowLabel}>Teknik hedef</span>
                   <span className={styles.scoreCardRowValue}>
-                    {targetPrice != null ? `₺${formatPrice(targetPrice)}` : '—'}
+                    {planTarget != null ? `₺${formatPrice(planTarget)}` : '—'}
                   </span>
                 </div>
                 <div className={styles.scoreCardRow}>
@@ -463,7 +709,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 <div className={styles.scoreCardRow}>
                   <span className={styles.scoreCardRowLabel}>ATR stop seviyesi</span>
                   <span className={styles.scoreCardRowValue} style={{ color: 'var(--accent-red)' }}>
-                    {stopLoss != null ? `₺${formatPrice(stopLoss)}` : '—'}
+                    {planStop != null ? `₺${formatPrice(planStop)}` : '—'}
                   </span>
                 </div>
               </div>
@@ -475,7 +721,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 onClick={handleAnalyze}
                 disabled={analyzeLoading || analysis !== null}
               >
-                {analyzeLoading ? 'Analiz ediliyor...' : analysis !== null ? 'Analiz Tamamlandı' : '✦ Analiz Et'}
+                {analyzeLoading ? 'Analiz ediliyor...' : analysis !== null ? 'Analiz Tamamlandı' : '✦ AI ile analiz et'}
               </button>
               {analysis !== null && (
                 <div className={styles.analyzePanel}>
@@ -484,6 +730,61 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
               )}
             </div>
           </div>
+        </section>
+
+        {/* ── Investment thesis ───────────────────────────── */}
+        <section className={styles.thesisSection}>
+          <article className={styles.tradePlanCard}>
+            <div className={styles.cardHeaderLine}>
+              <div>
+                <div className={styles.sectionEyebrow}>Yatırım Kararı</div>
+                <h2>Neyi neden alayım?</h2>
+              </div>
+              <span className={`${styles.actionPill} ${decisionToneClass(primaryDecision)}`}>
+                {primaryDecision}
+              </span>
+            </div>
+            <div className={styles.planMetrics}>
+              <PlanMetric
+                label="Giriş bölgesi"
+                value={entryLow != null && entryHigh != null ? `₺${formatPrice(entryLow)} - ₺${formatPrice(entryHigh)}` : '—'}
+              />
+              <PlanMetric label="Stop" value={planStop != null ? `₺${formatPrice(planStop)}` : '—'} tone="danger" />
+              <PlanMetric label="Hedef" value={planTarget != null ? `₺${formatPrice(planTarget)}` : '—'} tone="success" />
+              <PlanMetric label="Risk/ödül" value={formatScoreNumber(planRiskReward, 2)} />
+              <PlanMetric label="Zaman ufku" value={horizonLabel(decision?.time_horizon)} />
+              <PlanMetric label="Risk" value={riskLabel(decision?.risk_level)} />
+              <PlanMetric label="Trend" value={trendLabel(decision?.signals.trend)} />
+            </div>
+            <div className={styles.positionStrip}>
+              <span>Pozisyon önerisi</span>
+              <strong>
+                {decision
+                  ? `${decision.position_size.shares} adet · ₺${formatPrice(decision.position_size.estimated_exposure)} · portföyün %${formatScoreNumber(decision.position_size.estimated_exposure_pct, 2)}`
+                  : 'Karar motoru bekleniyor'}
+              </strong>
+            </div>
+          </article>
+
+          <article className={styles.reasonCard}>
+            <div className={styles.sectionEyebrow}>Alma gerekçesi</div>
+            <h2>Tez</h2>
+            <ul className={styles.cleanList}>
+              {thesisRows.length ? thesisRows.slice(0, 5).map((item, index) => (
+                <li key={`${item}-${index}`}>{item}</li>
+              )) : <li>Henüz yeterli tez verisi yok.</li>}
+            </ul>
+          </article>
+
+          <article className={styles.reasonCard}>
+            <div className={styles.sectionEyebrow}>Ters senaryo</div>
+            <h2>Nerede vazgeçerim?</h2>
+            <ul className={styles.cleanList}>
+              {riskRows.length ? riskRows.slice(0, 5).map((item, index) => (
+                <li key={`${item}-${index}`}>{item}</li>
+              )) : <li>Belirgin ek risk yok; stop ve haber akışı izlenmeli.</li>}
+            </ul>
+          </article>
         </section>
 
         {/* ── Chart section ────────────────────────────────── */}
@@ -540,7 +841,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
               <div className={styles.chartStat}>
                 <span className={styles.chartStatLabel}>F/K</span>
                 <span className={styles.chartStatValue}>
-                  {fundamentals?.pe_ratio != null ? fundamentals.pe_ratio.toFixed(1) : '—'}
+                  {formatScoreNumber(fundamentals?.pe_ratio)}
                 </span>
               </div>
               <div className={styles.chartStat}>
@@ -559,6 +860,78 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
           </div>
         </section>
 
+        {/* ── Technical and fundamental dossiers ───────────── */}
+        <section className={styles.dossierSection}>
+          <article className={styles.dossierCard}>
+            <div className={styles.cardHeaderLine}>
+              <div>
+                <div className={styles.sectionEyebrow}>Teknik Analiz</div>
+                <h2>Trend, momentum, destek ve stop</h2>
+              </div>
+              <span className={styles.scoreChip}>{Number.isFinite(technical?.score) ? `${formatScoreNumber(technical?.score, 0)}/100` : '—'}</span>
+            </div>
+            <div className={styles.indicatorGrid}>
+              {technicalRows.map((row) => (
+                <div key={row.label} className={styles.indicatorRow}>
+                  <span>{row.label}</span>
+                  <strong>{row.value}</strong>
+                  <small>{row.note}</small>
+                </div>
+              ))}
+            </div>
+            <div className={styles.signalRows}>
+              {(technical?.signals ?? []).slice(0, 8).map((signal, index) => (
+                <div key={`${signal.type}-${index}`} className={styles.signalRow}>
+                  <span>{signal.name}</span>
+                  <strong data-direction={signal.direction}>{signal.direction === 'bullish' ? 'Pozitif' : signal.direction === 'bearish' ? 'Negatif' : 'Nötr'}</strong>
+                  <small>{Number.isFinite(signal.strength) ? Math.round(signal.strength * 100) : 0} güç</small>
+                </div>
+              ))}
+              {!technical?.signals?.length && <p className={styles.inlineEmpty}>Teknik sinyal oluşmadı.</p>}
+            </div>
+          </article>
+
+          <article className={styles.dossierCard}>
+            <div className={styles.cardHeaderLine}>
+              <div>
+                <div className={styles.sectionEyebrow}>Temel Analiz</div>
+                <h2>Değerleme, kârlılık ve bilanço</h2>
+              </div>
+              <span className={styles.scoreChip}>{Number.isFinite(fundamentals?.fundamental_score) ? `${formatScoreNumber(fundamentals?.fundamental_score, 0)}/100` : '—'}</span>
+            </div>
+            <div className={styles.fundamentalRows}>
+              {fundamentalRows.map((row) => (
+                <div key={row.label} className={styles.fundamentalRow}>
+                  <span>{row.label}</span>
+                  <strong>{row.value}</strong>
+                  <small>{row.note}</small>
+                </div>
+              ))}
+            </div>
+            <div className={styles.watchBox}>
+              <span>Takip edilecekler</span>
+              <p>{watchRows.join(' · ')}</p>
+            </div>
+          </article>
+        </section>
+
+        {/* ── News dossier ─────────────────────────────────── */}
+        <section className={styles.newsDossier}>
+          <div className={styles.cardHeaderLine}>
+            <div>
+              <div className={styles.sectionEyebrow}>Haber ve KAP Takibi</div>
+              <h2>Bu hisse hakkında gelen akış</h2>
+            </div>
+            <span className={styles.scoreChip}>{news.length} kayıt</span>
+          </div>
+          <div className={styles.stockNewsList}>
+            {news.map((item) => (
+              <NewsRow key={item.id} item={item} />
+            ))}
+            {!news.length && <p className={styles.inlineEmpty}>Bu hisseye bağlı haber kaydı yok.</p>}
+          </div>
+        </section>
+
         {/* ── Model rationale section ───────────────────── */}
         {scoreReasonRows.length > 0 && (
           <section className={styles.analysisSection}>
@@ -570,7 +943,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 {scoreReasonRows.map((component, index) => (
                   <div key={`${component.key}-${index}`} className={styles.analysisItem}>
                     <div className={styles.analysisItemTitle}>
-                      {component.label} · {component.raw_score.toFixed(1)}
+                      {component.label} · {formatScoreNumber(component.raw_score)}
                     </div>
                     <div className={styles.analysisItemBody}>{component.reason}</div>
                   </div>
@@ -580,93 +953,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
           </section>
         )}
 
-        {/* ── Temel Analiz + Benzer Hisseler ───────────────── */}
-        <section className={styles.bottomSection}>
-          {/* Fundamentals */}
-          <div className={styles.fundCard}>
-            <div className={styles.fundCardHeader}>
-              <div className={styles.fundEyebrow}>Temel Analiz</div>
-              <div className={styles.fundCardTitle}>Anahtar oranlar</div>
-            </div>
-            {fundamentals === null ? (
-            <div className={styles.fundGrid}>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className={styles.fundItemLoading}>
-                  <div className={styles.fundLoadingBar} />
-                  <div className={styles.fundLoadingVal} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className={styles.fundGrid}>
-              <div className={styles.fundItem}>
-                <span className={styles.fundLabel} title="Fiyat/Kazanç — hisse fiyatının hisse başı kâra oranı. Düşük değer ucuz hisseye işaret edebilir.">F/K</span>
-                <span className={fundamentals?.pe_ratio != null ? styles.fundValue : styles.fundValueMissing}>
-                  {fundamentals?.pe_ratio != null ? fundamentals.pe_ratio.toFixed(1) : 'Yok'}
-                </span>
-              </div>
-              <div className={styles.fundItem}>
-                <span className={styles.fundLabel} title="Piyasa Değeri/Defter Değeri — şirket değerinin özkaynaklara oranı. 1'in altı genellikle ucuz sayılır.">PD/DD</span>
-                <span className={fundamentals?.pb_ratio != null ? styles.fundValue : styles.fundValueMissing}>
-                  {fundamentals?.pb_ratio != null ? fundamentals.pb_ratio.toFixed(2) : 'Yok'}
-                </span>
-              </div>
-              <div className={styles.fundItem}>
-                <span className={styles.fundLabel} title="Özkaynak Kârlılığı — şirketin özkaynaklarıyla ne kadar kâr ettiği. Yüksek değer iyidir.">ROE</span>
-                <span className={fundamentals?.roe != null ? styles.fundValue : styles.fundValueMissing}>
-                  {fundamentals?.roe != null ? formatPercentage(fundamentals.roe) : 'Yok'}
-                </span>
-              </div>
-              <div className={styles.fundItem}>
-                <span className={styles.fundLabel} title="Net Kâr Marjı — gelirin yüzde kaçının kâra dönüştüğü. Yüksek değer iyidir.">Net Marj</span>
-                <span className={fundamentals?.net_margin != null ? styles.fundValue : styles.fundValueMissing}>
-                  {fundamentals?.net_margin != null ? formatPercentage(fundamentals.net_margin) : 'Yok'}
-                </span>
-              </div>
-              <div className={styles.fundItem}>
-                <span className={styles.fundLabel} title="Kaldıraç oranı. Düşük değer daha az finansal risk anlamına gelir.">Borç/Özkaynak</span>
-                <span className={fundamentals?.debt_to_equity != null ? styles.fundValue : styles.fundValueMissing}>
-                  {fundamentals?.debt_to_equity != null
-                    ? fundamentals.debt_to_equity.toFixed(2)
-                    : 'Yok'}
-                </span>
-              </div>
-              <div className={styles.fundItem}>
-                <span className={styles.fundLabel} title="Şirket Değeri/FAVÖK — değerleme çarpanı. Düşük değer ucuzluğa işaret edebilir.">EV/FAVÖK</span>
-                <span className={fundamentals?.ev_ebitda != null ? styles.fundValue : styles.fundValueMissing}>
-                  {fundamentals?.ev_ebitda != null
-                    ? fundamentals.ev_ebitda.toFixed(1)
-                    : 'Yok'}
-                </span>
-              </div>
-              <div className={styles.fundItem}>
-                <span className={styles.fundLabel}>Temel Skor</span>
-                <span
-                  className={fundamentals?.fundamental_score != null ? styles.fundValue : styles.fundValueMissing}
-                  style={{
-                    color:
-                      fundamentals?.fundamental_score != null
-                        ? recColor(
-                            fundamentals.fundamental_score >= 65
-                              ? 'AL'
-                              : fundamentals.fundamental_score >= 40
-                                ? 'TUT'
-                                : 'SAT',
-                          )
-                        : undefined,
-                  }}
-                >
-                  {fundamentals?.fundamental_score != null
-                    ? fundamentals.fundamental_score.toFixed(1)
-                    : 'Yok'}
-                </span>
-              </div>
-            </div>
-          )}
-          </div>
-
-          {/* Peers */}
-          {peers.length > 0 && (
+        {peers.length > 0 && (
+          <section className={styles.bottomSection}>
             <div className={styles.peersCard}>
               <div className={styles.fundCardHeader}>
                 <div className={styles.fundEyebrow}>◆ Benzer Hisseler</div>
@@ -689,7 +977,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                       {peer.current_price != null ? `₺${formatPrice(peer.current_price)}` : '—'}
                     </span>
                     <span className={styles.peerCell}>
-                      {peer.overall_score != null ? peer.overall_score.toFixed(1) : '—'}
+                      {formatScoreNumber(peer.overall_score)}
                     </span>
                     <span
                       className={styles.peerCell}
@@ -703,15 +991,15 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                       }}
                     >
                       {peer.daily_change_pct != null
-                        ? `${peer.daily_change_pct >= 0 ? '+' : ''}${peer.daily_change_pct.toFixed(2)}%`
+                        ? formatSignedPct(peer.daily_change_pct)
                         : '—'}
                     </span>
                   </Link>
                 ))}
               </div>
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
       </div>
     </AppShell>
