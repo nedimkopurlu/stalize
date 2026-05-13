@@ -57,11 +57,13 @@ class PositionCreate(BaseModel):
     stop_loss: Optional[float] = None
     target_price: Optional[float] = None
     rationale: Optional[str] = None
+    invalidation_condition: Optional[str] = None
 
 
 class PositionClose(BaseModel):
     exit_price: float
     exit_date: date
+    exit_reason: Optional[str] = None
 
 
 def _normalize_symbol(symbol: str) -> str:
@@ -139,6 +141,8 @@ async def get_positions(db: AsyncSession = Depends(get_db)):
             "exit_price": pos.exit_price,
             "exit_date": pos.exit_date.isoformat() if pos.exit_date else None,
             "realized_pnl": pos.realized_pnl,
+            "exit_reason": pos.exit_reason,
+            "invalidation_condition": pos.invalidation_condition,
         })
 
     logger.info(f"GET /portfolio/positions — {len(output)} pozisyon döndü (açık+kapalı 30g).")
@@ -277,6 +281,7 @@ async def add_position(
         stop_loss=body.stop_loss,
         target_price=body.target_price,
         rationale=body.rationale,
+        invalidation_condition=body.invalidation_condition,
         is_active=True,
     )
     db.add(pos)
@@ -328,6 +333,7 @@ async def close_position(
     pos.exit_price = body.exit_price
     pos.exit_date = body.exit_date
     pos.realized_pnl = realized_pnl
+    pos.exit_reason = body.exit_reason
 
     log_entry = PortfolioChangeLog(
         date=datetime.now(timezone.utc).date(),
