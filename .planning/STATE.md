@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Karar Güvenliği & Sistem Olgunlaşması
 status: unknown
-last_updated: "2026-05-13T22:46:26.623Z"
+last_updated: "2026-05-13T22:50:03.184Z"
 progress:
   total_phases: 22
-  completed_phases: 12
+  completed_phases: 13
   total_plans: 22
-  completed_plans: 26
+  completed_plans: 27
 ---
 
 # Project State
@@ -53,8 +53,8 @@ Plan: 2 of 2
 - [x] Phase 45: Veri Tazeliği & Sistem Sağlığı ✅ (2026-05-14)
   - Requirements: VERI-01, VERI-02, VERI-03, VERI-04
   - Goal: Son güncelleme zamanı UI'da; stale data uyarısı; AI analizine veri tarihi notu
-- [~] Phase 46: Portföy Risk Yönetimi 🔄 In Progress (Plan 1/2 complete)
-  - Requirements: RISK-01 ✅, RISK-02 ⬜, RISK-03 ⬜, RISK-04 ✅
+- [x] Phase 46: Portföy Risk Yönetimi ✅ (2026-05-14)
+  - Requirements: RISK-01 ✅, RISK-02 ✅, RISK-03 ✅, RISK-04 ✅
   - Goal: Sektör dağılımı görsel; yoğunlaşma uyarıları; risk özeti kartı
 - [ ] Phase 47: İşlem Disiplini & Günlüğü ⬜ Not started
   - Requirements: GUNLUK-01, GUNLUK-02, GUNLUK-03, GUNLUK-04
@@ -147,8 +147,8 @@ Phase 39 (v5.0 tamamlandı)
 | VERI-03 | Phase 45 | ✅ Complete |
 | VERI-04 | Phase 45 | ✅ Complete |
 | RISK-01 | Phase 46 | ✅ Complete |
-| RISK-02 | Phase 46 | ⬜ Pending |
-| RISK-03 | Phase 46 | ⬜ Pending |
+| RISK-02 | Phase 46 | ✅ Complete |
+| RISK-03 | Phase 46 | ✅ Complete |
 | RISK-04 | Phase 46 | ✅ Complete |
 | GUNLUK-01 | Phase 47 | ⬜ Pending |
 | GUNLUK-02 | Phase 47 | ⬜ Pending |
@@ -183,6 +183,8 @@ Phase 39 (v5.0 tamamlandı)
 - 8 saat stale eşiği (v6.0 45-02): Türkiye piyasası 09:00-18:00 EEST; geceleri/hafta sonu kapanma için uygun eşik
 - analysisDate state string (v6.0 45-02): generated_at format dönüşümü render yerine set anında yapılır; fallback Date.now()
 - periodBadge vendor-data-missing gizlenir (v6.0 45-02): null ile aynı davranış — boş period badge gösterilmez
+- concentrationAlerts sorted by pct desc — highest risk alert shown first (v6.0 46-02)
+- riskAlerts section guarded by length > 0 — no empty space when threshold not breached (v6.0 46-02, RISK-02, RISK-03)
 
 ### Known Technical Debt
 
@@ -197,8 +199,8 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-13T22:46:26.619Z
-**Completed:** Phase 45 Plan 01 — backend updated_at field + StockSummary interface
-**Next action:** Execute Phase 45 Plan 02 — Veri Tazeliği UI banner & altbilgi
+**Last session:** 2026-05-14T00:09:14Z
+**Completed:** Phase 46 Plan 02 — yoğunlaşma uyarıları (RISK-02, RISK-03) — Phase 46 DONE
+**Next action:** Execute Phase 47 — İşlem Disiplini & Günlüğü (GUNLUK-01..04)
 
 ---

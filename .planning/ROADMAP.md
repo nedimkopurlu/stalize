@@ -404,7 +404,7 @@ Plans:
 
 Plans:
 - [x] 46-01-PLAN.md — riskGuard fetch + sektör dağılımı bar chart + özet kart top-3 sektör (RISK-01, RISK-04)
-- [ ] 46-02-PLAN.md — Yoğunlaşma uyarıları: sektör >%35 + tek hisse >%20 (RISK-02, RISK-03)
+- [x] 46-02-PLAN.md — Yoğunlaşma uyarıları: sektör >%35 + tek hisse >%20 (RISK-02, RISK-03)
 
 ### Phase 47: İşlem Disiplini & Günlüğü
 **Goal**: Pozisyon açma formuna disiplin alanları eklenir; pozisyon kapatmada çıkış nedeni zorunlu hale gelir; kapalı pozisyon istatistikleri gösterilir.
