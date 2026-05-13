@@ -3,7 +3,7 @@
  * Backend FastAPI ile iletişim katmanı
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE_ENV = process.env.NEXT_PUBLIC_API_URL;
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
 
 interface FetchOptions {
@@ -12,10 +12,18 @@ interface FetchOptions {
   signal?: AbortSignal;
 }
 
+function getApiBase() {
+  if (API_BASE_ENV) return API_BASE_ENV;
+  if (typeof window === 'undefined') return 'http://localhost:8000/api';
+
+  const hostname = window.location.hostname || 'localhost';
+  return `${window.location.protocol}//${hostname}:8000/api`;
+}
+
 async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
   const { method = 'GET', body, signal } = options;
 
-  const res = await fetch(`${API_BASE}${endpoint}`, {
+  const res = await fetch(`${getApiBase()}${endpoint}`, {
     method,
     headers: {
       'Content-Type': 'application/json',
@@ -54,6 +62,7 @@ export interface StockSummary {
   sentiment_score: number | null;
   overall_score: number | null;
   recommendation: string | null;
+  updated_at?: string | null;
   stop_loss?: number | null;
   target_price?: number | null;
 }
@@ -112,6 +121,173 @@ export interface HealthResponse {
     portfolio_snapshot: HealthSourceStatus;
   };
   timestamp: string;
+}
+
+export interface DiagnosticItem {
+  key: string;
+  title: string;
+  status: 'ok' | 'warning' | 'critical';
+  detail: string;
+  remediation: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface SystemDiagnosticsResponse {
+  status: 'healthy' | 'degraded' | 'down';
+  summary: {
+    ok: number;
+    warning: number;
+    critical: number;
+    total: number;
+  };
+  items: DiagnosticItem[];
+  timestamp: string;
+}
+
+export interface BacktestTrade {
+  symbol: string;
+  entry_date: string;
+  exit_date: string;
+  entry_price: number;
+  exit_price: number;
+  return_pct: number;
+  holding_days: number;
+  exit_reason: string;
+}
+
+export interface BacktestMetrics {
+  trades: number;
+  total_return_pct: number | null;
+  benchmark_return_pct: number | null;
+  excess_return_pct: number | null;
+  max_drawdown_pct: number | null;
+  win_rate_pct: number | null;
+  avg_gain_pct: number | null;
+  avg_loss_pct: number | null;
+  avg_trade_pct: number | null;
+  profit_factor: number | null;
+  volatility_pct: number | null;
+}
+
+export interface BacktestResponse {
+  strategy: {
+    key: string;
+    label: string;
+    description: string;
+  };
+  period: {
+    years: number;
+    start: string | null;
+    end: string | null;
+  };
+  benchmark: {
+    symbol: string;
+    return_pct: number | null;
+    start_close?: number | null;
+    end_close?: number | null;
+  };
+  portfolio: BacktestMetrics;
+  verdict: {
+    status: string;
+    label: string;
+    reason: string;
+  };
+  stocks: Array<BacktestMetrics & {
+    symbol: string;
+    name: string | null;
+    sector: string | null;
+    trades: BacktestTrade[];
+  }>;
+  trade_count: number;
+}
+
+export interface BacktestCompareResponse {
+  years: number;
+  benchmark_symbol: string;
+  strategies: Array<{
+    strategy: BacktestResponse['strategy'];
+    period: BacktestResponse['period'];
+    benchmark: BacktestResponse['benchmark'];
+    portfolio: BacktestMetrics;
+    verdict: BacktestResponse['verdict'];
+    trade_count: number;
+  }>;
+}
+
+export interface PortfolioRiskResponse {
+  portfolio_value: number;
+  invested_pct: number;
+  cash_pct: number;
+  recommended_cash_pct: number;
+  cash_action: {
+    status: string;
+    detail: string;
+    remediation: string;
+  };
+  risk_score: number;
+  risk_level: 'low' | 'medium' | 'high' | string;
+  estimated_capital_at_risk: number;
+  market_regime: Record<string, unknown>;
+  sector_exposure: Array<{
+    sector: string;
+    exposure: number;
+    exposure_pct: number;
+    limit_pct: number;
+    status: string;
+  }>;
+  positions: Array<{
+    symbol: string;
+    sector: string;
+    entry_price: number;
+    current_price: number;
+    quantity: number;
+    exposure: number;
+    exposure_pct: number;
+    stop_loss: number | null;
+    target_price: number | null;
+    stop_gap_pct: number | null;
+    target_gap_pct: number | null;
+    at_risk: boolean;
+    score: number | null;
+  }>;
+  rules: Record<string, number>;
+}
+
+export interface AlertItem {
+  kind: string;
+  severity: 'critical' | 'warning' | 'info' | string;
+  symbol: string | null;
+  detail: string;
+  remediation: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface AlertsResponse {
+  status: 'ok' | 'warning' | 'critical' | string;
+  summary: {
+    critical: number;
+    warning: number;
+    info: number;
+    total: number;
+  };
+  alerts: AlertItem[];
+  generated_at: string;
+}
+
+export interface AIAuditResponse {
+  symbol: string;
+  decision: InvestmentDecision;
+  audit: {
+    auditor_action: string;
+    severity: string;
+    contradictions: string[];
+    risk_report: string[];
+    positive_evidence: string[];
+    kap_news_summary: Array<Record<string, unknown>>;
+    failure_scenario: string;
+  };
+  narrative: string;
+  generated_at: string;
 }
 
 export interface StockListResponse {
@@ -181,7 +357,7 @@ export interface TechnicalResult {
 export interface ScoreBreakdownComponent {
   key: string;
   label: string;
-  raw_score: number;
+  raw_score: number | null;
   base_weight: number;
   normalized_weight: number;
   contribution: number;
@@ -210,6 +386,128 @@ export interface ScoreBreakdownResponse {
     };
   };
   timestamp: string;
+}
+
+export type InvestmentAction = 'strong_buy' | 'buy' | 'watch' | 'hold' | 'reduce' | 'exit';
+export type InvestmentRiskLevel = 'low' | 'medium' | 'high';
+
+export interface InvestmentDecision {
+  symbol: string;
+  name: string | null;
+  action: InvestmentAction;
+  action_label: string;
+  confidence: number;
+  risk_level: InvestmentRiskLevel;
+  time_horizon: string;
+  current_price: number;
+  entry_zone: {
+    low: number;
+    high: number;
+  };
+  stop_loss: number;
+  target_price: number;
+  risk_reward: number;
+  position_size: {
+    risk_budget: number;
+    shares: number;
+    estimated_exposure: number;
+    estimated_exposure_pct: number;
+    max_exposure_pct: number;
+  };
+  signals: {
+    overall_score: number | null;
+    technical_score: number | null;
+    fundamental_score: number | null;
+    sentiment_score: number | null;
+    recommendation: string | null;
+    trend: string;
+    drawdown_pct: number | null;
+    annualized_volatility_pct: number | null;
+  };
+  thesis: string[];
+  invalidation: string;
+  watch_items: string[];
+  policy?: {
+    mode: string;
+    notes: string[];
+  };
+  generated_at?: string;
+}
+
+export interface TopSignalsResponse {
+  signals: InvestmentDecision[];
+  count: number;
+  generated_at: string;
+}
+
+export interface SignalOutcomeItem {
+  id: number;
+  symbol: string;
+  sector: string | null;
+  decision_date: string;
+  action: InvestmentAction;
+  action_label: string;
+  confidence: number;
+  risk_level: InvestmentRiskLevel;
+  current_price: number;
+  stop_loss: number | null;
+  target_price: number | null;
+  risk_reward: number | null;
+  suggested_shares: number | null;
+  estimated_exposure_pct: number | null;
+  overall_score: number | null;
+  trend: string | null;
+  actual_return_1w_pct: number | null;
+  benchmark_return_1w_pct: number | null;
+  excess_return_1w_pct: number | null;
+  outcome_1w: 'success' | 'partial' | 'failure' | null;
+  actual_return_1m_pct: number | null;
+  benchmark_return_1m_pct: number | null;
+  excess_return_1m_pct: number | null;
+  outcome_1m: 'success' | 'partial' | 'failure' | null;
+  generated_at: string | null;
+  evaluated_at: string | null;
+}
+
+export interface SignalOutcomesResponse {
+  items: SignalOutcomeItem[];
+  count: number;
+  summary: {
+    success: number;
+    partial: number;
+    failure: number;
+    pending: number;
+  };
+}
+
+export interface SignalCalibrationBucket {
+  key: string;
+  count: number;
+  success: number;
+  partial: number;
+  failure: number;
+  success_rate: number;
+  non_failure_rate: number;
+  avg_return_pct: number | null;
+  avg_excess_return_pct: number | null;
+}
+
+export interface SignalCalibrationResponse {
+  horizon: '1w' | '1m';
+  sample_size: number;
+  overall: SignalCalibrationBucket;
+  by_action: SignalCalibrationBucket[];
+  by_risk_level: SignalCalibrationBucket[];
+  by_sector: SignalCalibrationBucket[];
+  recommendations: string[];
+  suggested_policy: {
+    mode: string;
+    measured_count: number;
+    min_buy_confidence: number;
+    min_buy_risk_reward: number;
+    block_high_risk_buys: boolean;
+    reasons: string[];
+  };
 }
 
 export interface StockNewsItem {
@@ -246,6 +544,7 @@ export interface StockFundamentals {
   debt_to_equity: number | null;
   fundamental_score: number | null;
   ev_ebitda?: number | null;
+  data_quality?: string;
 }
 
 export interface EventImpact {
@@ -501,6 +800,16 @@ export interface MarketFeedItem {
   magnitude: string;
   headline: string;
   original_headline?: string;
+  summary?: string | null;
+  ai_summary?: string | null;
+  ai_assessment?: {
+    stance?: 'positive' | 'negative' | 'neutral' | string;
+    label?: string;
+    action?: string;
+    reasoning?: string;
+    risk?: string;
+    confidence?: number;
+  } | null;
   source_url: string | null;
   publisher: string | null;
   sentiment_score: number;
@@ -508,14 +817,23 @@ export interface MarketFeedItem {
   category?: string;
   importance_score?: number | null;
   symbol?: string;
+  thesis_horizon?: string;
 }
 
 export interface IntelligenceOverview {
   feed: MarketFeedItem[];
   scenarios: EventScenarioResult[];
   source_summary: Record<string, number>;
+  horizon_summary?: Record<string, number>;
+  ai_digest?: {
+    summary: string;
+    generated_by?: string;
+    confidence?: number;
+    generated_at?: string;
+  };
   priority_mode: string;
   primary_source: string;
+  warnings?: string[];
   scope?: {
     language: string;
     region: string;
@@ -730,6 +1048,36 @@ export const api = {
   getStockScoreBreakdown: (symbol: string) =>
     apiFetch<ScoreBreakdownResponse>(`/stocks/${symbol}/score-breakdown`),
 
+  getStockDecision: (symbol: string, portfolioValue: number = 100000, riskPerTradePct: number = 1, calibrated = false) =>
+    apiFetch<InvestmentDecision>(
+      `/stocks/${symbol}/decision?portfolio_value=${portfolioValue}&risk_per_trade_pct=${riskPerTradePct}&calibrated=${calibrated ? 'true' : 'false'}`,
+    ),
+
+  getStockNews: (symbol: string, limit: number = 50) =>
+    apiFetch<StockNewsResponse>(`/stocks/${symbol}/news?limit=${limit}`),
+
+  getTopSignals: (limit: number = 20, portfolioValue: number = 100000, riskPerTradePct: number = 1, calibrated = false) =>
+    apiFetch<TopSignalsResponse>(
+      `/signals/top?limit=${limit}&portfolio_value=${portfolioValue}&risk_per_trade_pct=${riskPerTradePct}&calibrated=${calibrated ? 'true' : 'false'}`,
+    ),
+
+  runSignalSnapshot: (limit: number = 40, portfolioValue: number = 100000, riskPerTradePct: number = 1) =>
+    apiFetch<{ decision_date: string; created_or_updated: number; benchmark_symbol: string; benchmark_close: number | null }>(
+      `/signals/snapshots/run?limit=${limit}&portfolio_value=${portfolioValue}&risk_per_trade_pct=${riskPerTradePct}`,
+      { method: 'POST' },
+    ),
+
+  evaluateSignalOutcomes: () =>
+    apiFetch<{ evaluated_1w: number; evaluated_1m: number; as_of: string }>('/signals/outcomes/evaluate', {
+      method: 'POST',
+    }),
+
+  getSignalOutcomes: (limit: number = 20, horizon: '1w' | '1m' = '1w') =>
+    apiFetch<SignalOutcomesResponse>(`/signals/outcomes?limit=${limit}&horizon=${horizon}`),
+
+  getSignalCalibration: (horizon: '1w' | '1m' = '1w', minCount: number = 1) =>
+    apiFetch<SignalCalibrationResponse>(`/signals/calibration?horizon=${horizon}&min_count=${minCount}`),
+
   getStockFundamentals: (symbol: string) =>
     apiFetch<StockFundamentals>(`/stocks/${symbol}/fundamentals`),
 
@@ -782,6 +1130,26 @@ export const api = {
 
   getHealth: () =>
     apiFetch<HealthResponse>('/health'),
+
+  getSystemDiagnostics: () =>
+    apiFetch<SystemDiagnosticsResponse>('/system/diagnostics'),
+
+  getBacktest: (strategy: string = 'composite_signal', years: number = 1, limit: number = 100) =>
+    apiFetch<BacktestResponse>(`/strategy/backtests?strategy=${strategy}&years=${years}&limit=${limit}`),
+
+  compareBacktests: (years: number = 1, limit: number = 100) =>
+    apiFetch<BacktestCompareResponse>(`/strategy/backtests/compare?years=${years}&limit=${limit}`),
+
+  getPortfolioRiskGuard: (portfolioValue: number = 100000) =>
+    apiFetch<PortfolioRiskResponse>(`/risk/portfolio?portfolio_value=${portfolioValue}`),
+
+  getAlerts: (portfolioValue: number = 100000) =>
+    apiFetch<AlertsResponse>(`/alerts?portfolio_value=${portfolioValue}`),
+
+  auditStock: (symbol: string, portfolioValue: number = 100000, riskPerTradePct: number = 1, includeLlm = false) =>
+    apiFetch<AIAuditResponse>(
+      `/ai/audit/${symbol}?portfolio_value=${portfolioValue}&risk_per_trade_pct=${riskPerTradePct}&include_llm=${includeLlm ? 'true' : 'false'}`,
+    ),
 
   getIntelligenceOverview: (limit: number = 10) =>
     apiFetch<IntelligenceOverview>(`/intelligence/overview?limit=${limit}`),
