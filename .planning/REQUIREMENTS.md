@@ -104,10 +104,10 @@
 
 ### Backtest & Sinyal Performansı (BACKTEST)
 
-- [ ] **BACKTEST-01**: Sinyal performans tablosu: sinyal tarihi, hisse, etiket, 1 haftalık getiri, 1 aylık getiri, BIST100'e göre relatif performans, başarılı mı
-- [ ] **BACKTEST-02**: Filtre seçenekleri: dönem (son 1A/3A/6A), karar etiketi, başarı durumu
-- [ ] **BACKTEST-03**: Hit ratio özeti görünür: kaç sinyalin tuttuğu (%), ortalama 1 haftalık / 1 aylık getiri
-- [ ] **BACKTEST-04**: Sinyal performans verisi yoksa açıklayıcı boş durum gösterilir
+- [x] **BACKTEST-01**: Sinyal performans tablosu: sinyal tarihi, hisse, etiket, 1 haftalık getiri, 1 aylık getiri, BIST100'e göre relatif performans, başarılı mı
+- [x] **BACKTEST-02**: Filtre seçenekleri: dönem (son 1A/3A/6A), karar etiketi, başarı durumu
+- [x] **BACKTEST-03**: Hit ratio özeti görünür: kaç sinyalin tuttuğu (%), ortalama 1 haftalık / 1 aylık getiri
+- [x] **BACKTEST-04**: Sinyal performans verisi yoksa açıklayıcı boş durum gösterilir
 
 ### Veri Tazeliği & Sistem Sağlığı (VERI)
 
@@ -177,10 +177,10 @@
 | SKOR-01 | Phase 43 | Complete |
 | SKOR-02 | Phase 43 | Complete |
 | SKOR-03 | Phase 43 | Complete |
-| BACKTEST-01 | Phase 44 | Pending |
-| BACKTEST-02 | Phase 44 | Pending |
-| BACKTEST-03 | Phase 44 | Pending |
-| BACKTEST-04 | Phase 44 | Pending |
+| BACKTEST-01 | Phase 44 | Complete |
+| BACKTEST-02 | Phase 44 | Complete |
+| BACKTEST-03 | Phase 44 | Complete |
+| BACKTEST-04 | Phase 44 | Complete |
 | VERI-01 | Phase 45 | Pending |
 | VERI-02 | Phase 45 | Pending |
 | VERI-03 | Phase 45 | Pending |

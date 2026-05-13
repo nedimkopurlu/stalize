@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Karar Güvenliği & Sistem Olgunlaşması
 status: unknown
-last_updated: "2026-05-12T18:16:54.479Z"
+last_updated: "2026-05-13T11:24:53.198Z"
 progress:
   total_phases: 22
   completed_phases: 10
-  total_plans: 16
-  completed_plans: 21
+  total_plans: 18
+  completed_plans: 22
 ---
 
 # Project State
@@ -24,8 +24,8 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: 44
-Plan: Not started
+Phase: 44 (Backtest & Sinyal Performans Dashboard) — EXECUTING
+Plan: 2 of 2
 
 ## v5.0 Phases
 
@@ -185,7 +185,7 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-12T18:13:36.501Z
+**Last session:** 2026-05-13T11:24:53.194Z
 **Completed:** Phase 43 Plan 01 — karar dili güvenliği safeLabel 4 sayfada
 **Next action:** Execute Phase 43 Plan 02
 
