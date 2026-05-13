@@ -25,7 +25,7 @@ See: `.planning/PROJECT.md`
 ## Current Position
 
 Phase: 47
-Plan: Not started
+Plan: 01 Complete
 
 ## v5.0 Phases
 
@@ -150,15 +150,16 @@ Phase 39 (v5.0 tamamlandı)
 | RISK-02 | Phase 46 | ✅ Complete |
 | RISK-03 | Phase 46 | ✅ Complete |
 | RISK-04 | Phase 46 | ✅ Complete |
-| GUNLUK-01 | Phase 47 | ⬜ Pending |
-| GUNLUK-02 | Phase 47 | ⬜ Pending |
-| GUNLUK-03 | Phase 47 | ⬜ Pending |
-| GUNLUK-04 | Phase 47 | ⬜ Pending |
+| GUNLUK-01 | Phase 47 | ✅ Complete |
+| GUNLUK-02 | Phase 47 | ✅ Complete |
+| GUNLUK-03 | Phase 47 | ⬜ Pending (47-02 frontend) |
+| GUNLUK-04 | Phase 47 | ⬜ Pending (47-02 frontend) |
 
 ## Accumulated Context
 
 ### Key Decisions
 
+- exit_reason String(50), invalidation_condition Text — nullable, inspector-pattern idempotent migration 007 (v6.0 47-01, GUNLUK-01/02)
 - riskGuard fetched in separate useEffect after positions load — totalValue derived from active positions (v6.0 46-01)
 - sectorDist CSS yatay bar chart — harici kütüphane yok, exposure_pct% genişlik (v6.0 46-01, RISK-01)
 - On-demand AI analizi (Gemini) — sadece "Analiz Et" butonunda tetiklenir; API maliyeti kontrolü
@@ -199,8 +200,8 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-13T22:56:09.406Z
-**Completed:** Phase 46 Plan 02 — yoğunlaşma uyarıları (RISK-02, RISK-03) — Phase 46 DONE
-**Next action:** Execute Phase 47 — İşlem Disiplini & Günlüğü (GUNLUK-01..04)
+**Last session:** 2026-05-14
+**Completed:** Phase 47 Plan 01 — backend exit_reason + invalidation_condition alanları (GUNLUK-01, GUNLUK-02)
+**Next action:** Execute Phase 47 Plan 02 — Frontend İşlem Disiplini UI (GUNLUK-03, GUNLUK-04)
 
 ---
