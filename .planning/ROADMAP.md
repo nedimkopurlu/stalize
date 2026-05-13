@@ -387,7 +387,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 45-01-PLAN.md — Backend updated_at + StockSummary interface
+- [x] 45-01-PLAN.md — Backend updated_at + StockSummary interface
 - [ ] 45-02-PLAN.md — Frontend: stale banner, altbilgi, period badge, AI tarih notu
 
 ### Phase 46: Portföy Risk Yönetimi

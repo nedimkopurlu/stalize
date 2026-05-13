@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Karar Güvenliği & Sistem Olgunlaşması
 status: unknown
-last_updated: "2026-05-13T11:31:02.658Z"
+last_updated: "2026-05-13T22:27:55.102Z"
 progress:
   total_phases: 22
   completed_phases: 11
-  total_plans: 18
-  completed_plans: 23
+  total_plans: 20
+  completed_plans: 24
 ---
 
 # Project State
@@ -24,8 +24,8 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: 45
-Plan: Not started
+Phase: 45 (veri-tazeligi-sistem-sagligi) — EXECUTING
+Plan: 2 of 2
 
 ## v5.0 Phases
 
@@ -141,10 +141,10 @@ Phase 39 (v5.0 tamamlandı)
 | BACKTEST-02 | Phase 44 | ⬜ Pending |
 | BACKTEST-03 | Phase 44 | ⬜ Pending |
 | BACKTEST-04 | Phase 44 | ⬜ Pending |
-| VERI-01 | Phase 45 | ⬜ Pending |
+| VERI-01 | Phase 45 | ✅ Complete |
 | VERI-02 | Phase 45 | ⬜ Pending |
-| VERI-03 | Phase 45 | ⬜ Pending |
-| VERI-04 | Phase 45 | ⬜ Pending |
+| VERI-03 | Phase 45 | ✅ Complete |
+| VERI-04 | Phase 45 | ✅ Complete |
 | RISK-01 | Phase 46 | ⬜ Pending |
 | RISK-02 | Phase 46 | ⬜ Pending |
 | RISK-03 | Phase 46 | ⬜ Pending |
@@ -174,6 +174,8 @@ Phase 39 (v5.0 tamamlandı)
 - Promise.all 1w+1m calibration eş zamanlı (v6.0 44-02): sıralı yükleme yerine paralel fetch, KPI kartlarda gecikme yok
 - Client-side action/outcome filtreleme (v6.0 44-02): her filtre için ekstra API çağrısı yerine yüklenmiş veriye client filtre
 - Dönem filtresi server-side limit, diğer filtreler client-side (v6.0 44-02): kısa dönemlerde payload azalır; etiket/başarı filtreleri anlık tepki verir
+- updated_at opsiyonel (v6.0 45-01): StockSummary.updated_at?: string | null — mevcut componentler degisiklik gerektirmez, geri donuk uyumlu
+- DateTime isoformat ile None guard (v6.0 45-01): s.updated_at.isoformat() if s.updated_at else None — null safety
 
 ### Known Technical Debt
 
@@ -188,8 +190,8 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-13T11:28:19.242Z
-**Completed:** Phase 44 Plan 02 — backtest sayfası page.tsx + backtest.module.css
-**Next action:** Execute Phase 45 — Veri Tazeliği & Sistem Sağlığı
+**Last session:** 2026-05-13T22:27:55.093Z
+**Completed:** Phase 45 Plan 01 — backend updated_at field + StockSummary interface
+**Next action:** Execute Phase 45 Plan 02 — Veri Tazeliği UI banner & altbilgi
 
 ---
