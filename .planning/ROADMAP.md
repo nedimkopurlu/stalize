@@ -368,7 +368,11 @@ Plans:
   4. Özet satırı gösterilir: "toplam X sinyal, %Y tuttu, ortalama 1 haftalık getiri: +Z%"
   5. Veri yoksa "Henüz değerlendirilebilir sinyal yok — sistem sinyaller ürettikçe burada görünecek" mesajı gösterilir
   6. Backend'den sinyal verisi alınırken hata oluşursa kullanıcı dostu Türkçe mesaj gösterilir
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 44-01-PLAN.md — Sidebar'a Backtest nav item ekleme (BACKTEST-01, BACKTEST-02, BACKTEST-03, BACKTEST-04)
+- [ ] 44-02-PLAN.md — /backtest sayfası: KPI kartlar, filtreler, 7 sütunlu tablo, boş durum (BACKTEST-01, BACKTEST-02, BACKTEST-03, BACKTEST-04)
 
 ### Phase 45: Veri Tazeliği & Sistem Sağlığı
 **Goal**: Tüm sayfalarda verinin ne zaman güncellendiği gösterilir; stale data görsel uyarısı eklenir; AI analizine veri tarihi notu eklenir.
@@ -434,7 +438,7 @@ v6.0 phases: 43 → 44+45 (parallel) → 46 → 47
 | 41. Veri Doğruluğu & Eksik Fonksiyonlar | v5.1 | `/portfolio` + `/stocks/[symbol]` | 1/1 | ✅ Complete | 2026-05-08 |
 | 42. AI Kalite & Sistem Güvenilirliği | v5.1 | backend + AI endpoint'ler | 1/1 | ✅ Complete | 2026-05-08 |
 | 43. Karar Dili & Skor Açıklanabilirliği | v6.0 | `/stocks` + `/stocks/[symbol]` | 0/? | ⬜ Not started | — |
-| 44. Backtest & Sinyal Dashboard | v6.0 | `/intelligence` veya `/portfolio` | 0/? | ⬜ Not started | — |
+| 44. Backtest & Sinyal Dashboard | v6.0 | `/backtest` (yeni sayfa) | 0/2 | ⬜ Planned | — |
 | 45. Veri Tazeliği & Sistem Sağlığı | v6.0 | `/stocks` + `/stocks/[symbol]` + AI | 0/? | ⬜ Not started | — |
 | 46. Portföy Risk Yönetimi | v6.0 | `/portfolio` | 0/? | ⬜ Not started | — |
 | 47. İşlem Disiplini & Günlüğü | v6.0 | `/portfolio` + backend | 0/? | ⬜ Not started | — |
