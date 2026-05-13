@@ -3,13 +3,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import AppShell from '@/components/AppShell';
-import { formatPrice } from '@/components/StockHelpers';
+import { formatPrice, formatVolume } from '@/components/StockHelpers';
 import BistComparisonChart from '@/components/BistComparisonChart';
-import api, { PortfolioHistoryResponse, PortfolioPosition } from '@/lib/api';
+import api, { PortfolioHistoryResponse, PortfolioPosition, PortfolioRiskResponse, StockSummary } from '@/lib/api';
 import styles from './page.module.css';
 
 const PERIOD_OPTIONS = ['1H', '1A', '3A', '6A', '1Y', 'TÜMÜ'] as const;
 type Period = typeof PERIOD_OPTIONS[number];
+type WatchFilter = 'all' | 'up' | 'down' | 'volume';
+
+const WATCH_FILTERS: { key: WatchFilter; label: string }[] = [
+  { key: 'all', label: 'Tümü' },
+  { key: 'up', label: 'Yükselen' },
+  { key: 'down', label: 'Düşen' },
+  { key: 'volume', label: 'Hacim' },
+];
 
 type PositionForm = {
   symbol: string;
@@ -62,6 +70,13 @@ function pnlClass(value: number | null | undefined): string {
 function dayChangeClass(value: number | null | undefined): string {
   if (value == null) return styles.dayChangeNeutral;
   return value >= 0 ? styles.dayChangePositive : styles.dayChangeNegative;
+}
+
+function applyWatchFilter(stocks: StockSummary[], filter: WatchFilter): StockSummary[] {
+  if (filter === 'up') return stocks.filter((stock) => (stock.daily_change_pct ?? 0) > 0);
+  if (filter === 'down') return stocks.filter((stock) => (stock.daily_change_pct ?? 0) < 0);
+  if (filter === 'volume') return [...stocks].sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0));
+  return stocks;
 }
 
 // ─── SVG Portfolio Performance Chart ───
@@ -205,14 +220,22 @@ function RecentTransactions({ positions }: { positions: PortfolioPosition[] }) {
 export default function PortfolioPage() {
   const [positions, setPositions] = useState<PortfolioPosition[]>([]);
   const [history, setHistory] = useState<PortfolioHistoryResponse | null>(null);
+  const [watchStocks, setWatchStocks] = useState<StockSummary[]>([]);
+  const [watchSymbols, setWatchSymbols] = useState<string[]>([]);
   const [loadingPositions, setLoadingPositions] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [loadingWatchlist, setLoadingWatchlist] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [watchError, setWatchError] = useState<string | null>(null);
   const [period, setPeriod] = useState<Period>('3A');
+  const [watchFilter, setWatchFilter] = useState<WatchFilter>('all');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [form, setForm] = useState<PositionForm>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [riskGuard, setRiskGuard] = useState<PortfolioRiskResponse | null>(null);
+  const [loadingRiskGuard, setLoadingRiskGuard] = useState(true);
+
   // PORT-02: position close state
   const [closingId, setClosingId] = useState<number | null>(null);
   const [closeForm, setCloseForm] = useState<{ exit_price: string; exit_date: string }>({
@@ -225,7 +248,16 @@ export default function PortfolioPage() {
   useEffect(() => {
     void fetchPositions();
     void fetchHistory();
+    void fetchWatchlist();
   }, []);
+
+  useEffect(() => {
+    if (loadingPositions) return;
+    const active = positions.filter((p) => p.is_active !== false);
+    const tv = active.reduce((s, p) => s + (p.current_price ?? p.entry_price) * p.quantity, 0);
+    void fetchRiskGuard(tv);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [positions, loadingPositions]);
 
   async function fetchPositions() {
     setLoadingPositions(true);
@@ -249,6 +281,49 @@ export default function PortfolioPage() {
     } finally {
       setLoadingHistory(false);
     }
+  }
+
+  async function fetchRiskGuard(totalValue: number) {
+    setLoadingRiskGuard(true);
+    try {
+      // Use 100000 fallback when portfolio is empty (mirrors api default)
+      const safeValue = totalValue > 0 ? totalValue : 100000;
+      const data = await api.getPortfolioRiskGuard(safeValue);
+      setRiskGuard(data);
+    } catch {
+      // Non-blocking — silently skip (matches fetchHistory pattern)
+      setRiskGuard(null);
+    } finally {
+      setLoadingRiskGuard(false);
+    }
+  }
+
+  async function fetchWatchlist() {
+    setLoadingWatchlist(true);
+    setWatchError(null);
+    try {
+      const stored = JSON.parse(localStorage.getItem('stalize-watchlist') || '[]') as string[];
+      const symbols = Array.from(new Set(stored.map((item) => item.trim().toUpperCase()).filter(Boolean)));
+      setWatchSymbols(symbols);
+      if (!symbols.length) {
+        setWatchStocks([]);
+        return;
+      }
+      const data = await api.getStocks({ symbols: symbols.join(','), limit: symbols.length });
+      setWatchStocks(data.stocks);
+    } catch (err) {
+      setWatchError(err instanceof Error ? err.message : 'Takip listesi alınamadı');
+      setWatchStocks([]);
+    } finally {
+      setLoadingWatchlist(false);
+    }
+  }
+
+  function removeWatchSymbol(symbol: string) {
+    const nextSymbols = watchSymbols.filter((item) => item !== symbol);
+    localStorage.setItem('stalize-watchlist', JSON.stringify(nextSymbols));
+    setWatchSymbols(nextSymbols);
+    setWatchStocks((current) => current.filter((stock) => stock.symbol !== symbol));
   }
 
   function openAddForm() {
@@ -377,6 +452,10 @@ export default function PortfolioPage() {
       return { ...pos, weight, currentVal: val };
     });
   }, [activePositions, currentValue]);
+  const displayedWatchStocks = useMemo(
+    () => applyWatchFilter(watchStocks, watchFilter),
+    [watchStocks, watchFilter],
+  );
 
   // Risk level label
   function riskLabel(): string {
@@ -397,8 +476,11 @@ export default function PortfolioPage() {
 
         {/* ─── Header ─── */}
         <div className={styles.header}>
-          <p className={styles.eyebrow}>KİŞİSEL PORTFÖY</p>
-          <h1 className={styles.title}>Portföyüm</h1>
+          <p className={styles.eyebrow}>PORTFÖY MERKEZİ</p>
+          <h1 className={styles.title}>Portföyüm ve takip listem</h1>
+          <p className={styles.headerCopy}>
+            Açık pozisyonlarını, risk özetini ve izlediğin hisseleri tek ekranda takip et.
+          </p>
         </div>
 
         {error && <div className={styles.errorBanner}>{error}</div>}
@@ -509,6 +591,106 @@ export default function PortfolioPage() {
             </div>
           </div>
         </div>
+
+        {/* ─── Takip Listesi ─── */}
+        <section className={styles.watchSection}>
+          <div className={styles.watchHeader}>
+            <div>
+              <p className={styles.cardEyebrow}>TAKİP LİSTEM</p>
+              <h2 className={styles.watchTitle}>
+                {loadingWatchlist ? 'Takip listesi yükleniyor' : `${displayedWatchStocks.length}/${watchSymbols.length} hisse`}
+              </h2>
+            </div>
+            <div className={styles.filterGroup}>
+              {WATCH_FILTERS.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`${styles.filterPill} ${watchFilter === key ? styles.filterPillActive : ''}`}
+                  onClick={() => setWatchFilter(key)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {watchError ? (
+            <div className={styles.errorBanner}>{watchError}</div>
+          ) : (
+            <div className={styles.tableScroll}>
+              <table className={`${styles.table} ${styles.watchTable}`}>
+                <thead>
+                  <tr>
+                    <th>Sembol</th>
+                    <th className={styles.hideMobile}>Şirket</th>
+                    <th className={styles.hideMobile}>Sektör</th>
+                    <th>Fiyat</th>
+                    <th>Günlük</th>
+                    <th>Skor</th>
+                    <th className={styles.hideMobile}>Hacim</th>
+                    <th>İşlem</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loadingWatchlist ? (
+                    Array.from({ length: 4 }).map((_, index) => (
+                      <tr key={`watch-loading-${index}`}>
+                        {Array.from({ length: 8 }).map((__, cellIndex) => (
+                          <td key={cellIndex}>
+                            <div className={styles.skeletonLine} />
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : displayedWatchStocks.length === 0 ? (
+                    <tr>
+                      <td colSpan={8}>
+                        <div className={styles.emptyStateCompact}>
+                          <strong>{watchSymbols.length === 0 ? 'Takip listen boş' : 'Bu filtrede hisse yok'}</strong>
+                          <span>Hisse detayındaki “Takibe Al” düğmesiyle buraya ekleyebilirsin.</span>
+                          <Link href="/stocks" className={styles.inlineLink}>Hisselere git</Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    displayedWatchStocks.map((stock) => {
+                      const change = stock.daily_change_pct;
+                      return (
+                        <tr key={stock.symbol}>
+                          <td>
+                            <Link href={`/stocks/${stock.symbol}`} className={styles.symbolLink}>
+                              {stock.symbol}
+                            </Link>
+                          </td>
+                          <td className={styles.hideMobile} style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+                            {stock.name ?? '—'}
+                          </td>
+                          <td className={styles.hideMobile} style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+                            {stock.sector ?? '—'}
+                          </td>
+                          <td>{formatPrice(stock.current_price)}</td>
+                          <td className={pnlClass(change)}>{formatPct(change)}</td>
+                          <td>{stock.overall_score != null ? stock.overall_score.toFixed(1) : '—'}</td>
+                          <td className={styles.hideMobile}>{formatVolume(stock.volume)}</td>
+                          <td>
+                            <button
+                              type="button"
+                              className={styles.removeWatchBtn}
+                              onClick={() => removeWatchSymbol(stock.symbol)}
+                            >
+                              Çıkar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
 
         {/* ─── Pozisyonlarım Table ─── */}
         <div className={styles.positionsSection}>
