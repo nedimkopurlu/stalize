@@ -9,7 +9,7 @@
 /* ─── Page Header ─── */
 
 .header {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .eyebrow {
@@ -28,6 +28,13 @@
   color: var(--text-primary);
   margin: 0;
   line-height: 1.1;
+}
+
+.headerCopy {
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 10px 0 0;
 }
 
 /* ─── Hero 2-col ─── */
@@ -50,7 +57,7 @@
 .card {
   background: var(--bg-secondary, #16181c);
   border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 24px;
   overflow: hidden;
 }
@@ -73,7 +80,7 @@
   color: var(--text-primary, #f5f5f7);
   line-height: 1;
   margin: 0 0 8px;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .dayChange {
@@ -163,7 +170,7 @@
 .riskIcon {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: 8px;
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   display: flex;
   align-items: center;
@@ -236,7 +243,7 @@
 .positionsSection {
   background: var(--bg-secondary, #16181c);
   border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
-  border-radius: 16px;
+  border-radius: 8px;
   margin-bottom: 24px;
   overflow: hidden;
 }
@@ -265,7 +272,7 @@
   color: var(--text-dim, #5a5e68);
   background: var(--bg-elevated, #1c1f24);
   padding: 2px 8px;
-  border-radius: 20px;
+  border-radius: 8px;
 }
 
 .positionsActions {
@@ -313,6 +320,136 @@
 
 .tableScroll {
   overflow-x: auto;
+}
+
+/* ─── Watchlist inside portfolio ─── */
+
+.watchSection {
+  background: var(--bg-secondary, #16181c);
+  border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
+  border-radius: 8px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.watchHeader {
+  align-items: center;
+  border-bottom: 1px solid var(--border-primary, rgba(255,255,255,0.06));
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+}
+
+.watchTitle {
+  color: var(--text-primary, #f5f5f7);
+  font-size: 18px;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.filterGroup {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.filterPill {
+  background: transparent;
+  border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
+  border-radius: 8px;
+  color: var(--text-muted, #8b8d93);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.filterPill:hover {
+  background: var(--bg-elevated, #1c1f24);
+  color: var(--text-primary, #f5f5f7);
+}
+
+.filterPillActive {
+  background: var(--accent-soft, rgba(245,158,11,0.14));
+  border-color: rgba(245,158,11,0.28);
+  color: var(--accent, #f59e0b);
+}
+
+.watchTable {
+  min-width: 860px;
+}
+
+.symbolLink {
+  color: var(--text-primary, #f5f5f7);
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.symbolLink:hover {
+  color: var(--accent, #f59e0b);
+}
+
+.skeletonLine {
+  animation: shimmer 1.4s ease-in-out infinite;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  height: 14px;
+  min-width: 56px;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.removeWatchBtn {
+  background: transparent;
+  border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
+  border-radius: 8px;
+  color: var(--text-muted, #8b8d93);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+}
+
+.removeWatchBtn:hover {
+  border-color: rgba(239, 68, 68, 0.28);
+  color: var(--accent-red, #ef4444);
+}
+
+.emptyStateCompact {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 42px 24px;
+  text-align: center;
+}
+
+.emptyStateCompact strong {
+  color: var(--text-primary, #f5f5f7);
+  font-size: 15px;
+}
+
+.emptyStateCompact span {
+  color: var(--text-muted, #8b8d93);
+  font-size: 13px;
+}
+
+.inlineLink {
+  color: var(--accent, #f59e0b);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
 }
 
 .table {
@@ -498,7 +635,7 @@
 .sectorCard {
   background: var(--bg-secondary, #16181c);
   border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 24px;
 }
 
@@ -548,7 +685,7 @@
 .transCard {
   background: var(--bg-secondary, #16181c);
   border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 24px;
 }
 
@@ -654,7 +791,7 @@
 .errorBanner {
   background: rgba(239,68,68,0.1);
   border: 1px solid rgba(239,68,68,0.2);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 12px 16px;
   font-size: 13px;
   color: var(--accent-red);
@@ -681,7 +818,7 @@
   overflow-y: auto;
   background: var(--bg-secondary, #16181c);
   border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
-  border-radius: 16px;
+  border-radius: 8px;
   padding: 22px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
 }
@@ -747,7 +884,7 @@
   width: 100%;
   box-sizing: border-box;
   border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--bg-elevated, #1c1f24);
   color: var(--text-primary, #f5f5f7);
   padding: 10px 12px;
@@ -768,7 +905,7 @@
 .formError {
   margin: 4px 0 14px;
   border: 1px solid rgba(239, 68, 68, 0.22);
-  border-radius: 9px;
+  border-radius: 8px;
   background: rgba(239, 68, 68, 0.08);
   color: var(--accent-red, #ef4444);
   padding: 10px 12px;
@@ -891,5 +1028,77 @@
 @media (max-width: 480px) {
   .title {
     font-size: 24px;
+  }
+}
+
+/* ─── Sektör Dağılımı (Phase 46) ─── */
+.sectorDist {
+  background: var(--bg-secondary, #16181c);
+  border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.sectorDistHeader {
+  margin-bottom: 16px;
+}
+
+.sectorDistTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #f5f5f7);
+  margin: 4px 0 0;
+}
+
+.sectorList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectorRow {
+  display: grid;
+  grid-template-columns: 140px 1fr 56px;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-primary, #f5f5f7);
+}
+
+.sectorRowTop .sectorName {
+  font-weight: 600;
+}
+
+.sectorName {
+  color: var(--text-muted, #8b8d93);
+}
+
+.sectorBar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.sectorBarFill {
+  height: 100%;
+  background: var(--accent-green, #10b981);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.sectorPct {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary, #f5f5f7);
+  font-weight: 500;
+}
+
+@media (max-width: 600px) {
+  .sectorRow {
+    grid-template-columns: 100px 1fr 48px;
+    gap: 8px;
+    font-size: 12px;
   }
 }

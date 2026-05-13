@@ -592,6 +592,39 @@ export default function PortfolioPage() {
           </div>
         </div>
 
+        {/* ─── Sektör Dağılımı (RISK-01) ─── */}
+        <section className={styles.sectorDist}>
+          <div className={styles.sectorDistHeader}>
+            <p className={styles.cardEyebrow}>SEKTÖR DAĞILIMI</p>
+            <h2 className={styles.sectorDistTitle}>Portföyün sektörlere göre dağılımı</h2>
+          </div>
+          {loadingRiskGuard ? (
+            <div className={styles.loadingWrap}>Sektör dağılımı yükleniyor…</div>
+          ) : !riskGuard || riskGuard.sector_exposure.length === 0 ? (
+            <div className={styles.transEmpty}>Sektör dağılımı için aktif pozisyon gerekli</div>
+          ) : (
+            <div className={styles.sectorList}>
+              {[...riskGuard.sector_exposure]
+                .sort((a, b) => b.exposure_pct - a.exposure_pct)
+                .map((sec, idx) => (
+                  <div
+                    key={sec.sector}
+                    className={`${styles.sectorRow} ${idx < 3 ? styles.sectorRowTop : ''}`}
+                  >
+                    <span className={styles.sectorName}>{sec.sector || 'Bilinmiyor'}</span>
+                    <div className={styles.sectorBar}>
+                      <div
+                        className={styles.sectorBarFill}
+                        style={{ width: `${Math.min(sec.exposure_pct, 100)}%` }}
+                      />
+                    </div>
+                    <span className={styles.sectorPct}>{sec.exposure_pct.toFixed(1)}%</span>
+                  </div>
+                ))}
+            </div>
+          )}
+        </section>
+
         {/* ─── Takip Listesi ─── */}
         <section className={styles.watchSection}>
           <div className={styles.watchHeader}>
