@@ -43,6 +43,10 @@ const EMPTY_FORM: PositionForm = {
   rationale: '',
 };
 
+// ─── Risk thresholds (Phase 46 RISK-02, RISK-03) ───
+const SECTOR_CONCENTRATION_THRESHOLD = 35;   // RISK-02: %35
+const POSITION_CONCENTRATION_THRESHOLD = 20; // RISK-03: %20
+
 // ─── Helpers ───
 
 function formatTRY(value: number | null | undefined): string {
@@ -457,6 +461,53 @@ export default function PortfolioPage() {
     [watchStocks, watchFilter],
   );
 
+  // ─── Concentration alerts (RISK-02, RISK-03) ───
+  type ConcentrationAlert = {
+    key: string;
+    kind: 'sector' | 'position';
+    label: string;
+    pct: number;
+    threshold: number;
+    message: string;
+  };
+
+  const concentrationAlerts = useMemo<ConcentrationAlert[]>(() => {
+    if (!riskGuard) return [];
+    const alerts: ConcentrationAlert[] = [];
+
+    // Sector concentration (RISK-02)
+    for (const sec of riskGuard.sector_exposure) {
+      if (sec.exposure_pct > SECTOR_CONCENTRATION_THRESHOLD) {
+        const name = sec.sector || 'Bilinmiyor';
+        alerts.push({
+          key: `sector-${sec.sector}`,
+          kind: 'sector',
+          label: name,
+          pct: sec.exposure_pct,
+          threshold: SECTOR_CONCENTRATION_THRESHOLD,
+          message: `${name} sektöründe yoğunlaşma: %${sec.exposure_pct.toFixed(0)} ⚠ (eşik: %${SECTOR_CONCENTRATION_THRESHOLD})`,
+        });
+      }
+    }
+
+    // Single position concentration (RISK-03)
+    for (const pos of riskGuard.positions) {
+      if (pos.exposure_pct > POSITION_CONCENTRATION_THRESHOLD) {
+        alerts.push({
+          key: `position-${pos.symbol}`,
+          kind: 'position',
+          label: pos.symbol,
+          pct: pos.exposure_pct,
+          threshold: POSITION_CONCENTRATION_THRESHOLD,
+          message: `${pos.symbol} tek hisse ağırlığı: %${pos.exposure_pct.toFixed(0)} ⚠ (eşik: %${POSITION_CONCENTRATION_THRESHOLD})`,
+        });
+      }
+    }
+
+    // Sort highest exposure first
+    return alerts.sort((a, b) => b.pct - a.pct);
+  }, [riskGuard]);
+
   // Risk level label
   function riskLabel(): string {
     if (!risk) return '--';
@@ -610,6 +661,21 @@ export default function PortfolioPage() {
             </div>
           </div>
         </div>
+
+        {/* ─── Yoğunlaşma Uyarıları (RISK-02, RISK-03) ─── */}
+        {concentrationAlerts.length > 0 && (
+          <section className={styles.riskAlerts} aria-label="Yoğunlaşma uyarıları">
+            <p className={styles.riskAlertsTitle}>Yoğunlaşma Uyarıları</p>
+            <ul className={styles.riskAlertsList}>
+              {concentrationAlerts.map((alert) => (
+                <li key={alert.key} className={styles.riskAlertItem}>
+                  <span className={styles.riskAlertIcon} aria-hidden="true">⚠</span>
+                  <span className={styles.riskAlertMessage}>{alert.message}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* ─── Sektör Dağılımı (RISK-01) ─── */}
         <section className={styles.sectorDist}>
