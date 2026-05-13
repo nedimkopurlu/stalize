@@ -560,12 +560,12 @@ export default function PortfolioPage() {
 
             <div className={styles.riskRows}>
               <div className={styles.riskRow}>
-                <span className={styles.riskRowLabel}>Aktif pozisyon</span>
+                <span className={styles.riskRowLabel}>Açık pozisyon</span>
                 <div className={styles.riskRowRight}>
                   <span className={styles.riskRowValue}>
-                    {risk?.active_positions ?? positions.length}
+                    {activePositions.length} hisse
                   </span>
-                  <span className={styles.riskRowNote}>Portföydeki açık pozisyon</span>
+                  <span className={styles.riskRowNote}>Portföydeki açık pozisyon sayısı</span>
                 </div>
               </div>
 
@@ -586,6 +586,25 @@ export default function PortfolioPage() {
                     {risk?.positions_near_target ?? '--'}
                   </span>
                   <span className={styles.riskRowNote}>Hedef fiyatına yaklaşan pozisyon</span>
+                </div>
+              </div>
+
+              <div className={`${styles.riskRow} ${styles.riskRowSectors}`}>
+                <span className={styles.riskRowLabel}>En büyük 3 sektör</span>
+                <div className={styles.riskRowRight}>
+                  {loadingRiskGuard ? (
+                    <span className={styles.riskRowNote}>Hesaplanıyor…</span>
+                  ) : !riskGuard || riskGuard.sector_exposure.length === 0 ? (
+                    <span className={styles.riskRowNote}>Aktif pozisyon yok</span>
+                  ) : (
+                    <span className={styles.riskRowSectorList}>
+                      {[...riskGuard.sector_exposure]
+                        .sort((a, b) => b.exposure_pct - a.exposure_pct)
+                        .slice(0, 3)
+                        .map((s) => `${s.sector || 'Bilinmiyor'} %${s.exposure_pct.toFixed(0)}`)
+                        .join(', ')}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

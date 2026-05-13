@@ -1102,3 +1102,23 @@
     font-size: 12px;
   }
 }
+
+/* ─── Risk Özeti — En büyük 3 sektör (Phase 46) ─── */
+.riskRowSectors .riskRowRight {
+  align-items: flex-end;
+}
+
+.riskRowSectorList {
+  font-size: 12px;
+  color: var(--text-primary, #f5f5f7);
+  text-align: right;
+  line-height: 1.4;
+  max-width: 220px;
+}
+
+@media (max-width: 600px) {
+  .riskRowSectorList {
+    max-width: 100%;
+    font-size: 11px;
+  }
+}
