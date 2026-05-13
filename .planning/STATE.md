@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Karar Güvenliği & Sistem Olgunlaşması
 status: unknown
-last_updated: "2026-05-13T22:27:55.102Z"
+last_updated: "2026-05-13T22:31:16.161Z"
 progress:
   total_phases: 22
-  completed_phases: 11
+  completed_phases: 12
   total_plans: 20
-  completed_plans: 24
+  completed_plans: 25
 ---
 
 # Project State
@@ -24,8 +24,8 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: 45 (veri-tazeligi-sistem-sagligi) — EXECUTING
-Plan: 2 of 2
+Phase: 45 (veri-tazeligi-sistem-sagligi) — COMPLETE
+Plan: 2 of 2 (all done)
 
 ## v5.0 Phases
 
@@ -50,7 +50,7 @@ Plan: 2 of 2
 - [x] Phase 44: Backtest & Sinyal Performans Dashboard ✅ (2026-05-13)
   - Requirements: BACKTEST-01, BACKTEST-02, BACKTEST-03, BACKTEST-04
   - Goal: Mevcut sinyal altyapısı kullanıcıya görünür; hit ratio ve getiri tablosu sunulur
-- [ ] Phase 45: Veri Tazeliği & Sistem Sağlığı ⬜ Not started
+- [x] Phase 45: Veri Tazeliği & Sistem Sağlığı ✅ (2026-05-14)
   - Requirements: VERI-01, VERI-02, VERI-03, VERI-04
   - Goal: Son güncelleme zamanı UI'da; stale data uyarısı; AI analizine veri tarihi notu
 - [ ] Phase 46: Portföy Risk Yönetimi ⬜ Not started
@@ -88,6 +88,7 @@ Phase 39 (v5.0 tamamlandı)
 | Phase 41 | DATA/FEAT | NaN guards, null safety, fundGrid skeleton, BistComparisonChart |
 | Phase 42 | AI | Groq birincil sağlayıcı, derinleştirilmiş promptlar, model portföy gerekçe kalitesi |
 | Phase 43 | KARAR/SKOR | safeLabel 4 sayfada, skor dökümü progress bar, bileşen sayacı, volatilite uyarısı |
+| Phase 45 | VERI | stale-data banner, güncelleme saati altbilgisi, fundamental period badge, AI analiz tarihi |
 
 ## Requirements Satisfied (v5.0)
 
@@ -142,7 +143,7 @@ Phase 39 (v5.0 tamamlandı)
 | BACKTEST-03 | Phase 44 | ⬜ Pending |
 | BACKTEST-04 | Phase 44 | ⬜ Pending |
 | VERI-01 | Phase 45 | ✅ Complete |
-| VERI-02 | Phase 45 | ⬜ Pending |
+| VERI-02 | Phase 45 | ✅ Complete |
 | VERI-03 | Phase 45 | ✅ Complete |
 | VERI-04 | Phase 45 | ✅ Complete |
 | RISK-01 | Phase 46 | ⬜ Pending |
@@ -176,6 +177,10 @@ Phase 39 (v5.0 tamamlandı)
 - Dönem filtresi server-side limit, diğer filtreler client-side (v6.0 44-02): kısa dönemlerde payload azalır; etiket/başarı filtreleri anlık tepki verir
 - updated_at opsiyonel (v6.0 45-01): StockSummary.updated_at?: string | null — mevcut componentler degisiklik gerektirmez, geri donuk uyumlu
 - DateTime isoformat ile None guard (v6.0 45-01): s.updated_at.isoformat() if s.updated_at else None — null safety
+- latestUpdate Math.max client-side (v6.0 45-02): tüm hisselerin updated_at'ından en son tarih — sunucuda aggregate endpoint yok
+- 8 saat stale eşiği (v6.0 45-02): Türkiye piyasası 09:00-18:00 EEST; geceleri/hafta sonu kapanma için uygun eşik
+- analysisDate state string (v6.0 45-02): generated_at format dönüşümü render yerine set anında yapılır; fallback Date.now()
+- periodBadge vendor-data-missing gizlenir (v6.0 45-02): null ile aynı davranış — boş period badge gösterilmez
 
 ### Known Technical Debt
 
@@ -190,7 +195,7 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-13T22:27:55.093Z
+**Last session:** 2026-05-13T22:31:16.156Z
 **Completed:** Phase 45 Plan 01 — backend updated_at field + StockSummary interface
 **Next action:** Execute Phase 45 Plan 02 — Veri Tazeliği UI banner & altbilgi
 
