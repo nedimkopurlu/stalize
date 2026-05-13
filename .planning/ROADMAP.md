@@ -384,7 +384,11 @@ Plans:
   3. Son güncelleme 8 saatten eski olan hisselerde sarı renkli veya "⚠ Eski veri" metniyle görsel uyarı gösterilir
   4. Hisse AI analiz sonucunun altında "Bu analiz [tarih] verilerine dayanmaktadır" notu yer alır
   5. Uyarılar kullanıcı deneyimini bozmadan sade ve okunabilir şekilde gösterilir (tabloya dikey alan eklemeden)
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 45-01-PLAN.md — Backend updated_at + StockSummary interface
+- [ ] 45-02-PLAN.md — Frontend: stale banner, altbilgi, period badge, AI tarih notu
 
 ### Phase 46: Portföy Risk Yönetimi
 **Goal**: Portföy sayfasına sektör dağılımı görselleştirmesi ve yoğunlaşma uyarısı eklenir; özet karta risk bilgileri entegre edilir.
