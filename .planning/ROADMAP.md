@@ -372,7 +372,7 @@ Plans:
 
 Plans:
 - [x] 44-01-PLAN.md — Sidebar'a Backtest nav item ekleme (BACKTEST-01, BACKTEST-02, BACKTEST-03, BACKTEST-04)
-- [ ] 44-02-PLAN.md — /backtest sayfası: KPI kartlar, filtreler, 7 sütunlu tablo, boş durum (BACKTEST-01, BACKTEST-02, BACKTEST-03, BACKTEST-04)
+- [x] 44-02-PLAN.md — /backtest sayfası: KPI kartlar, filtreler, 7 sütunlu tablo, boş durum (BACKTEST-01, BACKTEST-02, BACKTEST-03, BACKTEST-04)
 
 ### Phase 45: Veri Tazeliği & Sistem Sağlığı
 **Goal**: Tüm sayfalarda verinin ne zaman güncellendiği gösterilir; stale data görsel uyarısı eklenir; AI analizine veri tarihi notu eklenir.

@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Karar Güvenliği & Sistem Olgunlaşması
 status: unknown
-last_updated: "2026-05-13T11:24:53.198Z"
+last_updated: "2026-05-13T11:28:19.246Z"
 progress:
   total_phases: 22
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 18
-  completed_plans: 22
+  completed_plans: 23
 ---
 
 # Project State
@@ -47,7 +47,7 @@ Plan: 2 of 2
 - [x] Phase 43: Karar Dili Güvenliği & Skor Açıklanabilirliği ✅ (2026-05-12)
   - Requirements: KARAR-01, KARAR-02, KARAR-03, KARAR-04, SKOR-01, SKOR-02, SKOR-03
   - Goal: "GÜÇLÜ AL/SAT" direktif etiketler güvenli dile çevrilir; hisse detay sayfasında skor bileşen dökümü ve veri bütünlüğü göstergesi eklenir
-- [ ] Phase 44: Backtest & Sinyal Performans Dashboard ⬜ Not started
+- [x] Phase 44: Backtest & Sinyal Performans Dashboard ✅ (2026-05-13)
   - Requirements: BACKTEST-01, BACKTEST-02, BACKTEST-03, BACKTEST-04
   - Goal: Mevcut sinyal altyapısı kullanıcıya görünür; hit ratio ve getiri tablosu sunulur
 - [ ] Phase 45: Veri Tazeliği & Sistem Sağlığı ⬜ Not started
@@ -171,6 +171,9 @@ Phase 39 (v5.0 tamamlandı)
 - Dosya bazlı helper kopyalama (v6.0 43-01): ortak lib yerine her sayfada yerel safeLabel — mevcut proje paterni
 - Volatilite proxy listede daily_change_pct >%4 (v6.0 43-02): 20g fiyat geçmişi hisse listesinde mevcut değil, günlük hareket proxy olarak kullanıldı
 - Skor Dökümü bölümü hero'dan sonra ayrı section (v6.0 43-02): scoreCard içinde değil, tam genişlikte editorial düzende
+- Promise.all 1w+1m calibration eş zamanlı (v6.0 44-02): sıralı yükleme yerine paralel fetch, KPI kartlarda gecikme yok
+- Client-side action/outcome filtreleme (v6.0 44-02): her filtre için ekstra API çağrısı yerine yüklenmiş veriye client filtre
+- Dönem filtresi server-side limit, diğer filtreler client-side (v6.0 44-02): kısa dönemlerde payload azalır; etiket/başarı filtreleri anlık tepki verir
 
 ### Known Technical Debt
 
@@ -185,8 +188,8 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-13T11:24:53.194Z
-**Completed:** Phase 43 Plan 01 — karar dili güvenliği safeLabel 4 sayfada
-**Next action:** Execute Phase 43 Plan 02
+**Last session:** 2026-05-13T11:28:19.242Z
+**Completed:** Phase 44 Plan 02 — backtest sayfası page.tsx + backtest.module.css
+**Next action:** Execute Phase 45 — Veri Tazeliği & Sistem Sağlığı
 
 ---
