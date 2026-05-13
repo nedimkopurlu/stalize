@@ -400,7 +400,11 @@ Plans:
   3. Herhangi bir hissenin portföy ağırlığı %20'yi geçtiğinde görsel uyarı gösterilir: "AKBNK tek hisse ağırlığı: %24 ⚠"
   4. Portföy özet kartına "Açık pozisyon: X hisse" ve "En büyük 3 sektör: Bankacılık %42, Enerji %18, Sanayi %15" bilgisi eklenir
   5. Uyarılar pozisyon listesinin üstünde veya ayrı bir risk özeti bölümünde gösterilir; K/Z tablosuna müdahale etmez
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [x] 46-01-PLAN.md — riskGuard fetch + sektör dağılımı bar chart + özet kart top-3 sektör (RISK-01, RISK-04)
+- [ ] 46-02-PLAN.md — Yoğunlaşma uyarıları: sektör >%35 + tek hisse >%20 (RISK-02, RISK-03)
 
 ### Phase 47: İşlem Disiplini & Günlüğü
 **Goal**: Pozisyon açma formuna disiplin alanları eklenir; pozisyon kapatmada çıkış nedeni zorunlu hale gelir; kapalı pozisyon istatistikleri gösterilir.
@@ -444,7 +448,7 @@ v6.0 phases: 43 → 44+45 (parallel) → 46 → 47
 | 43. Karar Dili & Skor Açıklanabilirliği | v6.0 | `/stocks` + `/stocks/[symbol]` | 0/? | ⬜ Not started | — |
 | 44. Backtest & Sinyal Dashboard | v6.0 | `/backtest` (yeni sayfa) | 0/2 | ⬜ Planned | — |
 | 45. Veri Tazeliği & Sistem Sağlığı | v6.0 | `/stocks` + `/stocks/[symbol]` + AI | 0/? | ⬜ Not started | — |
-| 46. Portföy Risk Yönetimi | v6.0 | `/portfolio` | 0/? | ⬜ Not started | — |
+| 46. Portföy Risk Yönetimi | v6.0 | `/portfolio` | 0/2 | ⬜ Planned | — |
 | 47. İşlem Disiplini & Günlüğü | v6.0 | `/portfolio` + backend | 0/? | ⬜ Not started | — |
 
 ## Kuzey Yıldızı

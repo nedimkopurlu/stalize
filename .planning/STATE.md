@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Karar Güvenliği & Sistem Olgunlaşması
 status: unknown
-last_updated: "2026-05-13T22:37:13.679Z"
+last_updated: "2026-05-13T22:46:26.623Z"
 progress:
   total_phases: 22
   completed_phases: 12
-  total_plans: 20
-  completed_plans: 25
+  total_plans: 22
+  completed_plans: 26
 ---
 
 # Project State
@@ -24,8 +24,8 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: 46
-Plan: Not started
+Phase: 46 (portföy-risk-yönetimi) — EXECUTING
+Plan: 2 of 2
 
 ## v5.0 Phases
 
@@ -53,8 +53,8 @@ Plan: Not started
 - [x] Phase 45: Veri Tazeliği & Sistem Sağlığı ✅ (2026-05-14)
   - Requirements: VERI-01, VERI-02, VERI-03, VERI-04
   - Goal: Son güncelleme zamanı UI'da; stale data uyarısı; AI analizine veri tarihi notu
-- [ ] Phase 46: Portföy Risk Yönetimi ⬜ Not started
-  - Requirements: RISK-01, RISK-02, RISK-03, RISK-04
+- [~] Phase 46: Portföy Risk Yönetimi 🔄 In Progress (Plan 1/2 complete)
+  - Requirements: RISK-01 ✅, RISK-02 ⬜, RISK-03 ⬜, RISK-04 ✅
   - Goal: Sektör dağılımı görsel; yoğunlaşma uyarıları; risk özeti kartı
 - [ ] Phase 47: İşlem Disiplini & Günlüğü ⬜ Not started
   - Requirements: GUNLUK-01, GUNLUK-02, GUNLUK-03, GUNLUK-04
@@ -146,10 +146,10 @@ Phase 39 (v5.0 tamamlandı)
 | VERI-02 | Phase 45 | ✅ Complete |
 | VERI-03 | Phase 45 | ✅ Complete |
 | VERI-04 | Phase 45 | ✅ Complete |
-| RISK-01 | Phase 46 | ⬜ Pending |
+| RISK-01 | Phase 46 | ✅ Complete |
 | RISK-02 | Phase 46 | ⬜ Pending |
 | RISK-03 | Phase 46 | ⬜ Pending |
-| RISK-04 | Phase 46 | ⬜ Pending |
+| RISK-04 | Phase 46 | ✅ Complete |
 | GUNLUK-01 | Phase 47 | ⬜ Pending |
 | GUNLUK-02 | Phase 47 | ⬜ Pending |
 | GUNLUK-03 | Phase 47 | ⬜ Pending |
@@ -159,6 +159,8 @@ Phase 39 (v5.0 tamamlandı)
 
 ### Key Decisions
 
+- riskGuard fetched in separate useEffect after positions load — totalValue derived from active positions (v6.0 46-01)
+- sectorDist CSS yatay bar chart — harici kütüphane yok, exposure_pct% genişlik (v6.0 46-01, RISK-01)
 - On-demand AI analizi (Gemini) — sadece "Analiz Et" butonunda tetiklenir; API maliyeti kontrolü
 - BIST100 evreni — likit, veri kaliteli, odaklı başlangıç (BIST250+ v2'ye bırakıldı)
 - Giriş yok — kişisel araç, tek kullanıcı, sürtünmeyi azaltır
@@ -195,7 +197,7 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-13T22:37:13.669Z
+**Last session:** 2026-05-13T22:46:26.619Z
 **Completed:** Phase 45 Plan 01 — backend updated_at field + StockSummary interface
 **Next action:** Execute Phase 45 Plan 02 — Veri Tazeliği UI banner & altbilgi
 
