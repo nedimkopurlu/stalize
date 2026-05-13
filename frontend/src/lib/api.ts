@@ -610,6 +610,9 @@ export interface PortfolioPosition {
   exit_price: number | null;
   exit_date: string | null;
   realized_pnl: number | null;
+  // GUNLUK-01, GUNLUK-02: işlem disiplini alanları
+  exit_reason: string | null;
+  invalidation_condition: string | null;
 }
 
 export interface PortfolioSnapshot {
@@ -1105,13 +1108,14 @@ export const api = {
     stop_loss?: number;
     target_price?: number;
     rationale?: string;
+    invalidation_condition?: string;
   }) =>
     apiFetch<{ id: number; symbol: string; status: string }>('/portfolio/positions', {
       method: 'POST',
       body: data,
     }),
 
-  closePosition: (id: number, data: { exit_price: number; exit_date: string }) =>
+  closePosition: (id: number, data: { exit_price: number; exit_date: string; exit_reason: string }) =>
     apiFetch<{ id: number; symbol: string; realized_pnl: number | null; status: string }>(
       `/portfolio/positions/${id}/close`,
       { method: 'PATCH', body: data },
