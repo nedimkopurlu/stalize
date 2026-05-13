@@ -27,6 +27,7 @@ type PositionForm = {
   stop_loss: string;
   target_price: string;
   rationale: string;
+  invalidation_condition: string;
 };
 
 function todayISO(): string {
@@ -41,6 +42,7 @@ const EMPTY_FORM: PositionForm = {
   stop_loss: '',
   target_price: '',
   rationale: '',
+  invalidation_condition: '',
 };
 
 // ─── Risk thresholds (Phase 46 RISK-02, RISK-03) ───
@@ -242,9 +244,16 @@ export default function PortfolioPage() {
 
   // PORT-02: position close state
   const [closingId, setClosingId] = useState<number | null>(null);
-  const [closeForm, setCloseForm] = useState<{ exit_price: string; exit_date: string }>({
+  const [closeForm, setCloseForm] = useState<{
+    exit_price: string;
+    exit_date: string;
+    exit_reason: string;
+    exit_reason_other: string;
+  }>({
     exit_price: '',
     exit_date: todayISO(),
+    exit_reason: '',
+    exit_reason_other: '',
   });
   const [closeLoading, setCloseLoading] = useState(false);
   const [closeError, setCloseError] = useState<string | null>(null);
@@ -391,6 +400,7 @@ export default function PortfolioPage() {
         ...(stopLoss !== undefined ? { stop_loss: stopLoss } : {}),
         ...(targetPrice !== undefined ? { target_price: targetPrice } : {}),
         ...(form.rationale.trim() ? { rationale: form.rationale.trim() } : {}),
+        ...(form.invalidation_condition.trim() ? { invalidation_condition: form.invalidation_condition.trim() } : {}),
       });
       setIsAddOpen(false);
       setForm({ ...EMPTY_FORM, entry_date: todayISO() });
@@ -411,15 +421,28 @@ export default function PortfolioPage() {
     if (closingId === null) return;
     const exitPrice = parseFloat(closeForm.exit_price);
     if (isNaN(exitPrice) || exitPrice <= 0) return;
+    // GUNLUK-02: exit_reason zorunlu
+    if (!closeForm.exit_reason) {
+      setCloseError('Çıkış nedeni seçilmesi zorunludur.');
+      return;
+    }
+    if (closeForm.exit_reason === 'Diğer' && !closeForm.exit_reason_other.trim()) {
+      setCloseError('"Diğer" seçildiğinde kısa açıklama zorunludur.');
+      return;
+    }
+    const exitReason = closeForm.exit_reason === 'Diğer'
+      ? `Diğer: ${closeForm.exit_reason_other.trim()}`
+      : closeForm.exit_reason;
     setCloseLoading(true);
     setCloseError(null);
     try {
       await api.closePosition(closingId, {
         exit_price: exitPrice,
         exit_date: closeForm.exit_date,
+        exit_reason: exitReason,
       });
       setClosingId(null);
-      setCloseForm({ exit_price: '', exit_date: todayISO() });
+      setCloseForm({ exit_price: '', exit_date: todayISO(), exit_reason: '', exit_reason_other: '' });
       await Promise.all([fetchPositions(), fetchHistory()]);
     } catch (e) {
       setCloseError(e instanceof Error ? e.message : 'Pozisyon kapatılamadı.');
@@ -924,6 +947,28 @@ export default function PortfolioPage() {
                                 onChange={(e) => setCloseForm((f) => ({ ...f, exit_date: e.target.value }))}
                                 className={styles.closeInput}
                               />
+                              <select
+                                value={closeForm.exit_reason}
+                                onChange={(e) => setCloseForm((f) => ({ ...f, exit_reason: e.target.value, exit_reason_other: '' }))}
+                                className={styles.closeInput}
+                                aria-label="Çıkış nedeni"
+                              >
+                                <option value="">Çıkış nedeni seçin…</option>
+                                <option value="Stop Tetiklendi">Stop Tetiklendi</option>
+                                <option value="Hedefe Ulaştı">Hedefe Ulaştı</option>
+                                <option value="Senaryo Bozuldu">Senaryo Bozuldu</option>
+                                <option value="Diğer">Diğer</option>
+                              </select>
+                              {closeForm.exit_reason === 'Diğer' && (
+                                <textarea
+                                  value={closeForm.exit_reason_other}
+                                  onChange={(e) => setCloseForm((f) => ({ ...f, exit_reason_other: e.target.value }))}
+                                  placeholder="Kısa açıklama giriniz"
+                                  rows={2}
+                                  className={styles.closeInput}
+                                  aria-label="Diğer çıkış nedeni açıklaması"
+                                />
+                              )}
                               <button
                                 className={styles.closeConfirm}
                                 onClick={handleClosePosition}
@@ -1147,6 +1192,16 @@ export default function PortfolioPage() {
                   onChange={(event) => updateForm('rationale', event.target.value)}
                   placeholder="Opsiyonel"
                   rows={3}
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span>Kararı bozan koşul</span>
+                <textarea
+                  value={form.invalidation_condition}
+                  onChange={(event) => updateForm('invalidation_condition', event.target.value)}
+                  placeholder="Ör. MACD negatif geçerse veya 90 TL altına sararsa"
+                  rows={2}
                 />
               </label>
 
