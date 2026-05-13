@@ -306,6 +306,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
   const [inWatchlist, setInWatchlist] = useState(false);
   const [period, setPeriod] = useState('6m');
   const [analysis, setAnalysis] = useState<string | null>(null);
+  const [analysisDate, setAnalysisDate] = useState<string | null>(null);
   const [analyzeLoading, setAnalyzeLoading] = useState(false);
 
   // ── Load watchlist state ──────────────────────────────────
@@ -327,6 +328,14 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     try {
       const result: StockAnalysisResponse = await api.analyzeStock(symbol);
       setAnalysis(result.analysis);
+      // Analiz tarihini kaydet (VERI-04) — generated_at ISO string'den yerel tarih formatına çevir
+      setAnalysisDate(
+        result.generated_at
+          ? new Date(result.generated_at).toLocaleDateString('tr-TR', {
+              day: '2-digit', month: '2-digit', year: 'numeric',
+            })
+          : new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      );
     } catch {
       setAnalysis('Analiz alınamadı. Lütfen tekrar deneyin.');
     } finally {
@@ -761,6 +770,11 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
               {analysis !== null && (
                 <div className={styles.analyzePanel}>
                   <p className={styles.analyzeText}>{analysis}</p>
+                  {analysisDate && (
+                    <p className={styles.analysisDate}>
+                      Bu analiz {analysisDate} verisine dayanmaktadır.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -990,7 +1004,12 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
           <article className={styles.dossierCard}>
             <div className={styles.cardHeaderLine}>
               <div>
-                <div className={styles.sectionEyebrow}>Temel Analiz</div>
+                <div className={styles.sectionEyebrow}>
+                  Temel Analiz
+                  {fundamentals?.period && fundamentals.period !== 'vendor-data-missing' && (
+                    <span className={styles.periodBadge}>{fundamentals.period}</span>
+                  )}
+                </div>
                 <h2>Değerleme, kârlılık ve bilanço</h2>
               </div>
               <span className={styles.scoreChip}>{Number.isFinite(fundamentals?.fundamental_score) ? `${formatScoreNumber(fundamentals?.fundamental_score, 0)}/100` : '—'}</span>

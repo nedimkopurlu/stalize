@@ -1357,3 +1357,26 @@
     padding: 32px 20px 0;
   }
 }
+
+/* ── AI analiz tarih notu (VERI-04) ── */
+.analysisDate {
+  margin: 10px 0 0;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* ── Fundamental dönem badge (VERI-02) ── */
+.periodBadge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--accent);
+  vertical-align: middle;
+  letter-spacing: 0.04em;
+}
