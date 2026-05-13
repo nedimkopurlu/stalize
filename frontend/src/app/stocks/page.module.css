@@ -341,3 +341,22 @@
   color: var(--accent);
   cursor: default;
 }
+
+/* ── Stale banner (VERI-03) ── */
+.staleBanner {
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  border-radius: 8px;
+  color: #eab308;
+  font-size: 0.8125rem;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+}
+
+/* ── Tablo altbilgisi (VERI-01) ── */
+.tableFooter {
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-align: right;
+}

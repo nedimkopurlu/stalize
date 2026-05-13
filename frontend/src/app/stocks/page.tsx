@@ -63,6 +63,17 @@ function isHighDailyVolatility(stock: StockSummary): boolean {
   return stock.daily_change_pct !== null && Math.abs(stock.daily_change_pct) > 4;
 }
 
+// Stale data helpers (VERI-01, VERI-03)
+function isStale(date: Date | null): boolean {
+  if (!date) return false;
+  return Date.now() - date.getTime() > 8 * 3600 * 1000;
+}
+
+function formatUpdateTime(date: Date | null): string {
+  if (!date) return '';
+  return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+}
+
 function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
   if (col !== sortKey) {
     return <span className={styles.sortIconInactive}>↕</span>;
@@ -96,6 +107,7 @@ export default function StocksPage() {
   const [stocks, setStocks] = useState<StockSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [latestUpdate, setLatestUpdate] = useState<Date | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [sectorFilter, setSectorFilter] = useState('');
@@ -116,6 +128,13 @@ export default function StocksPage() {
       .then((res) => {
         setStocks(res.stocks);
         setTotal(res.total);
+        // En son updated_at tarihini bul (VERI-01, VERI-03)
+        const dates = res.stocks
+          .map((s) => s.updated_at ? new Date(s.updated_at) : null)
+          .filter((d): d is Date => d !== null && !isNaN(d.getTime()));
+        if (dates.length > 0) {
+          setLatestUpdate(new Date(Math.max(...dates.map((d) => d.getTime()))));
+        }
       })
       .catch((err: unknown) => {
         setLoadError(err instanceof Error ? err.message : 'Hisse listesi alınamadı');
@@ -220,6 +239,13 @@ export default function StocksPage() {
             ))}
           </div>
         </div>
+
+        {/* ── Stale data uyarısı (VERI-03) ── */}
+        {!loading && latestUpdate !== null && isStale(latestUpdate) && (
+          <div className={styles.staleBanner}>
+            ⚠ Veriler 8+ saat önce güncellendi — piyasa kapalı olabilir
+          </div>
+        )}
 
         {/* ── Error ── */}
         {loadError && (
@@ -339,6 +365,13 @@ export default function StocksPage() {
             </div>
           )}
         </div>
+
+        {/* ── Altbilgi — son güncelleme (VERI-01) ── */}
+        {!loading && latestUpdate !== null && (
+          <div className={styles.tableFooter}>
+            Son güncelleme: {formatUpdateTime(latestUpdate)}
+          </div>
+        )}
       </div>
     </AppShell>
   );
