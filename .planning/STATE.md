@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Karar Güvenliği & Sistem Olgunlaşması
 status: unknown
-last_updated: "2026-05-13T11:28:19.246Z"
+last_updated: "2026-05-13T11:31:02.658Z"
 progress:
   total_phases: 22
   completed_phases: 11
@@ -24,8 +24,8 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: 44 (Backtest & Sinyal Performans Dashboard) — EXECUTING
-Plan: 2 of 2
+Phase: 45
+Plan: Not started
 
 ## v5.0 Phases
 
