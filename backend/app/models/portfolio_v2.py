@@ -24,6 +24,8 @@ class PortfolioPosition(Base):
     is_active = Column(Boolean, default=True, nullable=False)     # False = kapatılmış
     exit_price = Column(Float, nullable=True)                     # TRY çıkış fiyatı (satış fiyatı)
     exit_date = Column(Date, nullable=True)                       # satış tarihi
+    exit_reason = Column(String(50), nullable=True)               # çıkış nedeni: Stop Tetiklendi / Hedefe Ulaştı / Senaryo Bozuldu / Diğer: ...
+    invalidation_condition = Column(Text, nullable=True)          # kararı bozan koşul (serbest metin)
     realized_pnl = Column(Float, nullable=True)                   # gerçekleşen kâr/zarar TRY
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
