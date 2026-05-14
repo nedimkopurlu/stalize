@@ -9,6 +9,7 @@
 - ✅ **v5.0 LLM Entegrasyonlu Yatırım Asistanı** — Phases 34–39 (completed 2026-05-08)
 - ✅ **v5.1 Kapsamlı Bug Fix & Kalite İyileştirme** — Phases 40–42 (completed 2026-05-08)
 - ✅ **v6.0 Karar Güvenliği & Sistem Olgunlaşması** — Phases 43–47 (shipped 2026-05-14)
+- 🔄 **v7.0 Analiz Kalitesi & Sistem Bütünlüğü** — Phases 48–55 (in progress)
 
 ## Phases
 
@@ -90,6 +91,19 @@ Phases 30–33 (Keşif, Haberler, Portföy, Model Portföy) planned in v4.0 but 
 - [ ] **Phase 40: UI/UX Kapsamlı Görsel İyileştirme** — Tüm 7 sayfada sistematik görsel geçiş, mobile responsive düzeltmeleri, empty state standardizasyonu
 - [ ] **Phase 41: Veri Doğruluğu & Eksik Fonksiyonlar** — Hesaplama hatalarını düzelt, null güvenliği ekle, watchlist/portföy eksik fonksiyonlarını tamamla
 - [ ] **Phase 42: AI Kalite & Sistem Güvenilirliği** — Tüm AI prompt'larını derinleştir, hata yönetimini standardize et, sistem kararlılığını sağla
+
+### v7.0 Analiz Kalitesi & Sistem Bütünlüğü (Phases 48–55) — AKTİF
+
+**Milestone Hedefi:** BIST audit bulgularındaki tüm eksiklikleri kapatmak — Türkçe NLP, veri kalitesi, sektör bazlı scoring, market regime, portföy derinliği, backtest kalitesi.
+
+- [ ] **Phase 48: Veri Kalitesi Temeli** — yfinance USD→TRY sanity check, data quality score, safeLabel utility
+- [ ] **Phase 49: Veri Zenginleştirme** — Tavan/taban tespiti, likidite skoru, KAP duyuru sınıflandırması
+- [ ] **Phase 50: Market Regime Engine** — ADX+EMA200+ATR kural tabanlı rejim tespiti, USD-adjusted XU100.IS
+- [ ] **Phase 51: Sektör Bazlı Skorlama** — Banka P/TBV+ROE, GYO P/B proxy, Holding NAV yaklaşımı
+- [ ] **Phase 52: Portföy Analizi** — Portföy beta, korelasyon matrisi, pozisyon büyüklüğü rehberi
+- [ ] **Phase 53: Türkçe NLP & Sentiment** — VADER kaldır, GPT-4o-mini KAP sentiment, Türkçe RSS kural seti
+- [ ] **Phase 54: Backtest Kalitesi** — Likidite bazlı slipaj, %0.1 komisyon, rejim bazlı backtest filtreleme
+- [ ] **Phase 55: UI — Hisse Detay & Ön-işlem Checklist** — Detay sayfa hiyerarşisi, 7 maddelik ön-işlem checklist
 
 ## Phase Details
 
@@ -349,12 +363,107 @@ Full details: `.planning/milestones/v6.0-ROADMAP.md`
 
 </details>
 
+---
+
+## v7.0 Phase Details
+
+### Phase 48: Veri Kalitesi Temeli
+**Goal**: Kullanıcı, yfinance'ten gelen BIST fundamental verilerinin güvenilirliğini anlık olarak görebilir; şüpheli USD→TRY dönüşüm hataları tespit edilip işaretlenir.
+**Depends on**: Phase 47
+**Requirements**: VKL-01, VKL-02, TECH-01
+**Success Criteria** (what must be TRUE):
+  1. Kullanıcı, hisse listesinde ve hisse detay sayfasında her hisse için 0-100 arasında data quality score görür; düşük skorlu hisseler "Düşük Veri Güveni" uyarısıyla işaretlenir.
+  2. Yfinance'ten gelen fundamental değer USD cinsinden görünüyorsa (örn. çok küçük F/K, beklenmedik oran) sistem otomatik "düşük güven" bayrağı koyar; kullanıcı bu veriye dayanarak karar almaya yönlendirilmez.
+  3. `safeLabel()` fonksiyonu `StockHelpers.tsx`'te tek kaynak olarak tanımlanır; 5 sayfadaki inline kopyalar bu tek kaynaktan import edilir; kod tabanında duplikasyon kalmaz.
+  4. `stocks.data_quality_score` sütunu Alembic migration ile DB'ye eklenir; mevcut kayıtlar `null` ile başlar, ilk hesaplama sonrası güncellenir.
+**Plans**: TBD
+
+### Phase 49: Veri Zenginleştirme
+**Goal**: Kullanıcı, tavan/taban durumundaki hisseleri anında fark eder ve ince piyasalı hisselerde likidite uyarısıyla karşılaşır; KAP duyuruları kategori badge'iyle gösterilir.
+**Depends on**: Phase 48
+**Requirements**: VKL-03, VKL-04, KAP-01, KAP-02
+**Success Criteria** (what must be TRUE):
+  1. Hisse detay sayfasında fiyat kutusunda tavan/taban durumu renkli badge ile gösterilir (tavan: kırmızı, taban: yeşil); OHLCV verisi yoksa badge gizlenir.
+  2. Kullanıcı, Amihud illiquidity ratio tabanlı 3 kademeli likidite sınıflandırmasını (Yüksek/Orta/Düşük Likidite) hisse listesinde ve detay sayfasında görür; "Düşük Likidite" hisseler için uyarı mesajı gösterilir.
+  3. KAP duyuruları otomatik olarak tip koduna göre kategorize edilir (Finansal Sonuçlar, Temettü, Sermaye Artırımı, İçeriden Öğrenme, Düzenleyici); sınıflandırılamayan duyurular "Diğer" kategorisine düşer.
+  4. Hisse detay sayfasındaki KAP listesinde her duyurunun yanında kategori badge'i görünür; Temettü ve Sermaye Artırımı kategorileri vurgulanır.
+  5. `price_history.is_tavan`, `price_history.is_taban` ve `stocks.liquidity_score`, `stocks.liquidity_label` sütunları Alembic migration ile eklenir.
+**Plans**: TBD
+
+### Phase 50: Market Regime Engine
+**Goal**: Sistem, BIST100 piyasa rejimini otomatik olarak tespit eder ve bu bilgi hem dashboard'da hem hisse detay sayfasında görünür hale gelir.
+**Depends on**: Phase 48
+**Requirements**: REJ-01, REJ-02
+**Success Criteria** (what must be TRUE):
+  1. Sistem her 60 dakikada bir BIST100 için piyasa rejimini hesaplar (Boğa / Ayı / Yatay / Volatil); ADX, EMA200 ve ATR değerleri kural tabanlı algoritmaya girdi olarak kullanılır; USD-adjusted XU100.IS kullanılır.
+  2. Dashboard'da mevcut piyasa rejimi badge olarak görünür (renk + Türkçe etiket); kullanıcı sayfayı yenilemeden son rejimi görür.
+  3. Hisse detay sayfasında da aynı regime badge gösterilir; hisse skoru yorumlanırken rejim bağlamı sunulur.
+  4. `market_regimes` tablosu DB'ye eklenir; APScheduler 60 dakikada bir regime hesaplama jobunu çalıştırır.
+**Plans**: TBD
+
+### Phase 51: Sektör Bazlı Skorlama
+**Goal**: Bankacılık, GYO ve Holding hisseleri için sektöre özgü skorlama mantığı devreye girer; yanıltıcı standart metrikler bu sektörlerde uygulanmaz.
+**Depends on**: Phase 48
+**Requirements**: SEK-01, SEK-02, SEK-03
+**Success Criteria** (what must be TRUE):
+  1. Bankacılık hisseleri için skor hesaplamasında F/DD (P/TBV) ve ROE ağırlıklı sektör skoru kullanılır; standart PE/PB bu hisseler için skoru etkilemez; hisse detay sayfasında "Banka Sektörü Skoru" açıklaması görünür.
+  2. GYO hisseleri için P/B değeri NAV proxy olarak kullanılır ve skor buna göre hesaplanır; detay sayfasında "Gerçek NAD verisi mevcut değil" uyarı notu gösterilir.
+  3. Holding hisseleri için halka açık bağlı ortaklıkların piyasa değerleri toplanarak yaklaşık NAV iskontosu hesaplanır ve skora yansıtılır; bu hesaplama yaklaşık olduğuna dair not gösterilir.
+  4. yfinance'ten gelen sektör string değerleri normalizasyon haritasıyla standartlaştırılır; bilinmeyen sektörler genel skorlamaya düşer.
+**Plans**: TBD
+
+### Phase 52: Portföy Analizi
+**Goal**: Kullanıcı, portföyünün piyasaya karşı betasını, pozisyonlar arası korelasyonu ve volatilite bazlı pozisyon büyüklüğü önerisini portföy sayfasında görür.
+**Depends on**: Phase 48
+**Requirements**: PORT-01, PORT-02, PORT-03
+**Success Criteria** (what must be TRUE):
+  1. Portföy sayfasında portföy betası görünür (252 günlük pencere, 0-3 aralığına kırpılmış, BIST100 benchmark); beta 1'den büyükse "Piyasadan Daha Volatil" uyarısı gösterilir.
+  2. Portföydeki pozisyonlar arası korelasyon matrisi portföy sayfasında görünür; yüksek korelasyonlu çiftler (>0.7) vurgulanır.
+  3. Kullanıcı, potansiyel bir pozisyon için hisse detay sayfasında volatilite bazlı pozisyon büyüklüğü önerisi görür (%1-2 risk kuralı, ATR×2 stop mesafesi temelinde).
+  4. Portföy beta ve korelasyon hesaplamaları için yeni API endpoint'leri oluşturulur; frontend bu endpoint'leri çağırır.
+**Plans**: TBD
+
+### Phase 53: Türkçe NLP & Sentiment
+**Goal**: VADER kaldırılır; KAP duyuruları OpenAI GPT-4o-mini ile Türkçe sentiment analizine tabi tutulur; RSS haber akışları Türkçe kural setiyle sınıflandırılır.
+**Depends on**: Phase 49
+**Requirements**: NLP-01, NLP-02
+**Success Criteria** (what must be TRUE):
+  1. `vaderSentiment` paketi `requirements.txt`'ten kaldırılır; codebase'de VADER import veya kullanımı kalmaz.
+  2. KAP duyuruları APScheduler job'u aracılığıyla OpenAI GPT-4o-mini'ye gönderilir; batch sentiment analizi sonuçları DB'ye yazılır; sentiment skoru hisse detay sayfasında KAP kartında görünür.
+  3. RSS haber akışları Türkçe pozitif/negatif/nötr anahtar kelime kurallarıyla sınıflandırılır; sınıflandırma sonucu haber listesinde renk kodu ile gösterilir.
+  4. APScheduler KAP sentiment job'u günlük çalışır; OpenAI API erişilemezse mevcut sentiment değerleri korunur, sistem çökmez.
+**Plans**: TBD
+
+### Phase 54: Backtest Kalitesi
+**Goal**: Backtest simülasyonu gerçekçi maliyet modeliyle çalışır; sonuçlar likidite kademesi ve piyasa rejimine göre ayrılmış olarak sunulur.
+**Depends on**: Phase 50, Phase 52
+**Requirements**: BACK-01, BACK-02, REJ-03
+**Success Criteria** (what must be TRUE):
+  1. Backtest simülasyonu BIST30 hisseleri için 10bps, sıra 30-70 için 20bps, sıra 70-100 için 40bps slipaj modeli uygular; ayrıca %0.1 işlem komisyonu hesaba katılır; sonuçlar mevcut ham sonuçlardan farklılaşır.
+  2. `/backtest` sayfasında sonuçlar rejim bazında filtrelenebilir (Boğa / Ayı / Yatay / Volatil dönem performans karşılaştırması); her rejim için ayrı metrikler gösterilir.
+  3. Kullanıcı, farklı piyasa koşullarında sinyallerin nasıl performans gösterdiğini karşılaştırmalı tabloda görür; "Boğa piyasasında %X başarı, Ayı piyasasında %Y başarı" gibi somut metrikler sunulur.
+**Plans**: TBD
+
+### Phase 55: UI — Hisse Detay & Ön-işlem Checklist
+**Goal**: Hisse detay sayfası hiyerarşik bölüm yapısına kavuşur; kullanıcı pozisyon açmadan önce otomatik doldurulmuş 7 maddelik ön-işlem checklist görür.
+**Depends on**: Phase 49, Phase 50, Phase 52, Phase 54
+**Requirements**: UI-01, UI-02
+**Success Criteria** (what must be TRUE):
+  1. Hisse detay sayfası hiyerarşik bölüm düzenine sahiptir: Hero (fiyat, badge'ler) → Skor Özeti → Teknik → Temel → Haberler → Regime → İlgili Hisseler; bölümler mantıksal sırayla gösterilir.
+  2. "Pozisyon Aç" bölümünde 7 maddelik ön-işlem checklist otomatik olarak doldurulur: piyasa rejimi, likidite durumu, toplam skor, diğer pozisyonlarla korelasyon, tavan/taban durumu, önerilen pozisyon büyüklüğü, çıkış planı; her madde geçti/başarısız/uyarı durumunu gösterir.
+  3. Checklist'teki tüm 7 madde mevcut hesaplama verilerinden otomatik beslenir; kullanıcı manuel giriş yapmaz.
+  4. Checklist sayfası render hatası durumunda bölüm gizlenir; sayfa çökmez.
+**Plans**: TBD
+
+---
+
 ## Progress Table
 
 **Execution Order:**
 v5.0 phases: 34 → 35 → 36 → 37 → 38 → 39 (complete)
 v5.1 phases: 40 → 41 → 42 (complete)
 v6.0 phases: 43 → 44+45 (parallel) → 46 → 47
+v7.0 phases: 48 → 49+50+51+52 (parallel after 48) → 53 (after 49) → 54 (after 50+52) → 55 (after 49+50+52+54)
 
 | Phase | Milestone | Sayfalar | Plans | Status | Tamamlandı |
 |-------|-----------|----------|-------|--------|-----------|
@@ -380,6 +489,14 @@ v6.0 phases: 43 → 44+45 (parallel) → 46 → 47
 | 45. Veri Tazeliği & Sistem Sağlığı | v6.0 | `/stocks` + `/stocks/[symbol]` + AI | 2/2 | ✅ Complete | 2026-05-13 |
 | 46. Portföy Risk Yönetimi | v6.0 | `/portfolio` | 2/2 | ✅ Complete | 2026-05-14 |
 | 47. İşlem Disiplini & Günlüğü | v6.0 | `/portfolio` + backend | 3/3 | ✅ Complete | 2026-05-14 |
+| 48. Veri Kalitesi Temeli | v7.0 | `/stocks` + `/stocks/[symbol]` + backend | TBD | ⬜ Not started | — |
+| 49. Veri Zenginleştirme | v7.0 | `/stocks/[symbol]` + `/intelligence` | TBD | ⬜ Not started | — |
+| 50. Market Regime Engine | v7.0 | `/` + `/stocks/[symbol]` + backend | TBD | ⬜ Not started | — |
+| 51. Sektör Bazlı Skorlama | v7.0 | `/stocks/[symbol]` + backend | TBD | ⬜ Not started | — |
+| 52. Portföy Analizi | v7.0 | `/portfolio` + `/stocks/[symbol]` | TBD | ⬜ Not started | — |
+| 53. Türkçe NLP & Sentiment | v7.0 | `/intelligence` + `/stocks/[symbol]` + backend | TBD | ⬜ Not started | — |
+| 54. Backtest Kalitesi | v7.0 | `/backtest` + backend | TBD | ⬜ Not started | — |
+| 55. UI — Hisse Detay & Ön-işlem Checklist | v7.0 | `/stocks/[symbol]` | TBD | ⬜ Not started | — |
 
 ## Kuzey Yıldızı
 

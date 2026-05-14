@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: Analiz Kalitesi & Sistem Bütünlüğü
-status: defining_requirements
-last_updated: "2026-05-14T00:00:00.000Z"
+status: roadmap_ready
+last_updated: "2026-05-15T00:00:00.000Z"
 progress:
-  total_phases: 0
+  total_phases: 8
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -23,35 +23,70 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 48 (not started — roadmap defined)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-14 — Milestone v7.0 started
-**Current milestone:** v6.0 — Karar Güvenliği & Sistem Olgunlaşması 🔄 IN PROGRESS
-**Previous milestone:** v5.1 — Kapsamlı Bug Fix & Kalite İyileştirme ✅ COMPLETE (Phases 40-42)
-**Previous milestone:** v5.0 — LLM Entegrasyonlu Yatırım Asistanı ✅ COMPLETE
+Status: Roadmap ready, awaiting Phase 48 planning
+Last activity: 2026-05-15 — v7.0 roadmap created (Phases 48–55, 22 requirements)
 
-## Current Position
+## v7.0 Phases
 
-Phase: 47
-Plan: 01 Complete
+- [ ] Phase 48: Veri Kalitesi Temeli ⬜ Not started
+  - Requirements: VKL-01, VKL-02, TECH-01
+  - Goal: yfinance USD→TRY sanity check layer, data_quality_score per stock, safeLabel() tek kaynak
+  - Depends on: Phase 47 (v6.0 complete)
 
-## v5.0 Phases
+- [ ] Phase 49: Veri Zenginleştirme ⬜ Not started
+  - Requirements: VKL-03, VKL-04, KAP-01, KAP-02
+  - Goal: Tavan/taban badge, likidite skoru (Amihud), KAP duyuru kategorilendirme
+  - Depends on: Phase 48
 
-- [x] Phase 34: Frontend Tasarım Düzeltmeleri ✅ (2026-05-08)
-- [x] Phase 35: Gemini LLM Altyapısı ✅ (2026-05-08)
-- [x] Phase 36: Hisse Detay + AI Analizi ✅ (2026-05-08)
-- [x] Phase 37: Haberler + Günlük Piyasa Özeti ✅ (2026-05-08)
-- [x] Phase 38: Portföy — PORT-02 pozisyon kapatma + gerçek K/Z ✅ (2026-05-08)
-- [x] Phase 39: Model Portföy + AI Kararları ✅ (2026-05-08)
+- [ ] Phase 50: Market Regime Engine ⬜ Not started
+  - Requirements: REJ-01, REJ-02
+  - Goal: ADX+EMA200+ATR kural tabanlı rejim tespiti, USD-adjusted XU100.IS, regime badge
+  - Depends on: Phase 48
 
-## v5.1 Phases (Tamamlandı)
+- [ ] Phase 51: Sektör Bazlı Skorlama ⬜ Not started
+  - Requirements: SEK-01, SEK-02, SEK-03
+  - Goal: Banka P/TBV+ROE, GYO P/B proxy, Holding NAV yaklaşımı
+  - Depends on: Phase 48
 
-- [x] Phase 40: UI/UX Kapsamlı Görsel İyileştirme ✅ (2026-05-08)
-- [x] Phase 41: Veri Doğruluğu & Eksik Fonksiyonlar ✅ (2026-05-08)
-- [x] Phase 42: AI Kalite & Sistem Güvenilirliği ✅ (2026-05-08)
+- [ ] Phase 52: Portföy Analizi ⬜ Not started
+  - Requirements: PORT-01, PORT-02, PORT-03
+  - Goal: Portföy beta, korelasyon matrisi, pozisyon büyüklüğü rehberi
+  - Depends on: Phase 48
 
-## v6.0 Phases
+- [ ] Phase 53: Türkçe NLP & Sentiment ⬜ Not started
+  - Requirements: NLP-01, NLP-02
+  - Goal: VADER kaldır, GPT-4o-mini KAP sentiment, Türkçe RSS kural seti
+  - Depends on: Phase 49
+
+- [ ] Phase 54: Backtest Kalitesi ⬜ Not started
+  - Requirements: BACK-01, BACK-02, REJ-03
+  - Goal: Likidite bazlı slipaj, %0.1 komisyon, rejim bazlı backtest filtreleme
+  - Depends on: Phase 50, Phase 52
+
+- [ ] Phase 55: UI — Hisse Detay & Ön-işlem Checklist ⬜ Not started
+  - Requirements: UI-01, UI-02
+  - Goal: Detay sayfa hiyerarşisi, 7 maddelik ön-işlem checklist (otomatik doldurulmuş)
+  - Depends on: Phase 49, Phase 50, Phase 52, Phase 54
+
+## Phase Dependency Map
+
+```
+Phase 47 (v6.0 tamamlandı)
+    └── Phase 48: Veri Kalitesi Temeli
+            ├── Phase 49: Veri Zenginleştirme
+            │       └── Phase 53: Türkçe NLP & Sentiment
+            ├── Phase 50: Market Regime Engine
+            │       └── Phase 54: Backtest Kalitesi
+            ├── Phase 51: Sektör Bazlı Skorlama
+            └── Phase 52: Portföy Analizi
+                    └── Phase 54: Backtest Kalitesi
+                            └── Phase 55: UI — Hisse Detay & Ön-işlem Checklist
+                    (Phase 49, 50 da Phase 55'e bağımlı)
+```
+
+## v6.0 Phases (Tamamlandı)
 
 - [x] Phase 43: Karar Dili Güvenliği & Skor Açıklanabilirliği ✅ (2026-05-12)
   - Requirements: KARAR-01, KARAR-02, KARAR-03, KARAR-04, SKOR-01, SKOR-02, SKOR-03
@@ -63,106 +98,11 @@ Plan: 01 Complete
   - Requirements: VERI-01, VERI-02, VERI-03, VERI-04
   - Goal: Son güncelleme zamanı UI'da; stale data uyarısı; AI analizine veri tarihi notu
 - [x] Phase 46: Portföy Risk Yönetimi ✅ (2026-05-14)
-  - Requirements: RISK-01 ✅, RISK-02 ✅, RISK-03 ✅, RISK-04 ✅
+  - Requirements: RISK-01, RISK-02, RISK-03, RISK-04
   - Goal: Sektör dağılımı görsel; yoğunlaşma uyarıları; risk özeti kartı
-- [ ] Phase 47: İşlem Disiplini & Günlüğü ⬜ Not started
+- [x] Phase 47: İşlem Disiplini & Günlüğü ✅ (2026-05-14)
   - Requirements: GUNLUK-01, GUNLUK-02, GUNLUK-03, GUNLUK-04
   - Goal: Kararı bozan koşul alanı; çıkış nedeni kaydı; kapalı pozisyon istatistiği
-
-## Phase Dependency Map
-
-```
-Phase 42 (v5.1 tamamlandı)
-    └── Phase 43: Karar Dili & Skor Açıklanabilirliği
-            ├── Phase 44: Backtest Dashboard
-            ├── Phase 45: Veri Tazeliği (parallel with 44)
-            └── Phase 46: Portföy Risk Yönetimi
-                    └── Phase 47: İşlem Disiplini & Günlüğü
-```
-
-## v5.x Phase Dependency Map (Arşiv)
-
-```
-Phase 39 (v5.0 tamamlandı)
-    └── Phase 40: UI/UX Kapsamlı Görsel İyileştirme
-            └── Phase 41: Veri Doğruluğu & Eksik Fonksiyonlar
-                    └── Phase 42: AI Kalite & Sistem Güvenilirliği
-```
-
-## Delivered This Milestone
-
-| Phase | Plan | Key Deliverables |
-|-------|------|-----------------|
-| Phase 40 | UI/UX | Mobile responsive, empty states, hardcoded colors |
-| Phase 41 | DATA/FEAT | NaN guards, null safety, fundGrid skeleton, BistComparisonChart |
-| Phase 42 | AI | Groq birincil sağlayıcı, derinleştirilmiş promptlar, model portföy gerekçe kalitesi |
-| Phase 43 | KARAR/SKOR | safeLabel 4 sayfada, skor dökümü progress bar, bileşen sayacı, volatilite uyarısı |
-| Phase 45 | VERI | stale-data banner, güncelleme saati altbilgisi, fundamental period badge, AI analiz tarihi |
-
-## Requirements Satisfied (v5.0)
-
-| Req | Status |
-|-----|--------|
-| DESIGN-01..06 | ✅ |
-| LLM-01..04 | ✅ |
-| DISC-03 | ✅ (navigasyon mevcut) |
-| STCK-01 | ✅ (grafik mevcut) |
-| STCK-02 | ✅ (temel metrikler + tooltip) |
-| STCK-03 | ✅ (teknik göstergeler mevcut) |
-| STCK-04 | ✅ (Analiz Et + session cache) |
-| STCK-05 | ✅ (intelligence sayfasında) |
-| STCK-06 | ✅ (intelligence sayfasında) |
-| NEWS-01 | ✅ (intelligence sayfası mevcut) |
-| PORT-01..05 | ✅ |
-| MODEL-01..04 | ✅ |
-
-## v5.1 Requirements to Satisfy
-
-| Req | Phase | Status |
-|-----|-------|--------|
-| UI-01 | Phase 40 | ✅ Complete |
-| UI-02 | Phase 40 | ✅ Complete |
-| UI-03 | Phase 40 | ✅ Complete |
-| UI-04 | Phase 40 | ✅ Complete |
-| UI-05 | Phase 40 | ✅ Complete |
-| DATA-01 | Phase 41 | ✅ Complete |
-| DATA-02 | Phase 41 | ✅ Complete |
-| DATA-03 | Phase 41 | ✅ Complete |
-| FEAT-01 | Phase 41 | ✅ Complete |
-| FEAT-02 | Phase 41 | ✅ Complete |
-| FEAT-03 | Phase 41 | ✅ Complete |
-| AI-01 | Phase 42 | ✅ Complete |
-| AI-02 | Phase 42 | ✅ Complete |
-| AI-03 | Phase 42 | ✅ Complete |
-| AI-04 | Phase 42 | ✅ Complete |
-
-## v6.0 Requirements to Satisfy
-
-| Req | Phase | Status |
-|-----|-------|--------|
-| KARAR-01 | Phase 43 | ✅ Complete |
-| KARAR-02 | Phase 43 | ✅ Complete |
-| KARAR-03 | Phase 43 | ✅ Complete |
-| KARAR-04 | Phase 43 | ✅ Complete |
-| SKOR-01 | Phase 43 | ✅ Complete |
-| SKOR-02 | Phase 43 | ✅ Complete |
-| SKOR-03 | Phase 43 | ✅ Complete |
-| BACKTEST-01 | Phase 44 | ⬜ Pending |
-| BACKTEST-02 | Phase 44 | ⬜ Pending |
-| BACKTEST-03 | Phase 44 | ⬜ Pending |
-| BACKTEST-04 | Phase 44 | ⬜ Pending |
-| VERI-01 | Phase 45 | ✅ Complete |
-| VERI-02 | Phase 45 | ✅ Complete |
-| VERI-03 | Phase 45 | ✅ Complete |
-| VERI-04 | Phase 45 | ✅ Complete |
-| RISK-01 | Phase 46 | ✅ Complete |
-| RISK-02 | Phase 46 | ✅ Complete |
-| RISK-03 | Phase 46 | ✅ Complete |
-| RISK-04 | Phase 46 | ✅ Complete |
-| GUNLUK-01 | Phase 47 | ✅ Complete |
-| GUNLUK-02 | Phase 47 | ✅ Complete |
-| GUNLUK-03 | Phase 47 | ⬜ Pending (47-02 frontend) |
-| GUNLUK-04 | Phase 47 | ⬜ Pending (47-02 frontend) |
 
 ## Accumulated Context
 
@@ -181,7 +121,7 @@ Phase 39 (v5.0 tamamlandı)
 - Closed positions: yfinance fetch skip, activePositions-only for live calculations
 - v5.1 watchlist sync: localStorage üzerinden — DB'ye taşıma v2'ye bırakıldı
 - Display-layer label mapping (v6.0 43-01): DB recommendation stringleri değiştirilmedi, display katmanında güvenli etikete çevrildi (KARAR-01)
-- Dosya bazlı helper kopyalama (v6.0 43-01): ortak lib yerine her sayfada yerel safeLabel — mevcut proje paterni
+- Dosya bazlı helper kopyalama (v6.0 43-01): ortak lib yerine her sayfada yerel safeLabel — mevcut proje paterni; v7.0 Phase 48'de TECH-01 ile StockHelpers.tsx'e taşınacak
 - Volatilite proxy listede daily_change_pct >%4 (v6.0 43-02): 20g fiyat geçmişi hisse listesinde mevcut değil, günlük hareket proxy olarak kullanıldı
 - Skor Dökümü bölümü hero'dan sonra ayrı section (v6.0 43-02): scoreCard içinde değil, tam genişlikte editorial düzende
 - Promise.all 1w+1m calibration eş zamanlı (v6.0 44-02): sıralı yükleme yerine paralel fetch, KPI kartlarda gecikme yok
@@ -195,6 +135,8 @@ Phase 39 (v5.0 tamamlandı)
 - periodBadge vendor-data-missing gizlenir (v6.0 45-02): null ile aynı davranış — boş period badge gösterilmez
 - concentrationAlerts sorted by pct desc — highest risk alert shown first (v6.0 46-02)
 - riskAlerts section guarded by length > 0 — no empty space when threshold not breached (v6.0 46-02, RISK-02, RISK-03)
+- v7.0 NLP: BERTurk/HuggingFace kaldırıldı (Railway 512MB RAM sınırı); OpenAI GPT-4o-mini batch sentiment kullanılıyor (NLP-01)
+- v7.0 Sector scoring: yfinance sektör string normalizasyon haritası gerekiyor; Phase 51 öncesinde live verification yapılmalı
 
 ### Known Technical Debt
 
@@ -209,8 +151,8 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-14
-**Completed:** Phase 47 Plan 01 — backend exit_reason + invalidation_condition alanları (GUNLUK-01, GUNLUK-02)
-**Next action:** Execute Phase 47 Plan 02 — Frontend İşlem Disiplini UI (GUNLUK-03, GUNLUK-04)
+**Last session:** 2026-05-15
+**Completed:** v7.0 roadmap created — Phases 48–55 defined, 22 requirements mapped (100% coverage)
+**Next action:** Plan Phase 48 — Veri Kalitesi Temeli (`/gsd:plan-phase 48`)
 
 ---
