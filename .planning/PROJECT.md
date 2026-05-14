@@ -34,12 +34,40 @@ Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıkl
 - ✓ BIST100 özeti, döviz, altın takibi dashboard — v2.0/v4.0
 - ✓ Giriş yok, responsive, tamamen Türkçe — v2.0
 
-### Active
+### Active (v7.0 — Analiz Kalitesi & Sistem Bütünlüğü)
 
-*(Sonraki milestone için — /gsd:new-milestone ile tanımlanacak)*
-
+**Veri Kalitesi:**
+- [ ] yfinance BIST fundamental veri güvenilirlik katmanı — sanity check + data quality score
+- [ ] Tavan/taban (devre kesici) tespiti ve UI göstergesi
+- [ ] Likidite skoru — hacim tutarlılığı, spread proxy, thinly traded uyarısı
 - [ ] `safeLabel()` ortak utility'e taşı (StockHelpers.tsx) — 5 dosyada duplikasyon giderilmeli
-- [ ] Formal test coverage (VALIDATION.md) — Nyquist uyumluluğu
+
+**Türkçe NLP & Sentiment:**
+- [ ] VADER → Türkçe NLP (BERTurk/zemberek) migration
+- [ ] KAP duyuru sınıflandırması — temettü, sermaye artırımı, mali sonuçlar, vs.
+
+**Teknik Analiz Derinliği:**
+- [ ] Multi-timeframe teknik analiz (günlük + haftalık + aylık)
+- [ ] Market Regime Engine — boğa/ayı/yatay/volatil rejim tespiti
+
+**Sektör Bazlı Analiz:**
+- [ ] Banka sektörü skor adaptasyonu — NIM, NPL oranı, sermaye yeterlilik rasyosu
+- [ ] GYO sektörü skor adaptasyonu — NAV iskonto, kira getirisi
+- [ ] Holding sektörü skor adaptasyonu — NAV iskonto hesabı
+
+**Portföy Analizi:**
+- [ ] Portföy beta hesabı (BIST100'e göre)
+- [ ] Pozisyon büyüklüğü rehberi
+- [ ] Holding korelasyon matrisi
+- [ ] İşlem sonrası öğrenme döngüsü — geçmiş kararların analizi
+
+**Backtest Kalitesi:**
+- [ ] Slipaj + komisyon modellemesi
+- [ ] Rejim bazlı sinyal performans analizi
+
+**UI/UX:**
+- [ ] Hisse detay sayfa hiyerarşisi yeniden yapılandırması
+- [ ] Ön-işlem checklist
 
 ### Out of Scope
 
@@ -49,13 +77,12 @@ Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıkl
 - Otomatik alım-satım — karar her zaman kullanıcıda
 - BIST100 dışı hisseler — v1 için likit evren yeterli
 
-## Current State: v6.0 Shipped — Sonraki Milestone Planlanıyor
+## Current State: v7.0 IN PROGRESS — Analiz Kalitesi & Sistem Bütünlüğü
 
-**Shipped:** 2026-05-14  
-**Phases:** 43–47 (5 phases, 13 plans)  
-**Archive:** `.planning/milestones/v6.0-ROADMAP.md`
+**Started:** 2026-05-14  
+**Goal:** BIST audit bulgularındaki tüm eksiklikleri kapatmak — Türkçe NLP, veri kalitesi, sektör bazlı scoring, market regime, portföy derinliği, backtest kalitesi
 
-v6.0 ile sistem artık kararların *nasıl verildiğini* açıklayan, *veri tazeliğini* gösteren ve *işlem disiplinini* kaydeden tam bir karar destek platformuna dönüştü. Tüm 23 requirement 5/5 faz doğrulamasıyla karşılandı.
+**Previous:** v6.0 Shipped 2026-05-14 | **Archive:** `.planning/milestones/v6.0-ROADMAP.md`
 
 ## Context
 
@@ -104,4 +131,4 @@ Bu döküman her fazda ve milestone sınırında güncellenir.
 3. Out of Scope'daki gerekçeler hâlâ geçerli mi?
 
 ---
-*Last updated: 2026-05-14 after v6.0 milestone completion — Karar Güvenliği & Sistem Olgunlaşması (23/23 requirements shipped)*
+*Last updated: 2026-05-14 — v7.0 milestone started: Analiz Kalitesi & Sistem Bütünlüğü*

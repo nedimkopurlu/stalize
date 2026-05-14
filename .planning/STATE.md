@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v6.0
-milestone_name: Karar Güvenliği & Sistem Olgunlaşması
-status: unknown
-last_updated: "2026-05-14T14:05:25.513Z"
+milestone: v7.0
+milestone_name: Analiz Kalitesi & Sistem Bütünlüğü
+status: defining_requirements
+last_updated: "2026-05-14T00:00:00.000Z"
 progress:
-  total_phases: 22
-  completed_phases: 14
-  total_plans: 25
-  completed_plans: 30
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -18,6 +18,15 @@ progress:
 See: `.planning/PROJECT.md`
 
 **Core value:** Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıklamayla cevap vermek — karar kullanıcıda, anlayış asistanda.
+**Current milestone:** v7.0 — Analiz Kalitesi & Sistem Bütünlüğü 🔄 IN PROGRESS
+**Previous milestone:** v6.0 — Karar Güvenliği & Sistem Olgunlaşması ✅ COMPLETE (Phases 43-47)
+
+## Current Position
+
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-14 — Milestone v7.0 started
 **Current milestone:** v6.0 — Karar Güvenliği & Sistem Olgunlaşması 🔄 IN PROGRESS
 **Previous milestone:** v5.1 — Kapsamlı Bug Fix & Kalite İyileştirme ✅ COMPLETE (Phases 40-42)
 **Previous milestone:** v5.0 — LLM Entegrasyonlu Yatırım Asistanı ✅ COMPLETE
