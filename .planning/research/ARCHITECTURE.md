@@ -1,8 +1,8 @@
 # Architecture Research
 
-**Domain:** BIST 100 AI Investment Advisor — Brownfield AI Chat + Briefing Integration
-**Researched:** 2026-04-16
-**Confidence:** HIGH (based on direct codebase analysis + verified FastAPI streaming patterns)
+**Domain:** BIST stock analysis assistant — v7.0 feature integration
+**Researched:** 2026-05-14
+**Confidence:** HIGH (based on direct codebase inspection)
 
 ## Standard Architecture
 
@@ -10,438 +10,483 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        NEXT.JS FRONTEND (port 3000)                  │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │
-│  │  Dashboard   │  │  Chat Page   │  │  Other Pages │               │
-│  │ (Briefing)   │  │ (AI Chat)    │  │  (unchanged) │               │
-│  └──────┬───────┘  └──────┬───────┘  └──────────────┘               │
-│         │                 │ SSE (text/event-stream)                  │
-│         │ REST            │ + REST                                   │
-└─────────┼─────────────────┼────────────────────────────────────────-┘
-          │                 │
-┌─────────┼─────────────────┼─────────────────────────────────────────┐
-│         ▼                 ▼                                          │
-│         FASTAPI API LAYER (port 8000)                                │
-│  ┌──────────────────────────────────────────────────────────────┐    │
-│  │ api/endpoints.py (existing routes, unchanged)                │    │
-│  │ api/chat.py (NEW — /api/chat/stream, /api/chat/history)      │    │
-│  │ api/briefing.py (NEW — /api/briefing/today, /api/briefing/)  │    │
-│  └───────┬────────────────────────────┬─────────────────────────┘    │
-│          │                            │                              │
-│  ┌───────▼──────────┐    ┌────────────▼────────────┐                │
-│  │  ChatService     │    │  BriefingService         │                │
-│  │  (NEW)           │    │  (NEW)                   │                │
-│  │  - build_context │    │  - generate_briefing()   │                │
-│  │  - stream_reply  │    │  - fetch_today_briefing  │                │
-│  └───────┬──────────┘    └────────────┬────────────┘                │
-│          │                            │                              │
-│  ┌───────▼────────────────────────────▼────────────┐                │
-│  │           DeepSeekLLMClient (SHARED)             │                │
-│  │  Thin wrapper around existing AsyncOpenAI        │                │
-│  │  client — streaming=True for chat,               │                │
-│  │  streaming=False for briefing generation         │                │
-│  └───────┬─────────────────────────────────────────┘                │
-│          │                                                           │
-│  EXISTING SERVICES (READ-ONLY from new components)                   │
+│                         FRONTEND (Next.js 16)                        │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────┐  ┌──────────┐  │
+│  │ StockDetail  │  │  Portfolio   │  │ Backtest   │  │  Other   │  │
+│  │  page.tsx    │  │  page.tsx    │  │  page.tsx  │  │  pages   │  │
+│  └──────┬───────┘  └──────┬───────┘  └─────┬──────┘  └────┬─────┘  │
+│         └─────────────────┴────────────────┴──────────────┘        │
+│                           api.ts (typed client)                      │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │ HTTP REST (NEXT_PUBLIC_API_URL)
+┌────────────────────────────────▼────────────────────────────────────┐
+│                       FastAPI /api router                            │
+│  stocks.py │ portfolio_v2.py │ intelligence.py │ signals.py │ ...   │
+├─────────────────────────────────────────────────────────────────────┤
+│                         Services Layer                               │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │
-│  │ scoring  │ │technical │ │ kap_     │ │ causal   │ │ market_  │  │
-│  │ _engine  │ │ _engine  │ │ parser   │ │ _engine  │ │intellig. │  │
+│  │ scoring  │ │technical │ │sentiment │ │ kap_     │ │backtest  │  │
+│  │  .py     │ │  .py     │ │  .py     │ │parser.py │ │  .py     │  │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘  │
-│                                                                      │
-│  APSCHEDULER (existing + one new job)                                │
-│  ┌────────────────────────────────────────────────────────────────┐  │
-│  │ background_briefing_generation (NEW — cron weekdays 06:30)    │  │
-│  │ + all existing jobs unchanged                                  │  │
-│  └────────────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────┘
-          │
-┌─────────▼────────────────────────────────────────────────────────────┐
-│                         POSTGRESQL                                    │
-│  ┌──────────────┐  ┌───────────────────┐  ┌──────────────────────┐   │
-│  │ Stock +      │  │ DailyBriefing     │  │ ChatMessage          │   │
-│  │ NewsItem +   │  │ (NEW table)       │  │ (NEW table)          │   │
-│  │ MacroIndicator│  │ id, date, content │  │ id, role, content,  │   │
-│  │ (existing)   │  │ summary_json,     │  │ timestamp, context_ │   │
-│  │              │  │ generated_at      │  │ snapshot_json        │   │
-│  └──────────────┘  └───────────────────┘  └──────────────────────┘   │
-└──────────────────────────────────────────────────────────────────────┘
-          │
-┌─────────▼──────────┐
-│  DEEPSEEK API      │
-│  (external, HTTPS) │
-│  openai SDK compat │
-└────────────────────┘
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────────┐   │
+│  │fundamen- │ │data_     │ │model_    │ │ dynamic_correlation  │   │
+│  │tal.py    │ │collector │ │portfolio │ │       .py            │   │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────────────────┘   │
+├─────────────────────────────────────────────────────────────────────┤
+│              APScheduler (AsyncIOScheduler — 16 jobs)                │
+│  KAP 5min │ TCMB 60min │ data_update Nh │ signal_snapshot 18:20     │
+│  model_portfolio 6h │ dynamic_correlation 60min │ ...               │
+├─────────────────────────────────────────────────────────────────────┤
+│                  PostgreSQL (asyncpg + SQLAlchemy)                   │
+│  stocks │ price_history │ news_items │ portfolio_positions │ ...    │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Component Responsibilities
 
-| Component | Responsibility | Location |
-|-----------|----------------|----------|
-| `ChatService` | Build context snapshot, call DeepSeek with streaming, detect stock-query intent, assemble 3-layer analysis | `backend/app/services/chat.py` (NEW) |
-| `BriefingService` | Generate daily morning summary using all data sources, persist to DB, serve stored result | `backend/app/services/briefing.py` (NEW) |
-| `DeepSeekLLMClient` | Thin async wrapper over existing `AsyncOpenAI` client; streaming and non-streaming modes | Extract from `llm_sentiment.py` or keep inline in new services |
-| `api/chat.py` | POST /api/chat/stream (SSE), GET /api/chat/history | `backend/app/api/chat.py` (NEW) |
-| `api/briefing.py` | GET /api/briefing/today, GET /api/briefing/ (list) | `backend/app/api/briefing.py` (NEW) |
-| `DailyBriefing` ORM model | Store one generated briefing per day; idempotent (upsert on date) | `backend/app/models/briefing.py` (NEW) |
-| `ChatMessage` ORM model | Persist conversation history for context window reconstruction | `backend/app/models/chat.py` (NEW) |
-| `background_briefing_generation` | APScheduler cron job — runs at 06:30 weekdays, calls BriefingService, stores to DB | `backend/app/main.py` lifespan (NEW job) |
-| Existing services | Provide scored data, news, macro context — read-only from new components | `backend/app/services/` (unchanged) |
+| Component | Responsibility | Status for v7.0 |
+|-----------|----------------|-----------------|
+| `scoring.py` (ScoringEngine) | Weighted aggregation of sub-scores into final score | MODIFY — add sector branching |
+| `sentiment.py` (SentimentAnalysisEngine) | Keyword-based Turkish sentiment on yfinance news | REPLACE body — delegate to turkish_nlp.py |
+| `kap_parser.py` (KAPParser) | KAP RSS + API fetch, entity linking, impact scoring | MODIFY — add fine-grained classification |
+| `technical.py` (TechnicalAnalysisEngine) | RSI, MACD, Bollinger, ATR, OBV, peaks | MODIFY — add weekly/monthly timeframes |
+| `data_collector.py` (DataCollector) | yfinance OHLCV, fundamentals, live quotes | MODIFY — add tavan/taban detection |
+| `backtest.py` (backtesting engine) | Rule-based signal simulation from stored OHLCV | MODIFY — add slippage/commission model |
+| `fundamental.py` | yfinance fundamental data fetching and enrichment | MODIFY — add sanity-check quality layer |
+| `dynamic_correlation.py` | Portfolio-to-portfolio and cross-sector correlation | REUSE — portfolio correlation endpoint can call this |
+| `main.py` | FastAPI app, CORS, APScheduler lifecycle | MODIFY — add new scheduler jobs |
+| `stocks.py` (API router) | BIST100 listing, stock detail, scoring endpoints | MODIFY — new score breakdown fields |
+| `portfolio_v2.py` (API router) | Portfolio CRUD, positions, snapshots | MODIFY — add beta, correlation, sizing endpoints |
+| `news.py` (model) | NewsItem ORM with category, sentiment fields | NO CHANGE — category column already exists |
+| `stock.py` (model) | Stock ORM — scores, metadata | MODIFY — add liquidity_score, liquidity_label columns |
+| `price.py` (model) | PriceHistory OHLCV + pre-calculated indicators | MODIFY — add is_tavan, is_taban bool columns |
 
-## Recommended Project Structure
-
-New files follow existing conventions. Zero existing files are moved or renamed.
+## Recommended Project Structure for v7.0 Additions
 
 ```
 backend/app/
-├── api/
-│   ├── endpoints.py          # existing — DO NOT TOUCH structure
-│   ├── chat.py               # NEW — chat endpoints
-│   └── briefing.py           # NEW — briefing endpoints
-├── models/
-│   ├── briefing.py           # NEW — DailyBriefing ORM model
-│   └── chat.py               # NEW — ChatMessage ORM model
 ├── services/
-│   ├── chat.py               # NEW — ChatService singleton
-│   └── briefing.py           # NEW — BriefingService singleton
-└── main.py                   # existing — add briefing job + mount new routers
-
-frontend/src/
-├── app/
-│   ├── page.tsx              # existing Dashboard — fetch /api/briefing/today
-│   └── chat/
-│       └── page.tsx          # NEW — AI chat page (SSE consumer)
-├── lib/
-│   └── api.ts                # existing — add chat + briefing typed methods
-└── components/
-    └── ChatMessage.tsx        # NEW — message bubble component
+│   ├── scoring.py              # MODIFY: sector-branch logic
+│   ├── sentiment.py            # MODIFY: delegate body to turkish_nlp.py
+│   ├── turkish_nlp.py          # NEW: Turkish NLP service wrapper
+│   ├── market_regime.py        # NEW: regime detection engine
+│   ├── liquidity.py            # NEW: liquidity score computation
+│   ├── portfolio_analytics.py  # NEW: beta, correlation, position sizing
+│   ├── sector_scoring.py       # NEW: bank/REIT/holding adapters
+│   ├── kap_parser.py           # MODIFY: classification categories
+│   ├── data_collector.py       # MODIFY: tavan/taban detection
+│   ├── backtest.py             # MODIFY: slippage + commission model
+│   └── fundamental.py          # MODIFY: quality/sanity layer
+├── models/
+│   ├── stock.py                # MODIFY: liquidity_score, liquidity_label columns
+│   ├── news.py                 # NO CHANGE: category column already exists
+│   ├── price.py                # MODIFY: is_tavan, is_taban booleans
+│   └── market_regime.py        # NEW: MarketRegime ORM model
+├── api/
+│   ├── stocks.py               # MODIFY: liquidity, regime in response
+│   └── portfolio_v2.py         # MODIFY: beta, correlation, sizing endpoints
+└── alembic/versions/
+    └── XXXX_v7_schema.py       # NEW: migration for all DB changes
 ```
-
-### Structure Rationale
-
-- **api/chat.py separate from endpoints.py**: `endpoints.py` is already 38k characters. New chat routes use `StreamingResponse` which has a different response model; keeping it separate avoids router conflicts and makes the streaming behavior explicit.
-- **api/briefing.py separate**: Briefing has its own idempotency logic and cron dependency. Isolating it makes that explicit.
-- **services/chat.py and services/briefing.py**: Follows existing singleton pattern (`chat_service = ChatService()` at module bottom). New services import from existing services — they don't modify them.
-- **models/briefing.py and models/chat.py**: Each new table gets its own file, consistent with `models/stock.py`, `models/news.py` convention. Both re-exported from `models/__init__.py`.
 
 ## Architectural Patterns
 
-### Pattern 1: Context Snapshot Assembly (Chat)
+### Pattern 1: Sector Branching in ScoringEngine
 
-**What:** Before calling DeepSeek for a chat reply, `ChatService.build_context()` queries the DB once to assemble a frozen snapshot of current reality — top stock scores, today's KAP headlines, latest macro indicators, and the last N chat messages. This snapshot is serialized and injected into the system prompt.
+**What:** `calculate_overall_score()` checks `stock.sector` and delegates to a sector-specific weight/metric resolver before the existing weighted sum.
 
-**When to use:** Every chat turn. The snapshot is cheap (indexed queries), prevents stale LLM responses, and makes every reply grounded in current DB state.
+**When to use:** Banks, REITs, Holdings have fundamentally different valuation metrics (NIM vs P/E, NAV discount vs P/B).
 
-**Trade-offs:** Adds ~50-100ms per request for DB queries; snapshot grows with requested context depth. Keep to last 5 KAP items, top 10 stocks by score, and last 10 chat messages to stay within DeepSeek's context window.
+**Trade-offs:** Keeps the single ScoringEngine contract; avoids scattered scoring logic. Risk: sector string values from yfinance are inconsistent — need a normalization map.
 
+**Implementation approach:**
 ```python
-# backend/app/services/chat.py
-class ChatService:
-    async def build_context(self, db, symbol: str | None = None) -> dict:
-        top_stocks = await db.execute(
-            select(Stock).order_by(Stock.overall_score.desc()).limit(10)
-        )
-        recent_kap = await db.execute(
-            select(NewsItem).order_by(NewsItem.published_at.desc()).limit(5)
-        )
-        macro = await db.execute(
-            select(MacroIndicator).order_by(MacroIndicator.date.desc()).limit(5)
-        )
-        # If symbol specified, pull 3-layer data for that stock
-        stock_detail = None
-        if symbol:
-            stock_detail = await self._get_stock_analysis(db, symbol)
-        return {"stocks": ..., "kap": ..., "macro": ..., "stock_detail": stock_detail}
+# scoring.py — add before weight resolution
+SECTOR_WEIGHT_OVERRIDES = {
+    "Bankacılık": {"fundamental_score": 0.50, "technical_score": 0.30, "sentiment_score": 0.20},
+    "GYO":        {"fundamental_score": 0.45, "technical_score": 0.30, "sentiment_score": 0.25},
+    "Holding":    {"fundamental_score": 0.40, "technical_score": 0.35, "sentiment_score": 0.25},
+}
 
-    async def stream_reply(self, user_message: str, context: dict, history: list):
-        system_prompt = self._build_system_prompt(context)
-        messages = [{"role": "system", "content": system_prompt}]
-        messages += history  # last N turns from ChatMessage table
-        messages.append({"role": "user", "content": user_message})
-
-        async with self.client.chat.completions.stream(
-            model=settings.LLM_MODEL,
-            messages=messages,
-        ) as stream:
-            async for chunk in stream:
-                delta = chunk.choices[0].delta.content or ""
-                yield delta
+def _resolve_weights(self, stock: Stock) -> Dict[str, float]:
+    sector = (stock.sector or "").strip()
+    override = self.SECTOR_WEIGHT_OVERRIDES.get(sector)
+    if override:
+        return override
+    # fall through to existing normalization logic
 ```
 
-### Pattern 2: SSE Streaming via FastAPI StreamingResponse
+Extract sector-specific metric computation into `sector_scoring.py` — called only during `collect_fundamentals()`, outputs persist as sub-fields on the Fundamental row. ScoringEngine reads those fields, not yfinance directly.
 
-**What:** The chat endpoint uses `StreamingResponse` with `media_type="text/event-stream"`. The async generator yields SSE-formatted chunks (`data: {token}\n\n`). The frontend uses `EventSource` or `fetch` with `ReadableStream` to consume it.
+### Pattern 2: Turkish NLP as a Drop-in Wrapper
 
-**When to use:** Any endpoint where the user should see tokens appear progressively — chat replies and optionally structured analysis generation.
+**What:** Replace the keyword-based `SentimentAnalysisEngine.analyze_stock()` body with a call to a new `turkish_nlp.py` service that wraps whichever NLP backend is available.
 
-**Trade-offs:** SSE is one-directional (server to client) and cannot be cancelled mid-stream without client disconnect detection. Use `asyncio.CancelledError` handling in the generator to clean up if the client disconnects.
+**When to use:** BERTurk is the preferred model but is ~400MB — too large for Railway 512MB. The wrapper must degrade gracefully.
 
+**Trade-offs:**
+
+| Option | Size | Accuracy | Railway fit |
+|--------|------|----------|-------------|
+| BERTurk (HuggingFace) | ~420MB | High | NO — exceeds RAM |
+| savasy/bert-base-turkish-sentiment-cased | ~420MB | High | NO |
+| zemberek-python (rule + morphology) | ~5MB | Medium | YES |
+| Keyword rules + morpheme awareness | <1MB | Low-medium | YES |
+| Remote Gemini call (existing infra) | 0MB local | High | YES (rate-limited) |
+
+**Recommendation:** Use Gemini 2.0 Flash for KAP announcement sentiment (already integrated, Türkçe mükemmel, 0 additional RAM) with a lightweight keyword fallback for high-frequency yfinance news items. Do NOT load BERTurk on Railway free tier.
+
+**Implementation approach:**
 ```python
-# backend/app/api/chat.py
-from fastapi import APIRouter
-from fastapi.responses import StreamingResponse
-
-router = APIRouter(prefix="/chat")
-
-@router.post("/stream")
-async def stream_chat(request: ChatRequest):
-    async def generator():
-        async with AsyncSessionLocal() as db:
-            context = await chat_service.build_context(db, request.symbol)
-            history = await chat_service.get_history(db, limit=10)
-            full_reply = ""
-            async for token in chat_service.stream_reply(request.message, context, history):
-                full_reply += token
-                yield f"data: {token}\n\n"
-            # Persist after stream completes
-            await chat_service.save_message(db, "user", request.message, context)
-            await chat_service.save_message(db, "assistant", full_reply, {})
-
-    return StreamingResponse(generator(), media_type="text/event-stream")
+# turkish_nlp.py — new service
+class TurkishNLPService:
+    async def analyze(self, text: str, use_llm: bool = False) -> dict:
+        if use_llm:
+            return await self._gemini_sentiment(text)  # existing gemini_service.py
+        return self._keyword_sentiment(text)           # fast path for bulk
 ```
 
-### Pattern 3: Idempotent Scheduled Briefing Generation
+`sentiment.py` imports and delegates; `kap_parser.py` uses `use_llm=True` for important announcement classification.
 
-**What:** `BriefingService.generate_briefing()` runs at 06:30 on weekdays via APScheduler. It assembles the full morning context (price movements from last close, KAP overnight, macro), calls DeepSeek (non-streaming, full response), and upserts a `DailyBriefing` row keyed on today's date. Dashboard fetches `/api/briefing/today` — returns the stored row immediately, no LLM call at request time.
+### Pattern 3: Market Regime as Persisted State
 
-**When to use:** Any AI-generated content that is expensive to produce but can be pre-computed. Pre-generation means dashboard load time is sub-100ms even though generating the briefing takes 5-15 seconds.
+**What:** A new `market_regime.py` service computes BIST100-level regime (bull/bear/sideways/volatile) from index price history. Result is persisted in a new `market_regimes` table and read by ScoringEngine's `macro_regime_score` weight slot.
 
-**Trade-offs:** If the cron job fails, the briefing is stale. Mitigate with a fallback endpoint that triggers on-demand generation if today's briefing is absent, with a loading state in the UI.
+**When to use:** Regime computation is expensive (requires 200+ days of XU100 data). Run it on a scheduler job, not on-demand.
 
+**Implementation approach:**
 ```python
-# backend/app/services/briefing.py
-class BriefingService:
-    async def generate_briefing(self) -> DailyBriefing:
-        async with AsyncSessionLocal() as db:
-            today = date.today()
-            existing = await db.execute(
-                select(DailyBriefing).where(
-                    func.date(DailyBriefing.generated_at) == today
-                )
-            )
-            if existing.scalar():
-                return  # Already generated today, skip
+# market_regime.py — new singleton
+class MarketRegimeEngine:
+    REGIMES = ["bull", "bear", "sideways", "volatile"]
 
-            context = await self._build_morning_context(db)
-            content = await self._call_llm(context)  # Non-streaming
+    async def compute_regime(self) -> str:
+        # reads CommodityPrice for XU100.IS (already stored)
+        # applies: 200-day SMA slope + 20-day volatility percentile + drawdown
+        ...
 
-            briefing = DailyBriefing(
-                generated_at=datetime.utcnow(),
-                content=content,
-                summary_json=json.dumps(context["highlights"])
-            )
-            db.add(briefing)
-            await db.commit()
+    async def get_current_regime(self) -> str:
+        # reads latest row from market_regimes table
+        ...
 ```
 
-### Pattern 4: Structured 3-Layer Analysis Output
+New DB model:
+```python
+# models/market_regime.py
+class MarketRegime(Base):
+    __tablename__ = "market_regimes"
+    id = Column(Integer, primary_key=True)
+    computed_at = Column(DateTime(timezone=True), server_default=func.now())
+    regime = Column(String(20), nullable=False)      # bull/bear/sideways/volatile
+    confidence = Column(Float, nullable=True)         # 0-1
+    indicators_json = Column(JSON, nullable=True)     # raw indicators for transparency
+```
 
-**What:** When the user asks about a specific stock in chat, `ChatService` detects the intent (symbol present in message or explicit request body), enriches the context with that stock's technical, fundamental, and sentiment sub-scores, and instructs DeepSeek to return a structured response in a defined JSON envelope within the stream. The frontend renders it as a card.
+Scheduler job: add `background_market_regime_update` to `main.py`, every 60 minutes, `max_instances=1`. Uses XU100.IS data from existing `CommodityPrice` table — no new data source.
 
-**When to use:** Stock-specific queries. Generic market questions get plain prose.
+### Pattern 4: Portfolio Analytics as Stateless Computation
 
-**Trade-offs:** Structured output requires DeepSeek to follow JSON schema instructions reliably. Use `temperature=0.1` for structured analysis calls vs `temperature=0.3` for conversational chat. Fall back to plain text if JSON parse fails.
+**What:** Beta, correlation matrix, and position sizing are computed on-demand from existing DB data (PortfolioPosition + PriceHistory + CommodityPrice). No new persistence needed except optional caching.
+
+**When to use:** These are read-heavy, compute-on-request operations. Avoid persisting to DB unless called > 5x/minute (unlikely for single-user tool).
+
+**Trade-offs:** Avoids schema changes at the cost of ~200ms latency per call (acceptable for single user). Beta computation requires BIST100 index returns — already stored in `CommodityPrice` as `XU100.IS`.
+
+**New endpoints in `portfolio_v2.py`:**
+```
+GET /api/portfolio/beta          -> {"portfolio_beta": 1.23, "period_days": 90}
+GET /api/portfolio/correlation   -> {"matrix": {...}, "symbols": [...]}
+GET /api/portfolio/position-size -> {"symbol": "THYAO", "suggested_pct": 5.2, "reasoning": "..."}
+```
+
+All computations in new `portfolio_analytics.py` service — stateless functions, no singleton needed.
+
+### Pattern 5: Tavan/Taban Detection in DataCollector
+
+**What:** After fetching daily OHLCV, compare whether `high == low` (circuit breaker) or `close >= open * 1.099` (upper limit, tavan) or `close <= open * 0.901` (taban). Flag on `PriceHistory` row.
+
+**When to use:** Detect daily; expose via existing stock detail API response.
+
+**DB change:** Two new boolean columns on `price_history`: `is_tavan BOOLEAN DEFAULT FALSE`, `is_taban BOOLEAN DEFAULT FALSE`. Requires Alembic migration.
+
+**Implementation approach:** Add `_detect_circuit_breakers(df)` method to `DataCollector`; call it inside `collect_prices()` before DB upsert.
+
+### Pattern 6: KAP Classification Without Schema Change
+
+**What:** The `NewsItem.category` column already exists (String(50), nullable). Current values include "company_disclosure", "geopolitics", "macro", "sector". Extend the `KAPParser._classify_announcement()` method to emit more granular KAP-specific values.
+
+**No schema change needed.** Only `kap_parser.py` changes — add a `_kap_category()` method that pattern-matches KAP title/summary against Turkish term dictionaries.
+
+```python
+KAP_CATEGORIES = {
+    "temettu": ["temettü", "kar payı", "nakit kar payı"],
+    "sermaye_artirimi": ["bedelsiz", "bedelli", "sermaye artırımı", "rüçhan"],
+    "mali_sonuclar": ["finansal sonuçlar", "bilanço", "gelir tablosu"],
+    "geri_alim": ["geri alım", "pay geri alım"],
+    "yonetim_degisikligi": ["yönetim kurulu", "genel müdür", "görevden"],
+}
+```
+
+The existing `category` field stores generic values. The cleanest path: write the granular KAP value directly to `category` when source is KAP. No Alembic migration required for this feature.
+
+### Pattern 7: Backtest Slippage/Commission Model
+
+**What:** The existing `backtest.py` `StrategySpec` and trade simulation loop apply ATR-based stops and targets. Add `slippage_bps` (basis points applied to entry/exit price) and `commission_bps` parameters to `StrategySpec` and to the trade execution calculation.
+
+**Default values:** 20bps commission (2x10bps per side, BIST typical), 10bps slippage.
+
+**No schema change needed.** Pure computation change in `backtest.py`. The frontend `/backtest` page receives updated KPI fields.
+
+### Pattern 8: Multi-Timeframe Technical Analysis
+
+**What:** Add weekly and monthly price aggregation to the technical analysis flow. Aggregate `PriceHistory` daily rows into weekly and monthly DataFrames inside `TechnicalAnalysisEngine`, compute indicators, return as separate sub-objects.
+
+**No schema change needed** — compute from existing daily rows. New field in API response: `technical_analysis.weekly`, `technical_analysis.monthly`. Existing `daily` sub-object unchanged.
+
+### Pattern 9: Liquidity Score
+
+**What:** Stateless computation from existing `PriceHistory` data: average daily volume consistency (std/mean of 30-day volume), volume trend, estimated spread proxy (daily range / close). Returns a `liquidity_score` (0-100) and `thinly_traded` boolean.
+
+**Persistence:** Store `liquidity_score` on `Stock` model (new column). Requires Alembic migration.
+
+**Implementation:** `liquidity.py` new service with `compute_liquidity_score(price_rows: list) -> float` pure function. Called from `data_collector.daily_update()` after prices refresh.
 
 ## Data Flow
 
-### Chat Request Flow
+### Request Flow — New Portfolio Analytics
 
 ```
-User types message → Chat Page (Next.js)
-    ↓ POST /api/chat/stream  {message, symbol?}
-ChatService.build_context(db)
-    ↓ queries: Stock (top 10), NewsItem (5 recent), MacroIndicator (5 recent)
-    ↓ if symbol: also queries PriceHistory, Fundamental, Stock sub-scores
-Context snapshot assembled (dict, not persisted yet)
+User opens Portfolio page
     ↓
-ChatService.get_history(db, limit=10)
-    ↓ SELECT from ChatMessage ORDER BY timestamp DESC LIMIT 10
+portfolio/page.tsx -> api.ts -> GET /api/portfolio/beta
     ↓
-DeepSeek API called (stream=True)
-    ↓ tokens flow back via AsyncOpenAI streaming
-FastAPI StreamingResponse yields SSE chunks
-    ↓ text/event-stream
-Next.js EventSource / fetch ReadableStream
-    ↓ appends tokens to message bubble in real-time
-Stream complete → ChatService persists user + assistant messages to ChatMessage
-```
-
-### Daily Briefing Flow
-
-```
-APScheduler cron 06:30 (weekdays)
-    ↓ background_briefing_generation()
-BriefingService._build_morning_context(db)
-    ↓ queries: Stock (all active, close vs prev_close), NewsItem (overnight),
-    ↓          MacroIndicator (latest TCMB/TUIK), CausalChainLog (recent)
-Context assembled (price movers, KAP highlights, macro state)
+portfolio_v2.py route handler
     ↓
-DeepSeek API called (stream=False, max_tokens=1500)
-    ↓ full response returned
-DailyBriefing row upserted (keyed on date)
+portfolio_analytics.py.compute_beta(positions, db)
     ↓
-
-Later: User opens Dashboard
-    ↓ GET /api/briefing/today
-DB lookup (indexed on generated_at date)
-    ↓ < 10ms
-JSON response → Dashboard renders briefing card
+SELECT price_history WHERE stock_id IN (positions) AND date > 90d ago
+SELECT commodity_prices WHERE symbol = 'XU100.IS' AND date > 90d ago
+    ↓
+Compute returns, covariance, beta (numpy, in asyncio.to_thread)
+    ↓
+{"portfolio_beta": 1.23} -> JSON response
 ```
 
-### Score Context Injection Flow
+### Background Flow — Market Regime Update
 
 ```
-Existing pipeline (unchanged):
-APScheduler → KAP/TCMB/TUIK → scoring_engine.update_all_scores()
-    ↓ writes to Stock.overall_score, .technical_score, .sentiment_score, etc.
-
-New pipeline reads from these columns at chat time:
-ChatService.build_context() → SELECT Stock.* ORDER BY overall_score DESC
-    ↓ current scores are always in DB — no live re-computation at chat time
+APScheduler (every 60min) -> background_market_regime_update()
+    ↓
+market_regime.MarketRegimeEngine.compute_regime()
+    ↓
+SELECT commodity_prices WHERE symbol = 'XU100.IS' ORDER BY date DESC LIMIT 252
+    ↓
+Compute: 200d SMA slope, 20d volatility percentile, max drawdown 90d
+    ↓
+INSERT INTO market_regimes (regime, confidence, indicators_json)
+    ↓
+ScoringEngine reads latest regime on next update_all_scores() call
 ```
 
-### Key Data Flows Summary
+### Background Flow — Turkish NLP Sentiment (KAP path)
 
-1. **Briefing pre-generation:** BriefingService reads existing tables → calls LLM once → stores result. Dashboard serves stored result.
-2. **Chat context injection:** ChatService queries existing Stock/NewsItem/MacroIndicator tables at message time → injects as LLM system prompt — no score recalculation.
-3. **Message persistence:** ChatMessage table stores role + content + context_snapshot_json (the assembled context at time of message). Allows debugging what the LLM saw.
-4. **History windowing:** Last 10 messages from ChatMessage are loaded and passed as messages array to DeepSeek. Token cost is bounded.
-
-## New ORM Models
-
-### DailyBriefing
-
-```python
-class DailyBriefing(Base):
-    __tablename__ = "daily_briefing"
-    id = Column(Integer, primary_key=True)
-    generated_at = Column(DateTime, default=datetime.utcnow, index=True)
-    content = Column(Text)               # Full AI-generated briefing text (markdown)
-    summary_json = Column(String)        # JSON: {top_movers, kap_highlights, macro_state}
-    generation_duration_s = Column(Float, nullable=True)   # How long LLM took
-    __table_args__ = (UniqueConstraint('generated_at::date', name='uq_briefing_date'),)
-    # NOTE: Use func.date() in queries; SQLAlchemy handles date truncation
+```
+background_kap_scan() (every 5min)
+    ↓
+kap_parser.fetch_latest_announcements()
+    ↓
+For each announcement:
+  turkish_nlp.analyze(title + summary, use_llm=True)  <- Gemini call
+  _kap_category(title)  <- keyword pattern match, no LLM
+    ↓
+NewsItem.sentiment_score = result.score
+NewsItem.category = result.kap_category
+    ↓
+scoring_engine.update_all_scores() if stored > 0
 ```
 
-### ChatMessage
+## Alembic Migration Plan
 
-```python
-class ChatMessage(Base):
-    __tablename__ = "chat_message"
-    id = Column(Integer, primary_key=True)
-    role = Column(String(20))            # 'user' | 'assistant' | 'system'
-    content = Column(Text)
-    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
-    context_snapshot_json = Column(Text, nullable=True)   # What the LLM saw
-    symbol = Column(String(20), nullable=True, index=True) # Stock symbol if stock-specific query
-```
+All DB changes must be consolidated into a single v7.0 Alembic revision to minimize migration risk:
+
+| Table | Column | Type | Default | Feature |
+|-------|--------|------|---------|---------|
+| `stocks` | `liquidity_score` | Float | NULL | Liquidity scoring |
+| `stocks` | `liquidity_label` | String(20) | NULL | "düşük"/"orta"/"yüksek" |
+| `price_history` | `is_tavan` | Boolean | False | Tavan/taban detection |
+| `price_history` | `is_taban` | Boolean | False | Tavan/taban detection |
+| `market_regimes` | (entire new table) | — | — | Market regime engine |
+
+`NewsItem.category` already exists — no change needed. KAP classification writes to existing column.
+
+**Migration file:** `backend/alembic/versions/XXXX_v7_0_schema.py`
+
+## Integration Map: New vs Modified
+
+### Modified Components
+
+| Component | Change Type | What Changes | Risk |
+|-----------|-------------|--------------|------|
+| `scoring.py` | Extend | Add `_resolve_weights(stock)` sector branch; add `market_regime_score` read | Low — additive; existing tests pass with sector=None |
+| `sentiment.py` | Replace body | Delegate `analyze_stock()` to `turkish_nlp.py`; keep interface signature | Low — same return type |
+| `kap_parser.py` | Extend | `_kap_category()` method + write to `category` field | Low — no schema change |
+| `technical.py` | Extend | `calculate_multi_timeframe()` wrapping existing `calculate_indicators()` | Low — new method, existing unchanged |
+| `data_collector.py` | Extend | `_detect_circuit_breakers()` call inside `collect_prices()`; `compute_liquidity_score()` call after price update | Medium — touches inner data loop |
+| `backtest.py` | Extend | `StrategySpec` gains `slippage_bps`, `commission_bps`; trade PnL calculation updated | Low — additive fields with defaults |
+| `fundamental.py` | Extend | Add `_data_quality_check()` wrapper around yfinance fetch; returns quality score | Low — wraps existing logic |
+| `portfolio_v2.py` | Extend | Three new GET routes: `/beta`, `/correlation`, `/position-size` | Low — new routes, no existing routes change |
+| `stocks.py` | Extend | Include `liquidity_score`, `is_tavan`, `is_taban` in stock detail response | Low — additive response fields |
+| `main.py` | Extend | Add `background_market_regime_update` scheduler job | Low — follows existing pattern |
+| `models/stock.py` | Additive | `liquidity_score`, `liquidity_label` columns | Low — nullable, Alembic migration |
+| `models/price.py` | Additive | `is_tavan`, `is_taban` boolean columns | Low — default False, Alembic migration |
+
+### New Components
+
+| Component | Purpose | Dependencies |
+|-----------|---------|--------------|
+| `services/turkish_nlp.py` | Turkish NLP wrapper (Gemini + keyword fallback) | `gemini_service.py` (existing) |
+| `services/market_regime.py` | MarketRegimeEngine singleton; regime computation | `CommodityPrice` table (XU100.IS data) |
+| `services/liquidity.py` | Liquidity score computation | `PriceHistory` table |
+| `services/portfolio_analytics.py` | Beta, correlation matrix, position sizing — stateless | `PriceHistory`, `CommodityPrice`, `PortfolioPosition` |
+| `services/sector_scoring.py` | Bank NIM/NPL, REIT NAV, Holding NAV adapters | `fundamental.py`, yfinance |
+| `models/market_regime.py` | MarketRegime ORM table | `Base` from database |
+| `alembic/versions/XXXX_v7_0_schema.py` | Single migration for all v7 schema changes | — |
+
+## Scaling Considerations
+
+| Concern | Current (1 user) | Notes |
+|---------|-----------------|-------|
+| Portfolio analytics latency | 200-500ms per call | Acceptable; add in-memory cache if needed later |
+| Turkish NLP (Gemini) KAP calls | ~5 calls/5min cycle | Gemini quota fallback already implemented |
+| Market regime computation | 1x60min job, <5MB | Light; only reads existing CommodityPrice |
+| Multi-timeframe technical | 3x computation per stock | On-demand only, not in bulk scheduler |
+| Liquidity score bulk | 100 stocks in daily_update | Sequential, not parallel — yfinance rate-limit safe |
+
+**Railway 512MB RAM constraint — per feature:**
+
+| Feature | RAM impact | Assessment |
+|---------|-----------|------------|
+| Turkish NLP (Gemini path) | 0MB additional | SAFE — remote call |
+| Turkish NLP (BERTurk) | +420MB | BLOCKED — exceeds limit |
+| Market Regime Engine | <5MB | SAFE — pure pandas/numpy |
+| Portfolio Analytics | <10MB | SAFE — small DataFrames |
+| Liquidity Score | <5MB | SAFE — existing data |
+| Multi-timeframe Technical | <20MB | SAFE — existing `ta` lib |
+| Sector Scoring (yfinance only) | <10MB | SAFE |
+
+## Build Order — Suggested Phase Sequence
+
+Dependencies drive this ordering. Each phase is independently deployable:
+
+**Phase 1 — Foundation (unblocks everything else)**
+- Alembic migration: `is_tavan`, `is_taban`, `liquidity_score`, `market_regimes` table
+- `safeLabel()` moved to `StockHelpers.tsx` (tech debt — unblocks UI consistency)
+- yfinance data quality layer in `fundamental.py`
+
+**Phase 2 — Data Enrichment (populates new columns, no new endpoints)**
+- Tavan/taban detection in `data_collector.py`
+- Liquidity score in `liquidity.py` + wired into `data_collector.py`
+- KAP announcement classification in `kap_parser.py`
+
+**Phase 3 — Regime + Turkish NLP (new services, feeds scoring)**
+- `market_regime.py` + scheduler job + `market_regimes` table reads
+- `turkish_nlp.py` + wire into `sentiment.py` and `kap_parser.py`
+
+**Phase 4 — Scoring Depth (depends on Phase 2+3 data being in DB)**
+- `sector_scoring.py` adapters (bank NIM/NPL, REIT NAV, holding NAV)
+- `scoring.py` sector branching + regime integration
+- Multi-timeframe technical analysis in `technical.py`
+
+**Phase 5 — Portfolio Analytics (depends on Phase 1 schema only)**
+- `portfolio_analytics.py` — beta, correlation, position sizing
+- New API routes in `portfolio_v2.py`
+- Pre-trade checklist frontend component (reads regime + scoring + liquidity)
+
+**Phase 6 — Backtest Quality + UI Polish (independent of all above)**
+- Slippage/commission model in `backtest.py`
+- Stock detail page hierarchy restructure
+- Post-trade learning loop UI
+
+Note: Phase 5 can run in parallel with Phases 3-4 since it only needs Phase 1 schema.
+
+## Anti-Patterns
+
+### Anti-Pattern 1: Loading BERTurk on Railway Free Tier
+
+**What people do:** Install `transformers` + BERTurk model — it is the "best" Turkish NLP option.
+
+**Why it is wrong:** Model weights alone are ~420MB; combined with existing TensorFlow (~600MB) and PyTorch (~800MB) already in requirements.txt, total memory blows through Railway's 512MB worker limit on first request.
+
+**Do this instead:** Route KAP sentiment through existing Gemini 2.0 Flash integration (`gemini_service.py`). Use keyword/morpheme rules for bulk yfinance news. BERTurk is a valid future option only if TensorFlow and PyTorch are removed or the project moves to a paid tier.
+
+### Anti-Pattern 2: Computing Portfolio Beta Inside the API Request Handler
+
+**What people do:** Place numpy covariance computation directly in the FastAPI route function.
+
+**Why it is wrong:** Blocks the async event loop for ~200ms during DB reads + computation. Fine for one user, breaks under concurrent requests.
+
+**Do this instead:** `portfolio_analytics.py` uses `asyncio.to_thread()` for the numpy computation, keeping DB queries async and CPU work off the event loop.
+
+### Anti-Pattern 3: New Scheduler Jobs Without max_instances=1
+
+**What people do:** Add new APScheduler jobs without `max_instances=1` guard.
+
+**Why it is wrong:** Overlapping job executions cause DB lock contention and double-processing on startup catch-up. All 16 existing jobs in `main.py` already set `max_instances=1`.
+
+**Do this instead:** Every new scheduler job must have `max_instances=1` and a `misfire_grace_time` appropriate to its interval.
+
+### Anti-Pattern 4: Multiple Alembic Migrations for v7.0 Schema Changes
+
+**What people do:** Create one migration per feature as features are built.
+
+**Why it is wrong:** On Railway, each deploy runs `alembic upgrade head`. Multiple small migrations create a fragile chain — one failure blocks all subsequent ones.
+
+**Do this instead:** Batch all v7.0 schema additions (tavan/taban, liquidity_score, market_regimes table) into a single `XXXX_v7_0_schema.py` migration, created in Phase 1.
+
+### Anti-Pattern 5: Raw yfinance Sector String Comparison
+
+**What people do:** `stock.sector == "Bankacılık"` comparison directly in ScoringEngine.
+
+**Why it is wrong:** yfinance returns inconsistent sector strings for BIST stocks (English/Turkish mix, sometimes None). Direct string comparison fails silently for most stocks.
+
+**Do this instead:** Create a `SECTOR_NORMALIZE` map in `config.py` that normalizes raw yfinance sector strings to canonical values. ScoringEngine uses only canonical values.
+
+### Anti-Pattern 6: Parallel yfinance Calls for Bulk Liquidity/Quality Computation
+
+**What people do:** Use `asyncio.gather()` across all 100 BIST stocks to compute liquidity in parallel.
+
+**Why it is wrong:** yfinance rate-limits batch requests. Existing `data_collector.py` uses sequential fetching with intentional delays for this reason.
+
+**Do this instead:** Compute liquidity score from already-fetched `PriceHistory` rows (already in DB) — no new yfinance call needed. Rate-limit risk eliminated.
 
 ## Integration Points
 
 ### External Services
 
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| DeepSeek API | `AsyncOpenAI(base_url="https://api.deepseek.com/v1")` — existing pattern from `llm_sentiment.py`. Reuse client instance. | `stream=True` for chat, `stream=False` for briefing. Same `DEEPSEEK_API_KEY`. |
-| yfinance / KAP / TCMB / TUIK | Read-only from PostgreSQL tables already populated by schedulers. New components never call external APIs directly. | This is the correct separation — new AI layer reads from the data layer, never bypasses it. |
+| Service | Integration Pattern | Notes for v7.0 |
+|---------|---------------------|----------------|
+| Gemini 2.0 Flash | Existing `gemini_service.py` | Reuse for KAP sentiment; 15 req/min means max ~12 KAP items per 5-min scan window |
+| yfinance | Existing `data_collector.py` + `fundamental.py` | Data quality layer wraps existing calls; no new yfinance endpoints needed |
+| XU100.IS index data | Already stored in `CommodityPrice` by data_collector | Market regime reads from this table — zero new external calls |
 
 ### Internal Boundaries
 
 | Boundary | Communication | Notes |
 |----------|---------------|-------|
-| `ChatService` → existing services | Direct import of singletons (`scoring_engine`, `kap_parser`) for metadata only, but prefer DB reads over calling service methods | Calling service methods may trigger expensive computations. Prefer `SELECT` from already-populated tables. |
-| `BriefingService` → existing services | Same — DB reads only | Never call `scoring_engine.update_all_scores()` from briefing — that is the scheduler's job. |
-| New API routers → `main.py` | `app.include_router(chat_router, prefix="/api")` + same for briefing router | Mount in lifespan or directly on app after existing router; does not affect existing routes. |
-| `ChatMessage` → `DailyBriefing` | No direct relationship — they are independent tables | Chat history is not linked to briefings; briefings are not chat sessions. |
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Re-computing Scores at Chat Time
-
-**What people do:** Call `scoring_engine.calculate_overall_score(stock)` inside the chat endpoint to get "fresh" scores before sending context to LLM.
-
-**Why it's wrong:** `calculate_overall_score` may trigger ML inference, technical indicator computation, or external API calls. A chat endpoint must respond in < 500ms to start the first SSE token. Re-computing kills UX and wastes LLM context budget.
-
-**Do this instead:** Read pre-computed scores directly from `Stock.overall_score`, `Stock.technical_score`, etc. The APScheduler keeps these current. The chat layer trusts the data layer.
-
-### Anti-Pattern 2: Storing Full Conversation in LLM Context Window Without Windowing
-
-**What people do:** Load the entire `chat_message` table history and pass it to every LLM call.
-
-**Why it's wrong:** DeepSeek's context window is bounded. A 6-month conversation history will exceed it, causing silent truncation or errors. Token costs also grow unboundedly.
-
-**Do this instead:** Always limit to the last 10 messages (`LIMIT 10 ORDER BY timestamp DESC`). For stock analysis, use the structured context snapshot rather than referencing old messages about the same stock.
-
-### Anti-Pattern 3: Streaming Briefing Generation at Request Time
-
-**What people do:** When the user opens the dashboard, trigger LLM generation inline and stream the result.
-
-**Why it's wrong:** Briefing generation takes 5-15 seconds. Dashboard load time becomes 5-15 seconds. For a morning routine tool, this is unacceptable.
-
-**Do this instead:** Pre-generate at 06:30 via APScheduler. Dashboard fetches the stored result (< 10ms). If the job failed, show a "Generate now" button that triggers on-demand generation with a loading indicator — not the default path.
-
-### Anti-Pattern 4: Adding Chat Routes to the Existing endpoints.py
-
-**What people do:** Add `@router.post("/chat/stream")` directly into `endpoints.py`.
-
-**Why it's wrong:** `endpoints.py` is already 38k characters. Streaming responses have fundamentally different response headers and error handling than the existing JSON endpoints. Mixing them makes the file harder to reason about and risks header-conflict bugs.
-
-**Do this instead:** Create `api/chat.py` with its own `APIRouter`. Mount it separately in `main.py` alongside the existing router.
-
-### Anti-Pattern 5: Calling DeepSeek Without Temperature Differentiation
-
-**What people do:** Use the same `temperature=0.2` for both conversational chat and structured JSON analysis output.
-
-**Why it's wrong:** `0.2` is fine for sentiment analysis (the current use in `llm_sentiment.py`) but too low for natural-sounding chat, and too high for reliably formatted JSON output.
-
-**Do this instead:** Use `temperature=0.3` for conversational chat replies, `temperature=0.1` for structured 3-layer analysis JSON output, and keep `temperature=0.2` for the existing sentiment analysis calls (unchanged).
-
-## Build Order (Phase Dependencies)
-
-The components have clear dependencies that dictate build order:
-
-**Phase 1 — Foundation (must be first):**
-- `models/briefing.py` and `models/chat.py` (DB schema, no dependencies)
-- `models/__init__.py` re-exports updated
-- Tables are auto-created by existing `Base.metadata.create_all` in lifespan
-
-**Phase 2 — Service Layer (depends on Phase 1):**
-- `services/briefing.py` — BriefingService (depends on new DailyBriefing model + existing DB tables)
-- `services/chat.py` — ChatService (depends on new ChatMessage model + existing Stock/NewsItem/MacroIndicator models)
-
-**Phase 3 — API Layer (depends on Phase 2):**
-- `api/briefing.py` — briefing endpoints (depends on BriefingService)
-- `api/chat.py` — chat endpoints with SSE (depends on ChatService)
-- Mount new routers in `main.py`
-
-**Phase 4 — Scheduler (depends on Phase 2):**
-- Add `background_briefing_generation` job to `main.py` lifespan (depends on BriefingService being importable)
-
-**Phase 5 — Frontend (depends on Phase 3):**
-- Update `frontend/src/lib/api.ts` with new typed methods (`getBriefingToday`, `streamChat`)
-- Update `frontend/src/app/page.tsx` (Dashboard) to fetch and render briefing
-- Create `frontend/src/app/chat/page.tsx` with SSE consumer
-
-Each phase is independently deployable and testable before the next begins. Phases 3 and 4 can run in parallel (they both depend only on Phase 2).
-
-## Scaling Considerations
-
-This is a single-user local tool. Scaling is not a concern. The architecture decisions here are about correctness and maintainability, not throughput.
-
-| Concern | At current scale (1 user, local) |
-|---------|----------------------------------|
-| LLM latency | Pre-generation for briefing; streaming for chat hides latency perceptually |
-| DB connection pool | Existing `AsyncSessionLocal` is sufficient; single writer, low query volume |
-| Context window | 10-message history window + bounded context snapshot keeps token count controlled |
-| DeepSeek rate limits | Low risk at 1 user; add `asyncio.sleep` backoff on 429 responses in ChatService |
+| `scoring.py` to `market_regime.py` | Direct import; `get_current_regime()` async DB read | ScoringEngine must await regime read |
+| `scoring.py` to `sector_scoring.py` | Direct import; sector metrics pre-computed, stored in Fundamental row | ScoringEngine reads from DB, not live yfinance |
+| `sentiment.py` to `turkish_nlp.py` | Direct import; same async interface | Keyword path is synchronous; Gemini path is async |
+| `kap_parser.py` to `turkish_nlp.py` | Direct import; `use_llm=True` for important items | Rate-limit guard inside `turkish_nlp.py` |
+| `portfolio_v2.py` to `portfolio_analytics.py` | Direct import; stateless functions | `asyncio.to_thread()` for CPU-heavy correlation matrix |
+| `data_collector.py` to `liquidity.py` | Direct import; `compute_liquidity_score()` pure function | Called after `collect_prices()` in daily update loop |
 
 ## Sources
 
-- Existing codebase analysis (`backend/app/services/llm_sentiment.py`, `backend/app/main.py`, `backend/app/api/endpoints.py`) — HIGH confidence, direct read
-- FastAPI StreamingResponse SSE pattern: [Real-time OpenAI response streaming with FastAPI](https://sevalla.com/blog/real-time-openai-streaming-fastapi/) — MEDIUM confidence
-- FastAPI SSE streaming: [How to Stream LLM Responses in Real-Time Using FastAPI and SSE](https://blog.gopenai.com/how-to-stream-llm-responses-in-real-time-using-fastapi-and-sse-d2a5a30f2928) — MEDIUM confidence
-- PostgreSQL chat history with async SQLAlchemy: [Building Stateful Conversations with Postgres and LLMs](https://medium.com/@levi_stringer/building-stateful-conversations-with-postgres-and-llms-e6bb2a5ff73e) — MEDIUM confidence
-- OpenAI SDK streaming docs: [Streaming API responses](https://developers.openai.com/api/docs/guides/streaming-responses) — HIGH confidence (DeepSeek uses same protocol)
+- Direct codebase inspection: `backend/app/main.py`, `services/scoring.py`, `services/sentiment.py`, `services/kap_parser.py`, `services/backtest.py`, `services/technical.py`, `services/data_collector.py`, `models/stock.py`, `models/news.py`, `models/price.py`, `models/portfolio_v2.py`
+- PROJECT.md v7.0 requirements (`.planning/PROJECT.md`)
+- Railway free tier constraints: 512MB RAM, 1 vCPU (from milestone context)
+- Gemini 2.0 Flash limits: 15 req/min, 1500 req/day (from PROJECT.md Key Decisions)
 
 ---
-*Architecture research for: BIST 100 AI Investment Advisor — AI Chat + Daily Briefing Integration*
-*Researched: 2026-04-16*
+*Architecture research for: Yatırım Asistanı v7.0 — Analiz Kalitesi & Sistem Bütünlüğü*
+*Researched: 2026-05-14*

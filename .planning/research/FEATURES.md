@@ -1,8 +1,8 @@
 # Feature Research
 
-**Domain:** Personal AI investment advisor — BIST 100 (Turkish stock market)
-**Researched:** 2026-04-16
-**Confidence:** HIGH for table stakes and differentiators; MEDIUM for competitor comparison (limited Turkish-market tooling data)
+**Domain:** BIST-specific advanced analysis — Turkish retail investor stock assistant (v7.0)
+**Researched:** 2026-05-14
+**Confidence:** MEDIUM — BIST-specific standards verified via official BIST/KAP sources and academic research; NLP model performance verified on HuggingFace; some UX patterns inferred from general retail-investor research and Turkish broker practices
 
 ---
 
@@ -10,191 +10,314 @@
 
 ### Table Stakes (Users Expect These)
 
-Features a personal AI stock analysis tool must have. Missing any of these makes the product feel broken, not just incomplete.
+Features users expect for a BIST analysis tool at this maturity level. These already exist in v6.0 or are obvious gaps that feel broken if absent.
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| Real-time (or near-real-time) price data | Any tool without current prices is useless for decisions | LOW | yfinance polling every 5 min is sufficient; no WebSocket needed |
-| KAP news feed with filtering | KAP is the primary official news source for all BIST-listed companies; competitors Fintables, StocKeys both build on this | LOW | Already built — KAPParser + APScheduler at 5 min intervals |
-| Stock-level recommendation (AL/SAT/TUT) | Users open a tool to get a decision, not raw data | MEDIUM | Already have scoring engine; just needs surfacing cleanly in UI |
-| Fundamental indicators per stock | P/E, PD/DD, revenue growth, debt ratio — baseline for any analysis | LOW | yfinance provides; already stored in `Fundamental` model |
-| Technical signals | Trend, RSI, MACD, moving averages — expected by any investor | MEDIUM | `technical.py` service exists; needs validation it's correct |
-| Macro context | TCMB rate, USD/TRY, inflation — Turkish market is uniquely macro-sensitive | MEDIUM | TCMB + TUIK scrapers exist; need reliable data flow |
-| Search / stock lookup | User must be able to reach any BIST 100 ticker quickly | LOW | Can be a simple dropdown or chat command |
-| Explanation behind recommendation | "Why AL?" — without this, recommendation is just a number | MEDIUM | LLM synthesis layer; the differentiating part is the quality of explanation |
-| Reliable data (not mock fallback) | KAP mock fallback currently active in prod — this kills trust in all outputs | HIGH | Must fix before any feature work; data integrity is foundation |
+| Feature | Why Expected | Complexity | Existing Hook | Notes |
+|---------|--------------|------------|---------------|-------|
+| Tavan/taban göstergesi | Her Türk yatırımcı bu terimleri bilir; bir hisse tavan/tabanda ise alım/satım yapılamayabilir — karar değişir | LOW | `technical.py` — price_history mevcut; önceki kapanış verisi var | BIST standart limit: önceki kapanış ±%10 (Yıldız ve Ana Pazar). Yeni halka arzlarda tavan serisi yaygın — düşük halka açıklık oranı tetikler. Gösterim: "TAVAN" kırmızı badge + kalan uzaklık yüzdesi |
+| KAP duyuru türü etiketleri | Kullanıcı "bu duyuru önemli mi?" sorusunu sorar — ham KAP başlığından anlayamaz | MEDIUM | `kap_parser.py` — RSS akışı mevcut, entity linking var | 5 kritik kategori: Finansal Sonuçlar, Temettü/Sermaye, Özel Durum/M&A, Yönetim Değişikliği, Düzenleyici/Hukuki. İlk ikisi en yüksek fiyat etkisi. Kural tabanlı regex yeterli — KAP başlıkları standart formatlı |
+| Portföy beta göstergesi | "Piyasa %10 düşerse portföyüm ne kadar düşer?" — temel risk sorusu | LOW | `portfolio_snapshot.py` — pozisyonlar var; `dynamic_correlation.py` — korelasyon hesaplanıyor | β_portföy = Σ(ağırlık_i × β_i). yfinance beta field kullanılır; eksikse 252 günlük regresyon (XU100.IS baz). Sözel etiket: Defansif/Piyasa Dengeli/Agresif |
+| Likidite uyarısı | Düşük hacimli hissede tavan serisi, manipülasyon riski, çıkış güçlüğü yaygın — BIST'e özgü risk | MEDIUM | `scoring.py` — scoring katmanına eklenecek | Metrikler: 20 günlük ortalama hacim, hacim tutarlılığı (StdDev/Mean), spread proxy (yüksek-düşük/kapanış). "İnce Piyasa" uyarısı — skor bileşeni olarak da dahil edilebilir |
 
 ### Differentiators (Competitive Advantage)
 
-Features that distinguish Stalize from Fintables, StocKeys, and generic AI tools. These are where the tool creates real value and where the existing codebase has unique leverage.
+Features that set this product apart from Fintables, StocKeys, and generic AI tools. These are BIST-specific and not available in any existing tool.
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| AI daily morning briefing | Pre-synthesized market picture the moment you open the app — no assembly required; QuantHub shows demand for this pattern | HIGH | New build; needs: scored stocks + KAP digest + macro summary + LLM narrative layer |
-| 3-layer contradiction detection (Fundamental vs Technical vs Sentiment) | "Strong fundamentals, falling price — why?" is where real opportunities hide; no BIST tool does this explicitly | HIGH | Core differentiator; requires all three scores to be reliable first |
-| Causal chain analysis (macro → sector → stock) | "If TCMB raises rates, which BIST stocks are hit?" — unique to Stalize; no competitor has this | HIGH | `causal.py` + `knowledge_graph.py` exist; surface in chat and briefing |
-| Conversational stock deep-dive via chat | Free-form "tell me about THYAO" triggers structured 3-layer analysis, not just a data dump | HIGH | New build; needs intent detection + structured prompt template + streaming response |
-| Turkish macro-aware scoring | Enflasyon, kur, faiz politikası baked into the score — not a US-market generic model | MEDIUM | Existing scoring weights partially do this; needs alignment between `config.py` and `scoring.py` |
-| ML price-direction signal as one input (not the headline) | XGBoost prediction honest about confidence, not oversold as "price target" | MEDIUM | `ml.py` exists; needs model persistence so it's fast; present as "model signal" not "forecast" |
-| Sector-level KAP news digests in briefing | "3 KAP haberi bu sabah finans sektörünü etkiliyor" — contextualizes noise | MEDIUM | Requires KAP news classification by sector; LLM can do this |
-| Risk/reward framing (not just direction) | "Risk yüksek ama ödül 3x" vs "Düşük risk, küçük yukarı" — decision quality over raw signal | MEDIUM | Needs explicit risk/reward output format from LLM; scoring engine provides sub-scores as inputs |
+| Feature | Value Proposition | Complexity | Existing Hook | Notes |
+|---------|-------------------|------------|---------------|-------|
+| Market Regime Engine | Sinyal bağlamı olmadan yanıltıcı. Boğa rejiminde AL sinyali güvenilir; ayı rejiminde aynı sinyal tuzak. Hiçbir Türk perakende aracında yok | MEDIUM | `technical.py` — ADX, EMA200, ATR zaten hesaplanıyor | 4 rejim: Boğa (EMA200 üstü + ADX>25 + pozitif momentum), Ayı (EMA200 altı + ADX>25 + negatif momentum), Yatay (ADX<20), Volatil (ATR/fiyat>%3). XU100.IS endeksine uygulanır. Badge her analiz sayfasında görünür |
+| Türkçe NLP sentiment (BERTurk) | VADER İngilizce tabanlı — Türkçe haberlerde yanlış polarite üretir. BERTurk F1: .86 (genel), finansal alana yakın bağlam için doğru model seçimi kritik | HIGH | `sentiment.py` — VADER mevcut; `external_news_rss.py` ve `kap_parser.py` — Türkçe metin var; Transformers zaten requirements.txt'de | `savasy/bert-base-turkish-sentiment-cased` film+ürün yorumu+tweet üzerinde eğitildi — finansal fine-tune yok. Pragmatik: önce KAP keyword sınıflandırması, sonra BERTurk inference sadece KAP duyuruları için. Lazy loading şart (~440MB model) |
+| Sektör-spesifik scoring | Banka için genel F/K anlamsız. GYO için net kar değil NAV iskonto kritik. Holding için iştiraklerin toplamı esas | HIGH | `scoring.py` — uniform scoring; `fundamental.py` — sektör yok | 3 adapter: Banka (NIM, NPL, F/DD, sermaye yeterlilik), GYO (NAD iskonto, kira getirisi — yfinance'de yok, quarterly KAP raporu gerekir), Holding (iştirak market cap toplamı vs piyasa değeri). Veri erişilebilirliği önce doğrulanmalı |
+| KAP duyuru öncelik sınıflandırması | KAP günde 200+ duyuru — hangisi önemli belirsiz. Renk kodlu öncelik sistemi hiçbir rakipte yok | MEDIUM | `kap_parser.py` — başlık parsing ve impact_score altyapısı var | Kategori + renk (kırmızı/turuncu/gri). Kural tabanlı regex %80+ doğruluk sağlar — KAP başlıkları standart. BERTurk ile desteklenebilir ama gerekli değil |
+| Pozisyon büyüklüğü rehberi | "Ne kadar almalıyım?" — çoğu uygulamada hiç yok. Disiplinli risk yönetimi öğretir | MEDIUM | ATR mevcut (`technical.py`); portföy değeri mevcut; v6.0 stop-loss alanı mevcut | Volatilite-ayarlı %1-2 risk kuralı: Pozisyon = (Portföy × Risk%) / (ATR × 2). 3 senaryo: muhafazakar/dengeli/agresif. Full Kelly değil — win-rate tahmini belirsizliği ile retail için aşırı agresif |
+| Ön-işlem checklist | İşlem disiplinini pekiştiriyor. v6.0 exit/invalidation altyapısının doğal önceki adımı | LOW* | v6.0 exit_reason ve invalidation_condition zaten var; tüm diğer v7.0 özellikleri bağımlılık | 7 madde: trend, rejim, KAP duyurusu, stop-loss, pozisyon boyutu, sektör yoğunluğu, likidite. Son faza bırakılmalı — tüm alt sistemler gerektirir |
 
-### Anti-Features (Deliberately NOT Building)
+*Checklist UI basit ama tüm v7.0 bağımlılıklarını bekler
 
-Features that seem useful but add complexity, risk, or distraction without proportional value at this scope.
+### Anti-Features (Commonly Requested, Often Problematic)
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Automated trade execution (broker API) | "Let AI trade for me" | Legal liability, broker API complexity, catastrophic failure risk for real money; explicitly out of scope | Clear AL/SAT/TUT + risk/reward so user makes the call |
-| Real-time WebSocket price streaming | "I want tick-by-tick prices" | BIST is volatile intraday but Stalize's value is in synthesis, not speed; polling every 5 min is sufficient; WebSocket adds infra complexity with no analytical benefit | 5-min APScheduler polling is fine for personal use |
-| Portfolio P&L tracker | "Show me my gains/losses" | Requires broker integration or manual entry maintenance; no auth, no multi-account support; v1 priority is analysis quality, not portfolio accounting | Manual watchlist for stocks of interest; full portfolio tracking is v2+ |
-| Multi-stock comparison table (screener) | "Show me top 10 AL stocks sorted by score" | Screener UX is a separate product mode; it conflicts with the focused briefing-first approach; Fintables already does this well | Rankings endpoint already exists; surface top N in briefing instead of building a screener |
-| Price alerts / push notifications | "Notify me when THYAO hits X" | No mobile, no push infrastructure, no background notification service; adds backend complexity for marginal gain on a personal tool | Scheduled morning briefing covers the "what happened" need |
-| Social / sharing features | "Share my analysis" | Single-user personal tool; social layer is a different product category | Not applicable |
-| Technical charting (candlestick UI) | "Show me the chart" | TradingView, Fintables already do this excellently; building charts in Next.js is high cost for low differentiation | Link to TradingView for the ticker; focus on textual AI analysis |
-| Backtesting UI | "Test my strategy" | Backtesting script exists (`backtester.py`) but surfacing it as UI is a full feature; not core to daily advisory use | Keep as dev script; surface backtest confidence in ML signal label |
-| OAuth / multi-user auth | "Let others use it" | Out of scope; single-user personal tool; adding auth creates maintenance burden | No auth; localhost access is the security boundary |
+| Full Kelly criterion otomasyonu | Matematiksel olarak "optimal" görünüyor | Win-rate tahmini %5 hata bile sonucu dramatik değiştirir; full Kelly ile %50+ drawdown olası; retail için psikolojik dayanılmaz | Volatilite-ayarlı %1-2 risk kuralı — daha sağlam, daha anlaşılır, retail'e uygun |
+| BERTurk inference her RSS haberi için | Kapsamlı sentiment coverage görünüyor | Transformers CPU inference ~100ms/metin × 200+ günlük haber = 20+ saniye batch; startup maliyeti yüksek | Sadece şirkete linked KAP duyuruları; genel haber makro seviyede keyword-based kalır |
+| GYO NAD tam otomasyonu | "Otomatik hesapla" mantıklı | GYO NAD verisi yfinance'de yok; SPK/KAP'tan quarterly rapor scraping ayrı bağımlılık; v7.0 kapsamı dışında | Uniform scoring + "GYO: NAD verisi manuel girilmeli" uyarısı — v7.0'da geçici çözüm |
+| Holding tam NAD otomasyonu | Logik bir beklenti | İştirak oranı yıllık rapordan çekilmeli — yfinance'de yok; halka kapalı iştiraklerin değeri tahmin gerektirir | Sadece halka açık iştiraklerin market cap toplamı; holding iskonto kabaca hesaplanır |
+| Gerçek zamanlı fiyat akışı | Kullanıcı "anlık fiyat" ister | yfinance BIST için 15 dk gecikme; gerçek zamanlı lisans maliyetli; kişisel araç için gereksiz | Veri tazeliği badge (mevcut v6.0) + "15 dk gecikmeli" notu açık gösterilir |
+| Sektör karşılaştırma endeksi oluşturma | "Sektör ortalaması nedir?" sorusu makul | BIST sektör alt endeksleri veri çekimi ayrı bağımlılık; yfinance güvenilirliği düşük | Mevcut BIST100 hisseleri üzerinden peer median hesapla — yeterince yakın |
 
 ---
 
 ## Feature Dependencies
 
 ```
-[Reliable Data Pipeline]
-    └──required by──> [AI Morning Briefing]
-    └──required by──> [3-Layer Stock Analysis]
-    └──required by──> [AL/SAT/TUT Recommendation]
-    └──required by──> [Contradiction Detection]
+[Tavan/Taban Tespiti]
+    └──gerektirir──> [PriceHistory.close önceki gün] (MEVCUT)
+    └──besler──> [Ön-işlem Checklist] (alım/satım yapılabilir mi maddesi)
+    └──besler──> [Likidite Uyarısı] (tavan serisi + ince piyasa ilişkisi)
 
-[ML Model Persistence]
-    └──required by──> [ML Score as Briefing Input]
-    └──required by──> [3-Layer Analysis: ML Layer]
+[KAP Duyuru Sınıflandırması]
+    └──gerektirir──> [kap_parser.py RSS çekimi] (MEVCUT)
+    └──güçlendirir──> [Türkçe NLP Sentiment] (sınıflandırma sonucu polariteyi yönlendirir)
+    └──besler──> [Ön-işlem Checklist] (olumsuz duyuru filtresi)
 
-[Scoring System Alignment (config.py == scoring.py)]
-    └──required by──> [Reliable AL/SAT/TUT]
-    └──required by──> [Contradiction Detection]
+[Türkçe NLP Sentiment]
+    └──gerektirir──> [Türkçe haber metni] (MEVCUT — external_news_rss.py, kap_parser.py)
+    └──gerektirir──> [savasy/bert-base-turkish-sentiment-cased model yükleme]
+    └──günceller──> [sentiment_score] → ScoringEngine ağırlıklı hesap
 
-[KAP News + Sector Classification]
-    └──required by──> [AI Morning Briefing: News Digest]
-    └──required by──> [Chat: "What KAP news affects X?"]
+[Market Regime Engine]
+    └──gerektirir──> [ADX, EMA200, ATR] (MEVCUT — technical.py)
+    └──gerektirir──> [XU100.IS fiyat geçmişi] (yfinance — erişilebilir)
+    └──besler──> [Ön-işlem Checklist] (rejim kontrol maddesi)
+    └──besler──> [Sinyal Backtest Rejim Analizi] (v7.0 backtest kalitesi)
+    └──bağlamlandırır──> [ScoringEngine önerileri]
 
-[3-Layer Scoring (Fundamental + Technical + Sentiment all reliable)]
-    └──required by──> [Contradiction Detection]
-    └──required by──> [Risk/Reward Output]
+[Sektör-Spesifik Scoring]
+    └──gerektirir──> [Stock.sector etiketi] (MEVCUT)
+    └──gerektirir──> [NIM, NPL, sermaye yeterlilik — bankalar] (fundamental.py GENİŞLEME gerekli — veri riski)
+    └──gerektirir──> [NAD verisi — GYO] (yfinance'de YOK — quarterly KAP raporu scraping)
+    └──gerektirir──> [İştirak oranları — holding] (KAP yıllık rapor — kısmen manuel)
+    └──günceller──> [fundamental_score]
 
-[AI Morning Briefing]
-    └──enhances──> [Chat Interface]
-        (briefing creates context; chat lets user drill in)
+[Portföy Beta]
+    └──gerektirir──> [Hisse bazlı beta] (yfinance info['beta'] — MEDIUM confidence)
+    └──gerektirir──> [Pozisyon ağırlıkları] (MEVCUT — portfolio_snapshot.py)
+    └──fallback──> [252 günlük regresyon XU100.IS] (technical.py genişlemesi)
 
-[Causal Chain Analysis]
-    └──enhances──> [AI Morning Briefing]
-        (macro events → sector impact narrative)
-    └──enhances──> [Chat Interface]
-        (user asks "if faiz artarsa ne olur?")
+[Likidite Skoru]
+    └──gerektirir──> [PriceHistory volume 20 gün] (MEVCUT)
+    └──besler──> [Ön-işlem Checklist] (hacim yeterli mi maddesi)
+    └──besler──> [ScoringEngine risk overlay]
 
-[Chat Interface]
-    └──conflicts with──> [Screener/Comparison Table]
-        (chat-first means user asks for rankings; building a separate screener UI duplicates the same job)
+[Pozisyon Büyüklüğü Rehberi]
+    └──gerektirir──> [ATR] (MEVCUT — technical.py)
+    └──gerektirir──> [Portföy değeri] (MEVCUT — portfolio_snapshot.py)
+    └──gerektirir──> [stop-loss seviyesi] (v6.0 invalidation_condition MEVCUT)
+    └──besler──> [Ön-işlem Checklist] (pozisyon boyutu hesaplama maddesi)
+
+[Ön-işlem Checklist]
+    └──gerektirir──> [Market Regime Engine] (YENI)
+    └──gerektirir──> [Tavan/Taban Tespiti] (YENI)
+    └──gerektirir──> [KAP Duyuru Sınıflandırması] (YENI)
+    └──gerektirir──> [Likidite Skoru] (YENI)
+    └──gerektirir──> [Pozisyon Büyüklüğü Rehberi] (YENI)
+    └──gerektirir──> [Sektör Konsantrasyon Uyarısı] (MEVCUT — v6.0)
+    └──gerektirir──> [Stop-loss alanı] (MEVCUT — v6.0)
 ```
 
 ### Dependency Notes
 
-- **Reliable Data Pipeline required by everything:** Mock KAP fallback is a trust-killer. Data integrity is the zero-layer — all analytical features built on bad data will produce wrong recommendations. Must fix before any new feature work.
-- **ML Model Persistence required by briefing and chat:** Retraining XGBoost on every call makes chat unusable (latency) and briefing unreliable (timing). Persist models to disk; reload on startup.
-- **Scoring alignment required by contradiction detection:** If `config.py` and `scoring.py` weights differ, the "contradiction" between layers might be an artifact of misconfiguration, not a real signal. Fix alignment before building contradiction UI.
-- **Briefing enhances chat:** Users will read the morning briefing, then use chat to drill into specific items. The briefing creates the frame; chat completes the thought. Design the briefing to invite follow-up questions.
-- **Chat conflicts with screener:** Building both a conversational interface and a traditional screener table UI creates UX confusion about which to use. Pick one interaction model. Chat wins because it's the differentiator.
+- **Sektör-spesifik scoring veri riski taşıyor:** Banka için NIM/NPL yfinance'de tutarsız. GYO NAD scraping ayrı iş. Holding iştirak oranı manuel. Bu özelliğin kapsamı veri erişilebilirliğine göre daraltılabilir — banka F/DD + ROE adaptasyonu minimum uygulanabilir kapsam.
+- **Türkçe NLP lazy loading zorunlu:** bert-base model ~440MB. Startup'ta değil, ilk inference isteğinde yükle. CPU-only ortamda ~100ms/metin inference — KAP duyuruları için kabul edilebilir (günlük 20-50 duyuru), genel haber için değil.
+- **Market Regime tüm yorum bağlamını sağlar:** Backtest rejim analizi, ön-işlem checklist, scoring önerileri hepsi bu katmandan beslenir. En erken fazda uygulanmalı.
+- **Ön-işlem checklist bağımlılık zincirinin sonundadır:** Tüm alt sistemler çalışıyorsa anlam taşır — son faza bırakılmalı.
 
 ---
 
-## MVP Definition
+## MVP Definition (v7.0 Scope)
 
-### Launch With (v1)
+### Faz 1: Altyapı (Hızlı Kazanımlar)
 
-Minimum to validate the core value: "Open app, get your BIST 100 picture, drill into any stock."
+Minimum bağımlılık, yüksek değer, mevcut altyapıya doğrudan hook.
 
-- [ ] **Reliable data pipeline** — KAP real data (no mock fallback), yfinance prices stable, TCMB/TUIK flowing — without this, nothing else matters
-- [ ] **AI daily briefing page** — top movers, top/bottom 5 scored stocks, KAP news digest (LLM-summarized by sector), macro snapshot (USD/TRY, TCMB rate, CPI), AI narrative paragraph tying it together
-- [ ] **Scoring system alignment** — `config.py` weights match `scoring.py`; sub-scores (fundamental, technical, sentiment, causal, ml) are trustworthy
-- [ ] **ML model persistence** — persist XGBoost to disk; load on startup; retrain on schedule (daily), not on every request
-- [ ] **Chat interface with structured stock analysis** — user types "THYAO analiz" → LLM produces 3-layer structured output (Fundamental status / Technical status / Sentiment status / Contradiction if any / Karar: AL·SAT·TUT / Risk-Ödül)
-- [ ] **Clean, focused UI** — briefing page as home, chat accessible from every page, stock detail surfaceable from briefing
+- [ ] Tavan/taban tespiti ve badge — `PriceHistory` + önceki kapanış; dış API gerektirmez
+- [ ] KAP duyuru sınıflandırması — `kap_parser.py` üzerine kural tabanlı regex; Transformers gerektirmez
+- [ ] Market Regime Engine — `technical.py` ADX/EMA200/ATR üzerine yeni hesaplama katmanı; XU100.IS fiyat çekimi
+- [ ] Portföy beta — `portfolio_snapshot.py` + yfinance beta; görece basit; fallback regresyon
 
-### Add After Validation (v1.x)
+### Faz 2: Analiz Kalitesi
 
-Features to add once the core loop works and feels trustworthy.
+Daha yüksek maliyet, veri erişilebilirliği riski olan özellikler.
 
-- [ ] **Contradiction highlighting in briefing** — flag top 3 stocks where fundamental-technical-sentiment diverge significantly; "Dikkat: TEMEL güçlü ama teknik zayıf" callout cards
-- [ ] **Causal event cards in briefing** — "TCMB faiz kararı: Finans sektörü -%2.1 baskı altında" surfacing causal chain outputs in human language
-- [ ] **Chat memory within session** — "bir önceki hisseyle karşılaştır" — simple in-session context so follow-up questions work
-- [ ] **Stock watchlist** — user pins 5-10 tickers; briefing leads with those before broader market view
+- [ ] Türkçe NLP sentiment — VADER'dan kademeli geçiş; önce KAP duyuruları için lazy BERTurk
+- [ ] Sektör-spesifik scoring (banka minimum: F/DD, ROE adaptasyonu) — veri doğrulaması önce
+- [ ] Sektör-spesifik scoring (GYO: uniform + NAD uyarısı) — tam otomasyon v8.0'a ertele
+- [ ] Likidite skoru — 20 günlük hacim tutarlılık hesabı; scoring katmanına entegre
 
-### Future Consideration (v2+)
+### Faz 3: Kullanıcı Arayüzü
 
-Defer until v1 is proven.
+Tüm alt sistemler hazır olduğunda anlamlı.
 
-- [ ] **Portfolio P&L tracking** — needs broker integration or persistent manual input; high complexity, low MVP priority
-- [ ] **Historical briefing archive** — "dünkü brifing neydi?" — useful but requires briefing persistence; defer until briefing generation is stable
-- [ ] **Alerts / scheduled Telegram message** — push delivery of morning briefing to Telegram; useful for "open without opening browser" but adds infra
-- [ ] **Backtesting UI** — surface `backtester.py` results in dashboard; dev tool today, user feature later
+- [ ] Pozisyon büyüklüğü rehberi — portföy + ATR + risk yüzdesi; frontend hesaplaması; 3 senaryo
+- [ ] Ön-işlem checklist — interaktif modal; 7 madde; tüm v7.0 alt sistemlerini entegre
+
+### v8.0'a Ertele
+
+- [ ] Holding NAD iskonto tam otomasyonu — iştirak verisi çekimi karmaşık; v7.0'da halka açık iştiraklerin hesabı ile sınırlı
+- [ ] BERTurk finansal fine-tune — TurSentiFin corpus mevcut ama eğitim pipeline ayrı iş
+- [ ] Sinyal backtest rejim bazlı analiz — backtest motoru yeniden yapılandırma gerektirebilir
+- [ ] GYO NAD quarterly scraping — SPK/KAP PDF parse ayrı bağımlılık
 
 ---
 
 ## Feature Prioritization Matrix
 
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Reliable data pipeline (no mock fallback) | HIGH | MEDIUM | P1 |
-| Scoring system alignment | HIGH | LOW | P1 |
-| ML model persistence | HIGH | LOW | P1 |
-| AI daily briefing page | HIGH | HIGH | P1 |
-| Chat with structured stock analysis | HIGH | HIGH | P1 |
-| Clean UI (briefing-first) | HIGH | MEDIUM | P1 |
-| Contradiction detection in briefing | HIGH | MEDIUM | P2 |
-| Causal event cards in briefing | MEDIUM | MEDIUM | P2 |
-| Chat session memory | MEDIUM | MEDIUM | P2 |
-| Stock watchlist | MEDIUM | LOW | P2 |
-| Historical briefing archive | LOW | MEDIUM | P3 |
-| Portfolio P&L tracker | LOW | HIGH | P3 |
-| Telegram delivery | MEDIUM | LOW | P3 |
+| Feature | Kullanıcı Değeri | Uygulama Maliyeti | Öncelik |
+|---------|-----------------|-------------------|---------|
+| Tavan/taban tespiti | HIGH | LOW | P1 |
+| Market Regime Engine | HIGH | MEDIUM | P1 |
+| KAP duyuru sınıflandırması | HIGH | MEDIUM | P1 |
+| Portföy beta | MEDIUM | LOW | P1 |
+| Likidite skoru | MEDIUM | MEDIUM | P2 |
+| Türkçe NLP sentiment (KAP bazlı) | HIGH | HIGH | P2 |
+| Sektör-spesifik scoring — banka | MEDIUM | HIGH | P2 |
+| Pozisyon büyüklüğü rehberi | HIGH | MEDIUM | P2 |
+| Sektör-spesifik scoring — GYO (kısmi) | MEDIUM | HIGH | P2 |
+| Ön-işlem checklist | HIGH | LOW* | P3 |
+| Holding NAD iskonto (kısmi) | LOW | HIGH | P3 |
+| BERTurk finansal fine-tune | MEDIUM | VERY HIGH | P3 |
 
-**Priority key:**
-- P1: Must have for launch — core value loop
-- P2: Adds depth after core is working
-- P3: Nice to have; defer until v1 proven
+*Checklist UI basit ama tüm v7.0 bağımlılıklarını bekler
+
+---
+
+## BIST-Specific Standards: Teknik Referans
+
+### Tavan/Taban Sistemi (2025 itibarıyla)
+
+**Güncel kurallar:**
+- Standart fiyat limiti: Önceki kapanış ±%10 (Yıldız Pazar, Ana Pazar)
+- Yakın İzleme Pazarı: Farklı marjlar uygulanabilir
+- Endekse bağlı devre kesici (EBDKS): BIST100 %6 düşüşünde tüm piyasa durur (2025 güncelleme — önceki: %5+%7 iki aşamalı)
+- Hisse bazlı devre kesici: Tek emirde %5 hareket → işlem 10 dakika durur (2025 güncelleme — önceden 20-30 dk)
+- Yeni halka arzlar: İlk seanslarda tavan serisi yaygın; düşük halka açıklık oranı hızlandırır
+
+**Hesaplama:** `tavan = onceki_kapanis * 1.10` / `taban = onceki_kapanis * 0.90`
+
+**UI:** Badge rengi kırmızı/mavi, kalan yüzde mesafesi gösterilir, "emir karşılanmayabilir" uyarısı.
+
+### KAP Duyuru Sınıflandırma Şeması
+
+| Kategori | Türkçe Anahtar Kelimeler | Önem | Badge Rengi |
+|----------|--------------------------|------|-------------|
+| Finansal Sonuçlar | "finansal sonuçlar", "net kâr", "bilanço", "denetim raporu" | YÜKSEK | Kırmızı |
+| Temettü / Sermaye | "kâr payı dağıtımı", "bedelsiz sermaye", "bedelli artırım", "rüçhan hakkı" | YÜKSEK | Kırmızı |
+| Özel Durum / M&A | "birleşme", "devralma", "büyük sözleşme", "stratejik ortaklık" | YÜKSEK | Kırmızı |
+| Yönetim Değişikliği | "genel müdür", "yönetim kurulu", "CEO", "istifa", "atama" | ORTA | Turuncu |
+| Düzenleyici/Hukuki | "SPK", "BDDK", "mahkeme", "ceza", "soruşturma" | ORTA | Turuncu |
+| Genel Kurul | "olağan genel kurul", "çağrı", "gündem" | DÜŞÜK | Gri |
+| Diğer | (eşleşme yok) | DÜŞÜK | Gri |
+
+Kural tabanlı regex — KAP başlıkları standart formatlı, %80+ doğruluk beklenir.
+
+### Market Regime: 4 Rejim Tanımı
+
+| Rejim | Koşullar (XU100.IS üzerinde) | Kullanıcı Mesajı | Sinyal Güvenilirliği |
+|-------|------------------------------|------------------|---------------------|
+| Boğa | Kapanış > EMA200 VE ADX > 25 VE 20g getiri > 0 | "Piyasa yükseliş trendinde" | AL sinyalleri daha güvenilir |
+| Ayı | Kapanış < EMA200 VE ADX > 25 VE 20g getiri < 0 | "Piyasa düşüş trendinde" | AL sinyallerine temkinli yaklaşın |
+| Yatay | ADX < 20 | "Piyasa yatay hareket ediyor" | Trend sinyalleri zayıf |
+| Volatil | 20g ATR/fiyat > %3 | "Piyasa aşırı oynak" | Pozisyon boyutlarını küçültün |
+
+Önemli not: Türkiye emerging market karakteri — kur şokları, TCMB faiz kararları, jeopolitik gelişmeler teknik rejimi override edebilir. Mevcut `macro_news.py` bu boşluğu kısmen kapatır.
+
+### Sektör-Spesifik Scoring
+
+**Bankalar (GARAN, AKBNK, ISCTR, VAKBN, vb.):**
+- Standart F/K: Döngüsel faiz marjı etkisi nedeniyle yanıltıcı
+- Kritik metrikler: F/DD (P/TBV) < 1 = cazip, ROE (yfinance'de mevcut), sermaye yeterlilik rasyosu (%8 Basel III minimum; Türk bankalar genelde %15+)
+- NIM ve NPL yfinance'de tutarsız — BDDK aylık bülteninden çekilebilir (scraping) ama v7.0 kapsamı dışında
+- Minimum v7.0 uygulaması: F/DD ağırlık artırımı + ROE odaklı banka adaptörü
+
+**GYO (ISGYO, EKGYO, TOASO, vb.):**
+- Kritik metrik: NAD iskonto = (Piyasa Değeri / Net Aktif Değer) - 1; negatif = cazip
+- GYO'lar SPK zorunluluğuyla 6 iş günü içinde quarterly portföy tablosu BIST'e gönderir — scraping mümkün ama maliyetli
+- Pragmatik v7.0: Uniform scoring + "GYO: NAD verisi otomatik çekilemiyor" uyarısı
+- Tam NAD otomasyonu: v8.0
+
+**Holdinglar (KCHOL, SAHOL, TKFEN, vb.):**
+- NAD iskonto = (Holdingin Piyasa Değeri / İştirak Paylarının Toplam Market Cap) - 1
+- Halka açık iştiraklerin değeri yfinance ile günlük hesaplanabilir
+- İştirak oranları yıllık rapor/KAP'tan — kısmen manual, kısmen scraping
+- v7.0: Sadece halka açık iştiraklerin payı hesaplanır; sonuç "yaklaşık iskonto"
+
+### Portföy Beta: Hesaplama ve Gösterim
+
+**Yöntem 1 (tercih):** yfinance `info['beta']` → ağırlıklı ortalama  
+**Yöntem 2 (fallback):** 252 günlük günlük getiri regresyonu (hisse vs XU100.IS)  
+**Gösterim:**
+```
+Portföy Beta: 1.34
+[AGRESİF] Piyasa %10 düşerse portföyünüz yaklaşık %13.4 düşebilir.
+```
+Sözel etiketler: β < 0.8 = Defansif, β 0.8–1.2 = Piyasa Dengeli, β > 1.2 = Agresif  
+Uyarı notu: "Beta geçmiş veriye dayanır; gelecek için garanti vermez."
+
+### Pozisyon Büyüklüğü: Formül ve Senaryo Gösterimi
+
+**Yöntem:** Volatilite-ayarlı sabit risk kuralı (Full Kelly değil)  
+**Neden Full Kelly değil:** Win-rate tahmini %5 hatalı bile olsa sonuç dramatik değişir; full Kelly %50+ drawdown üretebilir; retail için psikolojik dayanılmaz; half-Kelly bile belirsizlikte agresif.
+
+**Formül:**
+```
+Pozisyon = (Portföy Değeri × Risk%) / (ATR × 2)
+Stop-loss = Giriş Fiyatı - (ATR × 2)
+```
+
+**3 senaryo gösterimi:**
+| Senaryo | Risk % | Pozisyon (adet) | Toplam Değer |
+|---------|--------|-----------------|-------------|
+| Muhafazakar | %1 | X | Y TL |
+| Dengeli | %2 | X | Y TL |
+| Agresif | %3 | X | Y TL |
+
+Sorumluluk notu: "Bu yalnızca bir rehberdir. Risk yönetimi kişisel finansal durumunuza bağlıdır."
+
+### Ön-İşlem Checklist: 7 Madde
+
+1. **Teknik trend** — "Hisse EMA50 üzerinde mi?" → Otomatik (technical.py)
+2. **Piyasa rejimi** — "Boğa veya yatay mı?" → Otomatik (Market Regime Engine)
+3. **KAP duyurusu** — "Son 48 saatte olumsuz duyuru var mı?" → Otomatik (KAP sınıflandırması)
+4. **Stop-loss** — "Çıkış noktası belirlendi mi?" → Kullanıcı girer (invalidation_condition v6.0)
+5. **Pozisyon büyüklüğü** — "Hesaplandı mı?" → Pozisyon rehberine link
+6. **Sektör yoğunluğu** — "Bu sektör portföyün %35'ini geçiyor mu?" → Otomatik (v6.0 sektör risk modülü)
+7. **Likidite** — "20g ortalama hacim yeterli mi?" → Otomatik (Likidite skoru)
+
+**UX:** Modal veya sidebar bileşen. Her madde: tik/çarpı/uyarı ikonu. Maddeler 1-3 ve 6-7 otomatik; 4-5 kullanıcı onayı gerektirir. "İşleme Devam Et" butonu kritik maddeler temizlenince aktif.
+
+### Türkçe NLP Sentiment: Pragmatik Geçiş Planı
+
+**Aşama 1 (v7.0 başlangıç):** KAP duyuru sınıflandırması sonucundan keyword polarite skoru. Hız: anında. Doğruluk: kategori bazlı yüksek.
+
+**Aşama 2 (v7.0 orta):** `savasy/bert-base-turkish-sentiment-cased` — sadece KAP duyuruları için lazy inference. Kısa metin (~50-150 karakter başlık), CPU ~100ms, günlük 20-50 duyuru = 2-5 saniye batch. Kabul edilebilir.
+
+**Aşama 3 (v8.0+):** TurSentiFin corpus ile finansal alana fine-tune. Akademik veri kümesi mevcut — eğitim pipeline ayrı iş.
+
+**Genel Türkçe haberler** (external_news_rss.py): BERTurk inference değil — makro seviyede keyword-based polarite yeterli. Maliyet çok yüksek.
 
 ---
 
 ## Competitor Feature Analysis
 
-| Feature | Fintables (TR) | StocKeys (TR) | Generic AI tools (Incite, TradingKey) | Stalize Approach |
-|---------|---------------|---------------|--------------------------------------|-----------------|
-| KAP news | Filtered feed, sector-based | Not primary focus | No (US-market focused) | LLM-summarized digest per sector in briefing |
-| Fundamental analysis | Scorecard (Karne), ratios | Deep ratio analysis | Available but US-only data | yfinance fundamentals + LLM narrative |
-| Technical analysis | Charts + indicators | Limited | Pattern recognition | Signals used as one sub-score layer |
-| Macro integration (TCMB, TUIK) | Economic calendar (passive) | Not present | Not present | Active scoring input via causal graph — unique |
-| AI recommendation | None — data only | None — data only | Buy/sell signals (US stocks) | AL/SAT/TUT with 3-layer rationale + risk/reward |
-| Contradiction detection | None | None | None | Core differentiator — explicit in every analysis |
-| Chat interface | None | None | Available (KeyAI, Incite) | Structured 3-layer output per stock, not generic chat |
-| Morning briefing | None (you assemble manually) | None | QuantHub (US, paid) | Automated daily synthesis — core value prop |
-| Causal macro → stock analysis | None | None | None | Unique: knowledge_graph traversal surfaced in UX |
-
-**Key finding:** No existing BIST 100 tool combines AI-generated briefing + conversational analysis + causal macro-stock linkage. Fintables and StocKeys are strong data tools but require the user to do all the synthesis. Generic US-market AI tools don't cover KAP or TCMB at all. The gap Stalize fills is real.
+| Feature | İş Yatırım / Garanti Yatırım | Fintables | StocKeys | Bizim Yaklaşım |
+|---------|------------------------------|-----------|----------|----------------|
+| Tavan/taban göstergesi | Gerçek zamanlı, renk kodlu | Var (fiyat akışında) | Var | Gecikmeli ama etiketli; ±%10 mantığı kullanıcıya açıklanır |
+| KAP duyuruları | Ham liste | Filtrelenmiş feed | Yok | Öncelik kategorisi + renk badge — differentiator |
+| Market Regime | Analist raporunda (manuel) | Yok | Yok | 4 rejim otomatik — differentiator |
+| Sektör-spesifik scoring | Analist tarafından manuel | Karne sistemi (uniform) | Uniform | Sector adapter — differentiator |
+| Portföy beta | Var (platforma ait portföy) | Yok | Yok | Ağırlıklı beta + sözel yorum |
+| Pozisyon rehberi | Yok | Yok | Yok | Volatilite-ayarlı 3 senaryo — differentiator |
+| Ön-işlem checklist | Yok | Yok | Yok | 7 madde disiplin aracı — differentiator |
+| Türkçe NLP | Manuel analiz | Yok | Yok | BERTurk hedef; şimdilik keyword-based |
 
 ---
 
 ## Sources
 
-- [Wall Street Zen — AI Stock Analyzers 2026](https://www.wallstreetzen.com/blog/ai-stock-analysis/) — feature survey of leading AI analysis tools
-- [Monday.com — Best AI for stock trading 2026](https://monday.com/blog/ai-agents/best-ai-for-stock-trading/) — feature patterns across 12 tools
-- [QuantHub Morning Briefing](https://briefing.quanthub.ai/) — reference implementation of AI daily briefing pattern
-- [Fintables](https://fintables.com/) — primary Turkish competitor; fundamental analysis + KAP feed
-- [StocKeys](https://www.stockeys.com/) — secondary Turkish competitor; fundamental analysis focus
-- [GitHub: Borsacı AI Agent](https://github.com/saidsurucu/borsaci) — Turkish-market AI agent reference
-- [PMC: Hybrid AI for stock prediction](https://pmc.ncbi.nlm.nih.gov/articles/PMC12191900/) — multi-layer (fundamental + technical + sentiment) framework validation
-- [Lyzr: AI Agents for Stock Market](https://www.lyzr.ai/blog/ai-agents-for-stock-market/) — structured analysis output patterns
+- [Borsa İstanbul devre kesici 2025 değişiklikleri — Bloomberg HT](https://www.bloomberght.com/borsa-istanbul-devre-kesici-sisteminde-degisiklige-gitti-3756014)
+- [Tavan taban uygulama mekanizması — HangiKredi](https://www.hangikredi.com/bilgi-merkezi/borsada-tavan-taban-uygulamasi-nedir/)
+- [KAP bildirim türleri kategorileri — Borsa Atlas](https://borsaatlas.com/akademi/kap-bildirim-turleri/)
+- [savasy/bert-base-turkish-sentiment-cased — HuggingFace](https://huggingface.co/savasy/bert-base-turkish-sentiment-cased)
+- [Turkish Sentiment Analysis Cross-Validation Study 2025 — Springer](https://link.springer.com/article/10.1007/s10579-025-09869-6)
+- [BIST Banking Stock Prediction with Turkish Sentiment — ResearchGate](https://www.researchgate.net/publication/390581991_Predicting_Borsa_Istanbul_Banking_and_Finance_Stocks_Using_Turkish_Social_Media_Sentiment_with_Machine_and_Deep_Learning)
+- [Market Regime Detection — LuxAlgo](https://www.luxalgo.com/blog/market-regimes-explained-build-winning-trading-strategies/)
+- [BIST Trend Strategy ADX/EMA200 — TradingView](https://www.tradingview.com/script/MvU41Wwc/)
+- [Volatility-Based Position Sizing — QuantifiedStrategies](https://www.quantifiedstrategies.com/volatility-based-position-sizing/)
+- [Kelly Criterion retail investor risks — Deriv Experts](https://experts.deriv.com/insights/kelly-criterion-position-sizing)
+- [GYO NAD iskonto değerleme — PhillipCapital TR (2024 Raporu)](https://www.phillipcapital.com.tr/Files/IndustryReport/1991b54a-1f28-4e68-abf0-78f907e6870a.pdf)
+- [Portfolio Beta — Wall Street Prep](https://www.wallstreetprep.com/knowledge/portfolio-beta/)
+- [Pre-Trade Checklist best practices — Earn2Trade](https://www.earn2trade.com/blog/building-robust-pre-trade-checklist-for-funded-traders/)
 
 ---
-
-*Feature research for: BIST 100 Personal AI Investment Advisor (Stalize)*
-*Researched: 2026-04-16*
+*Feature research for: BIST v7.0 — Analiz Kalitesi & Sistem Bütünlüğü*
+*Researched: 2026-05-14*
