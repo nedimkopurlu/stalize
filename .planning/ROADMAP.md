@@ -84,13 +84,16 @@ Phases 30–33 (Keşif, Haberler, Portföy, Model Portföy) planned in v4.0 but 
 
 </details>
 
-### v5.1 Kapsamlı Bug Fix & Kalite İyileştirme (Phases 40–42) — AKTİF
+<details>
+<summary>✅ v5.1 Kapsamlı Bug Fix & Kalite İyileştirme (Phases 40–42) — SHIPPED 2026-05-08</summary>
 
-**Milestone Hedefi:** v5.0'da gönderilen tüm özellikleri olgunlaştır; görsel hatalar, veri doğruluğu, eksik fonksiyonlar ve AI kalitesi olmak üzere 4 alanda kapsamlı düzeltme yap.
+- [x] **Phase 40: UI/UX Kapsamlı Görsel İyileştirme** — Tüm 7 sayfada sistematik görsel geçiş, mobile responsive düzeltmeleri, empty state standardizasyonu
+- [x] **Phase 41: Veri Doğruluğu & Eksik Fonksiyonlar** — Hesaplama hatalarını düzelt, null güvenliği ekle, watchlist/portföy eksik fonksiyonlarını tamamla
+- [x] **Phase 42: AI Kalite & Sistem Güvenilirliği** — Tüm AI prompt'larını derinleştir, hata yönetimini standardize et, sistem kararlılığını sağla
 
-- [ ] **Phase 40: UI/UX Kapsamlı Görsel İyileştirme** — Tüm 7 sayfada sistematik görsel geçiş, mobile responsive düzeltmeleri, empty state standardizasyonu
-- [ ] **Phase 41: Veri Doğruluğu & Eksik Fonksiyonlar** — Hesaplama hatalarını düzelt, null güvenliği ekle, watchlist/portföy eksik fonksiyonlarını tamamla
-- [ ] **Phase 42: AI Kalite & Sistem Güvenilirliği** — Tüm AI prompt'larını derinleştir, hata yönetimini standardize et, sistem kararlılığını sağla
+Full details: `.planning/milestones/v6.0-ROADMAP.md`
+
+</details>
 
 ### v7.0 Analiz Kalitesi & Sistem Bütünlüğü (Phases 48–55) — AKTİF
 
@@ -364,8 +367,6 @@ Full details: `.planning/milestones/v6.0-ROADMAP.md`
 </details>
 
 ---
-
-## v7.0 Phase Details
 
 ### Phase 48: Veri Kalitesi Temeli
 **Goal**: Kullanıcı, yfinance'ten gelen BIST fundamental verilerinin güvenilirliğini anlık olarak görebilir; şüpheli USD→TRY dönüşüm hataları tespit edilip işaretlenir.
