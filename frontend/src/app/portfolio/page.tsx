@@ -416,6 +416,22 @@ export default function PortfolioPage() {
   const activePositions = positions.filter((p) => p.is_active !== false);
   const closedPositions = positions.filter((p) => p.is_active === false);
 
+  // GUNLUK-04: kapalı pozisyon istatistikleri
+  const closedStats = useMemo(() => {
+    if (closedPositions.length === 0) return null;
+    const withPct = closedPositions.filter(
+      (p) => p.realized_pnl !== null && p.entry_price > 0 && p.exit_price !== null
+    );
+    const avgPnlPct = withPct.length > 0
+      ? withPct.reduce((sum, p) => sum + ((p.exit_price! - p.entry_price) / p.entry_price) * 100, 0) / withPct.length
+      : NaN;
+    const plannedCount = closedPositions.filter(
+      (p) => p.exit_reason === 'Stop Tetiklendi' || p.exit_reason === 'Hedefe Ulaştı'
+    ).length;
+    const plannedPct = (plannedCount / closedPositions.length) * 100;
+    return { count: closedPositions.length, avgPnlPct, plannedPct };
+  }, [closedPositions]);
+
   // PORT-02: close position handler
   async function handleClosePosition() {
     if (closingId === null) return;
@@ -1020,6 +1036,26 @@ export default function PortfolioPage() {
               </h2>
               <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Son 30 gün</span>
             </div>
+            {/* GUNLUK-04: İstatistik özeti barı */}
+            {closedStats && (
+              <div className={styles.closedStats}>
+                <span className={styles.closedStatItem}>
+                  Kapatılan: <span className={styles.closedStatValue}>{closedStats.count}</span>
+                </span>
+                <span className={styles.closedStatItem}>
+                  Ort. K/Z:&nbsp;
+                  <span className={`${styles.closedStatValue} ${pnlClass(closedStats.avgPnlPct)}`}>
+                    {isNaN(closedStats.avgPnlPct) ? '—' : `${closedStats.avgPnlPct >= 0 ? '+' : ''}${closedStats.avgPnlPct.toFixed(1)}%`}
+                  </span>
+                </span>
+                <span className={styles.closedStatItem}>
+                  Planlı Çıkış:&nbsp;
+                  <span className={styles.closedStatValue}>
+                    %{isNaN(closedStats.plannedPct) ? '0' : closedStats.plannedPct.toFixed(0)}
+                  </span>
+                </span>
+              </div>
+            )}
             <div className={styles.tableScroll}>
               <table className={styles.table}>
                 <thead>
@@ -1040,7 +1076,19 @@ export default function PortfolioPage() {
                       : null;
                     return (
                       <tr key={`closed-${pos.id}-${idx}`}>
-                        <td><span className={styles.symbolName}>{pos.symbol}</span></td>
+                        <td>
+                          <span className={styles.symbolName}>{pos.symbol}</span>
+                          {pos.rationale && (
+                            <span className={styles.rationaleText} title={pos.rationale}>
+                              {pos.rationale}
+                            </span>
+                          )}
+                          {pos.exit_reason && (
+                            <span className={styles.exitReasonBadge}>
+                              Çıkış: {pos.exit_reason}
+                            </span>
+                          )}
+                        </td>
                         <td style={{ color: 'var(--text-muted)', fontSize: 13 }}>
                           {pos.exit_date
                             ? new Date(pos.exit_date).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' })
