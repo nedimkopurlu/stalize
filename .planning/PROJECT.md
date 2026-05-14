@@ -12,42 +12,34 @@ Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıkl
 
 ### Validated
 
-(None yet — ship to validate)
+**v6.0 — Karar Güvenliği & Sistem Olgunlaşması (2026-05-14)**
+- ✓ Direktif olmayan karar dili — "GÜÇLÜ AL/SAT" etiketleri 5 sayfada güvenli alternatiflerle değiştirildi — v6.0
+- ✓ Skor bileşen şeffaflığı — dökümü, N/M bileşen sayacı, eksik veri uyarısı hisse detayda — v6.0
+- ✓ Volatilite uyarı ikonu — yüksek volatilitede sarı ikon + tooltip — v6.0
+- ✓ Sinyal backtest paneli — /backtest sayfası KPI, 7 sütun, 3 filtre — v6.0
+- ✓ Veri tazeliği göstergeleri — stale banner (8h), son güncelleme saati, AI tarih notu, period badge — v6.0
+- ✓ Portföy sektör risk yönetimi — CSS bar chart, yoğunlaşma uyarıları (>%35/>%20), risk özet kartı — v6.0
+- ✓ İşlem disiplin alanları — kararı bozan koşul, zorunlu çıkış nedeni, kapalı poz. istatistikleri — v6.0
+
+**Önceki milestone'lardan (v2.0–v5.1)**
+- ✓ Temel analiz (F/K, PD/DD, net kar, bilanço büyümesi) ile BIST100 hisselerini skorla — v2.0
+- ✓ Teknik analiz (RSI, MACD, hareketli ortalamalar) ile BIST100 hisselerini skorla — v2.0
+- ✓ İki skoru birleştirerek "bugün ilginç hisseler" listesi sun — v2.0
+- ✓ Kullanıcı "Analiz Et" dediğinde AI o hisseyi Türkçe açıklasın (Gemini) — v5.0
+- ✓ Genel haber sayfası (Intelligence) + hisse KAP açıklamaları — v5.0
+- ✓ Kullanıcı gerçek alım-satımlarını girer (portföy takip) — v5.0
+- ✓ Portföy performansını göster (K/Z, BIST100 karşılaştırma) — v5.0
+- ✓ İzleme listesi (watchlist) — v5.0
+- ✓ Asistan model portföy yönetir (BIST100, AI kararları) — v5.0
+- ✓ BIST100 özeti, döviz, altın takibi dashboard — v2.0/v4.0
+- ✓ Giriş yok, responsive, tamamen Türkçe — v2.0
 
 ### Active
 
-**Keşif & Analiz**
-- [ ] Temel analiz (F/K, PD/DD, net kar, bilanço büyümesi) ile BIST100 hisselerini skorla
-- [ ] Teknik analiz (RSI, MACD, hareketli ortalamalar) ile BIST100 hisselerini skorla
-- [ ] İki skoru birleştirerek "bugün ilginç hisseler" listesi sun
-- [ ] Kullanıcı "Analiz Et" dediğinde AI o hisseyi Türkçe açıklasın (on-demand, verimli API kullanımı)
-- [ ] Her metriğin yanında ne anlama geldiğini açıkla (öğretici mod)
+*(Sonraki milestone için — /gsd:new-milestone ile tanımlanacak)*
 
-**Haberler**
-- [ ] Genel haber sayfası (tüm BIST haberlerini göster)
-- [ ] Hisse detay sayfasında o hisseye ait KAP açıklamaları ve basın haberleri
-
-**Portföy**
-- [ ] Kullanıcı gerçek alım-satımlarını girer (hisse, lot, fiyat, tarih)
-- [ ] Portföy performansını göster (kazanç/kayıp, BIST100 ile karşılaştırma)
-- [ ] İzleme listesi (watchlist) — henüz almadığı ama takip ettiği hisseler
-
-**Model Portföy**
-- [ ] Asistan kendi model portföyünü özerk olarak yönetir (BIST100, haftalık güncelleme)
-- [ ] Neden o hisseyi aldığını/sattığını kaydet
-- [ ] Tüm değişiklik geçmişi tarihli olarak sakla
-- [ ] Kullanıcı kendi portföyünü model portföyle karşılaştırabilsin
-
-**Dashboard**
-- [ ] BIST100 özeti (endeks, bugünkü hareketler)
-- [ ] Döviz takibi (USD/TRY, EUR/TRY, GBP/TRY ve diğer çiftler — toplamda 5-10)
-- [ ] Altın takibi (gram, ons, çeyrek, yarım, tam)
-- [ ] Portföy özeti
-
-**UX**
-- [ ] Giriş yok — direkt açılır
-- [ ] Hem mobil hem masaüstü (responsive)
-- [ ] Türkçe arayüz
+- [ ] `safeLabel()` ortak utility'e taşı (StockHelpers.tsx) — 5 dosyada duplikasyon giderilmeli
+- [ ] Formal test coverage (VALIDATION.md) — Nyquist uyumluluğu
 
 ### Out of Scope
 
@@ -57,17 +49,13 @@ Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıkl
 - Otomatik alım-satım — karar her zaman kullanıcıda
 - BIST100 dışı hisseler — v1 için likit evren yeterli
 
-## Current Milestone: v6.0 — Karar Güvenliği & Sistem Olgunlaşması
+## Current State: v6.0 Shipped — Sonraki Milestone Planlanıyor
 
-**Goal:** Kapsamlı audit bulgularına dayanarak sistemi gerçek bir kişisel yatırım karar asistanına dönüştür — direktif olmayan karar dili, sinyal backtest şeffaflığı, veri tazeliği göstergeleri, portföy risk uyarıları, işlem disiplini günlüğü ve skor açıklanabilirliği.
+**Shipped:** 2026-05-14  
+**Phases:** 43–47 (5 phases, 13 plans)  
+**Archive:** `.planning/milestones/v6.0-ROADMAP.md`
 
-**Target features:**
-- Karar Dili: "GÜÇLÜ AL/SAT" → direktif olmayan güvenli etiket sistemi; tooltip ile açıklamalı
-- Backtest: Sinyal performans tablosu (altyapı mevcut, kullanıcıya gösterilmiyor); hit ratio özeti
-- Veri Tazeliği: Son güncelleme zamanı UI'da; stale data uyarısı; AI analizine veri tarihi notu
-- Portföy Risk: Sektör dağılımı görsel; >%35 sektör / >%20 hisse yoğunlaşma uyarısı
-- İşlem Günlüğü: Kararı bozan koşul alanı; pozisyon kapatmada çıkış nedeni; kapalı pozisyon istatistiği
-- Skor Şeffaflığı: Bileşen dökümü (temel/teknik/sentiment katkısı); eksik veri uyarısı
+v6.0 ile sistem artık kararların *nasıl verildiğini* açıklayan, *veri tazeliğini* gösteren ve *işlem disiplinini* kaydeden tam bir karar destek platformuna dönüştü. Tüm 23 requirement 5/5 faz doğrulamasıyla karşılandı.
 
 ## Context
 
@@ -90,13 +78,15 @@ Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıkl
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| On-demand AI analizi | API maliyeti kontrolü, gereksiz çağrı yok | — Pending |
-| BIST100 evreni | Likit, veri kaliteli, odaklı başlangıç | — Pending |
-| Kripto yok | Kullanıcı odağını dağıtır, v1 için gereksiz | — Pending |
-| Model portföy özerk | AI kendi kararlarını verir, kullanıcı karşılaştırır | — Pending |
-| Giriş yok | Kişisel araç, tek kullanıcı, sürtünmeyi azaltır | — Pending |
-| Gemini 2.0 Flash | Ücretsiz tier yeterli, Türkçe mükemmel, DeepSeek'in yerini alıyor | — Pending |
-| LLM güvenli fallback | Gemini quota dolsa endpoint hata değil placeholder döner | — Pending |
+| On-demand AI analizi | API maliyeti kontrolü, gereksiz çağrı yok | ✓ Good — v5.0'da doğrulandı |
+| BIST100 evreni | Likit, veri kaliteli, odaklı başlangıç | ✓ Good — sonraki milestone'da genişletilebilir |
+| Kripto yok | Kullanıcı odağını dağıtır, v1 için gereksiz | ✓ Good |
+| Model portföy özerk | AI kendi kararlarını verir, kullanıcı karşılaştırır | ✓ Good — v5.0'da uygulandı |
+| Giriş yok | Kişisel araç, tek kullanıcı, sürtünmeyi azaltır | ✓ Good |
+| Gemini 2.0 Flash | Ücretsiz tier yeterli, Türkçe mükemmel, DeepSeek'in yerini alıyor | ✓ Good — v5.0'da doğrulandı |
+| LLM güvenli fallback | Gemini quota dolsa endpoint hata değil placeholder döner | ✓ Good — v5.1'de iyileştirildi |
+| Direktif olmayan karar dili | "GÜÇLÜ AL/SAT" yerine yorum içermeyen etiket sistemi | ✓ Good — v6.0'da uygulandı; safeLabel 5 sayfada |
+| safeLabel inline (tech debt) | 5 dosyada kopya — shared utility'e taşınmadı | ⚠️ Revisit — v7.0'da StockHelpers.tsx'e taşı |
 
 ## Evolution
 
@@ -114,4 +104,4 @@ Bu döküman her fazda ve milestone sınırında güncellenir.
 3. Out of Scope'daki gerekçeler hâlâ geçerli mi?
 
 ---
-*Last updated: 2026-05-08 after v6.0 milestone start — karar güvenliği & sistem olgunlaşması (audit bulgularına dayalı)*
+*Last updated: 2026-05-14 after v6.0 milestone completion — Karar Güvenliği & Sistem Olgunlaşması (23/23 requirements shipped)*

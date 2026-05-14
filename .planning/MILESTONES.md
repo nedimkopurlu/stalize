@@ -1,5 +1,39 @@
 # Milestones: Stalize
 
+## v6.0 Karar Güvenliği & Sistem Olgunlaşması (Shipped: 2026-05-14)
+
+**Phases completed:** 19 phases, 25 plans, 30 tasks
+
+**Key accomplishments:**
+
+- ASYNC-01 — time.sleep() cleanup:
+- ASYNC-03 — Scheduler job staggering (main.py):
+- Market domain router skeleton (market.py) with GOLD_COIN_WEIGHTS + FOREX_PAIRS constants, JPY/CHF config additions, and xfail test scaffolds for Plans 28-02/03 to implement against
+- One-liner:
+- One-liner:
+- Türkçe Piyasa Özeti dashboard with BIST100 banner, 6-pair Döviz widget, 5-form Altın widget, and 30-second auto-refresh using independent per-widget state buckets
+- Portfolio empty-state card with exact UI-SPEC copy ('Henüz portföy eklenmedi'), dashed-border treatment, and browser-verified coexistence with BIST100/Döviz/Altın widgets
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- 1. Lazy import of gemini_service inside endpoint function
+- 1. [Rule 1 - Bug] verify_api_key passes through in dev when API_KEY not set
+- Plan:
+- Direktif "GÜÇLÜ AL/SAT" etiketleri 4 sayfada safeLabel() helper ile güvenli, direktif olmayan Türkçe etiketlere (ör. "Yüksek Öncelikli İzleme") çevrildi; her etiketin yanında hover tooltip açıklaması eklendi
+- One-liner:
+- Sidebar'a IconChartBar SVG ikonu ve /backtest rotasına bağlı Backtest nav item eklendi; Haberler öğesinin hemen ardına yerleştirildi
+- One-liner:
+- GET /stocks endpoint'e updated_at ISO timestamp eklendi; StockSummary interface geriye donuk uyumlu updated_at?: string | null field ile guncellendi
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- api.ts interface'leri yeni işlem disiplini alanlarıyla genişletildi; pozisyon ekleme formuna "Kararı bozan koşul" ve kapatma formuna zorunlu çıkış nedeni seçici eklendi.
+- Status:
+
+---
+
 ## v2.0 — Gerçek Veri Çekirdeği
 
 **Shipped:** 2026-04-27

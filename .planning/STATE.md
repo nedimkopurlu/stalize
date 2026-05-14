@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v6.0
 milestone_name: Karar Güvenliği & Sistem Olgunlaşması
 status: unknown
-last_updated: "2026-05-13T22:56:09.411Z"
+last_updated: "2026-05-14T14:05:25.513Z"
 progress:
   total_phases: 22
-  completed_phases: 13
-  total_plans: 22
-  completed_plans: 27
+  completed_phases: 14
+  total_plans: 25
+  completed_plans: 30
 ---
 
 # Project State
