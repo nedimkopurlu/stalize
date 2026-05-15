@@ -381,7 +381,7 @@ Full details: `.planning/milestones/v6.0-ROADMAP.md`
 
 Plans:
 - [ ] 48-01-PLAN.md — DB migration 008 + calculate_data_quality_score + API serialization (VKL-01, VKL-02)
-- [ ] 48-02-PLAN.md — safeLabel consolidation into StockHelpers.tsx; 3 pages updated (TECH-01)
+- [x] 48-02-PLAN.md — safeLabel consolidation into StockHelpers.tsx; 3 pages updated (TECH-01)
 - [ ] 48-03-PLAN.md — Frontend quality badge (stocks list) + Veri Güven Skoru row (detail page) (VKL-01, VKL-02)
 
 ### Phase 49: Veri Zenginleştirme

@@ -55,7 +55,7 @@
 
 ### TECH — Tech Debt
 
-- [ ] **TECH-01**: `safeLabel()` helper `StockHelpers.tsx`'e taşınır; inline duplikasyon (3 sayfa: stocks, [symbol], model-portfolio) tek kaynaktan beslenir
+- [x] **TECH-01**: `safeLabel()` helper `StockHelpers.tsx`'e taşınır; inline duplikasyon (3 sayfa: stocks, [symbol], model-portfolio) tek kaynaktan beslenir
 
 ---
 
