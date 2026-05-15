@@ -455,7 +455,7 @@ Plans:
 
 Plans:
 - [x] 53-01-PLAN.md — Backend: KAP OpenAI batch sentiment, Türkçe keyword classifier, vaderSentiment kaldırma
-- [ ] 53-02-PLAN.md — Frontend: sentiment label Türkçe uyum, CSS renk kuralları genişletme
+- [x] 53-02-PLAN.md — Frontend: sentiment label Türkçe uyum, CSS renk kuralları genişletme
 
 ### Phase 54: Backtest Kalitesi
 **Goal**: Backtest simülasyonu gerçekçi maliyet modeliyle çalışır; sonuçlar likidite kademesi ve piyasa rejimine göre ayrılmış olarak sunulur.
