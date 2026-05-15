@@ -408,7 +408,10 @@ Plans:
   2. Dashboard'da mevcut piyasa rejimi badge olarak görünür (renk + Türkçe etiket); kullanıcı sayfayı yenilemeden son rejimi görür.
   3. Hisse detay sayfasında da aynı regime badge gösterilir; hisse skoru yorumlanırken rejim bağlamı sunulur.
   4. `market_regimes` tablosu DB'ye eklenir; APScheduler 60 dakikada bir regime hesaplama jobunu çalıştırır.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 50-01-PLAN.md — Backend: migration 010, MarketRegime model, regime detection service, APScheduler job, GET /api/market-regime
+- [ ] 50-02-PLAN.md — Frontend: MarketRegimeResponse type, api.getMarketRegime(), RegimeBadge on dashboard and stock detail
 
 ### Phase 51: Sektör Bazlı Skorlama
 **Goal**: Bankacılık, GYO ve Holding hisseleri için sektöre özgü skorlama mantığı devreye girer; yanıltıcı standart metrikler bu sektörlerde uygulanmaz.
