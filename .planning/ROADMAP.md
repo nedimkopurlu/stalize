@@ -439,7 +439,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 52-01-PLAN.md — Backend: GET /portfolio/analytics (beta + correlation matrix) + GET /stocks/{symbol}/position-size
+- [x] 52-01-PLAN.md — Backend: GET /portfolio/analytics (beta + correlation matrix) + GET /stocks/{symbol}/position-size
 - [ ] 52-02-PLAN.md — Frontend: api.ts types, portfolio page beta/correlation display, stock detail position size card
 
 ### Phase 53: Türkçe NLP & Sentiment

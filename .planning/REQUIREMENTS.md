@@ -34,9 +34,9 @@
 
 ### PORT — Portföy Analizi
 
-- [ ] **PORT-01**: Kullanıcı, portföyünün BIST100'e göre betasını portföy sayfasında görür (252 günlük pencere, 0-3 aralığına kırpılmış)
-- [ ] **PORT-02**: Kullanıcı, portföydeki pozisyonlar arası korelasyon matrisini portföy sayfasında görür
-- [ ] **PORT-03**: Kullanıcı, her potansiyel pozisyon için volatilite bazlı pozisyon büyüklüğü önerisi görür (portföyün %1-2 risk kuralı, ATR×2 stop mesafesi)
+- [x] **PORT-01**: Kullanıcı, portföyünün BIST100'e göre betasını portföy sayfasında görür (252 günlük pencere, 0-3 aralığına kırpılmış)
+- [x] **PORT-02**: Kullanıcı, portföydeki pozisyonlar arası korelasyon matrisini portföy sayfasında görür
+- [x] **PORT-03**: Kullanıcı, her potansiyel pozisyon için volatilite bazlı pozisyon büyüklüğü önerisi görür (portföyün %1-2 risk kuralı, ATR×2 stop mesafesi)
 
 ### NLP — Türkçe Sentiment
 
