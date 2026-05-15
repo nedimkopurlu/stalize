@@ -63,6 +63,15 @@ const OUTCOME_FILTER_OPTIONS = [
   { label: 'Beklemede', value: 'pending' },
 ];
 
+// Rejim filtresi seçenekleri (REJ-03)
+const REGIME_OPTIONS = [
+  { label: 'Tüm Rejimler', value: '' },
+  { label: 'Boğa', value: 'Boğa' },
+  { label: 'Ayı', value: 'Ayı' },
+  { label: 'Yatay', value: 'Yatay' },
+  { label: 'Volatil', value: 'Volatil' },
+] as const;
+
 // ── Yardımcı fonksiyonlar ────────────────────────────────────
 
 function fmtPct(v: number | null): string {
@@ -93,6 +102,7 @@ export default function BacktestPage() {
   const [period, setPeriod] = useState<PeriodLabel>('3A');
   const [actionFilter, setActionFilter] = useState('');
   const [outcomeFilter, setOutcomeFilter] = useState('');
+  const [regimeFilter, setRegimeFilter] = useState('');
 
   async function loadData() {
     setLoading(true);
@@ -101,9 +111,9 @@ export default function BacktestPage() {
       const limitMap: Record<PeriodLabel, number> = { '1A': 30, '3A': 90, '6A': 180 };
       const limit = limitMap[period] ?? 90;
       const [outcomesRes, calibRes, calibRes1m] = await Promise.all([
-        api.getSignalOutcomes(limit, '1w'),
-        api.getSignalCalibration('1w', 1),
-        api.getSignalCalibration('1m', 1),
+        api.getSignalOutcomes(limit, '1w', regimeFilter || undefined),
+        api.getSignalCalibration('1w', 1, regimeFilter || undefined),
+        api.getSignalCalibration('1m', 1, regimeFilter || undefined),
       ]);
       setOutcomes(outcomesRes.items);
       setSummary(outcomesRes.summary);
@@ -119,7 +129,7 @@ export default function BacktestPage() {
   useEffect(() => {
     loadData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period]);
+  }, [period, regimeFilter]);
 
   // İstemci tarafı filtreleme (BACKTEST-02)
   const filtered = outcomes.filter((item) => {
@@ -194,6 +204,25 @@ export default function BacktestPage() {
             </p>
             <p className={styles.kpiSub}>Ortalama 1 aylık getiri</p>
           </div>
+          <div className={styles.kpiCard}>
+            <p className={styles.kpiLabel}>Net Getiri (Maliyet Sonrası)</p>
+            <p
+              className={styles.kpiValue}
+              style={{ color: returnColor(calibration?.by_slippage_cost?.net_avg_return_pct ?? null) }}
+            >
+              {loading
+                ? '…'
+                : calibration?.by_slippage_cost?.net_avg_return_pct != null
+                ? fmtPct(calibration.by_slippage_cost.net_avg_return_pct)
+                : '—'}
+            </p>
+            <p className={styles.kpiSub}>
+              Brüt: {loading ? '…' : calibration?.by_slippage_cost?.gross_avg_return_pct != null
+                ? fmtPct(calibration.by_slippage_cost.gross_avg_return_pct)
+                : '—'}
+              {' '}| Maliyet: %{calibration?.by_slippage_cost?.assumed_round_trip_cost_pct ?? 0.6}
+            </p>
+          </div>
         </div>
 
         {/* Filtre Bar (BACKTEST-02) */}
@@ -235,6 +264,18 @@ export default function BacktestPage() {
               </option>
             ))}
           </select>
+          {/* Rejim filtresi (REJ-03) */}
+          <select
+            className={styles.filterSelect}
+            value={regimeFilter}
+            onChange={(e) => setRegimeFilter(e.target.value)}
+          >
+            {REGIME_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
           {/* Özet: başarı/başarısız/bekleyen sayıları */}
           {summary && !loading && (
             <div className={styles.summaryBadges}>
@@ -244,6 +285,56 @@ export default function BacktestPage() {
             </div>
           )}
         </div>
+
+        {/* Rejim Kırılım Tablosu (BACK-02) */}
+        {!loading && calibration?.by_regime && calibration.by_regime.length > 0 && (
+          <div className={styles.regimeSection}>
+            <h2 className={styles.sectionTitle}>Rejim Bazlı Performans</h2>
+            <div className={styles.tableWrapper}>
+              <table className={styles.regimeTable}>
+                <thead>
+                  <tr>
+                    <th>Rejim</th>
+                    <th>Sinyal</th>
+                    <th>Başarı %</th>
+                    <th>Ort. Getiri</th>
+                    <th>Ort. Relatif</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {calibration.by_regime.map((row) => {
+                    const regimeClass = row.key === 'Boğa'
+                      ? styles.regimeBoga
+                      : row.key === 'Ayı'
+                      ? styles.regimeAyi
+                      : row.key === 'Yatay'
+                      ? styles.regimeYatay
+                      : row.key === 'Volatil'
+                      ? styles.regimeVolatil
+                      : styles.regimeBilinmiyor;
+                    return (
+                      <tr key={row.key}>
+                        <td>
+                          <span className={regimeClass}>{row.key}</span>
+                        </td>
+                        <td>{row.count}</td>
+                        <td style={{ color: row.success_rate >= 55 ? 'var(--accent-green)' : row.success_rate >= 40 ? 'var(--accent)' : 'var(--accent-red)' }}>
+                          %{row.success_rate.toFixed(1)}
+                        </td>
+                        <td style={{ color: returnColor(row.avg_return_pct) }}>
+                          {fmtPct(row.avg_return_pct)}
+                        </td>
+                        <td style={{ color: returnColor(row.avg_excess_return_pct) }}>
+                          {fmtPct(row.avg_excess_return_pct)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* İçerik: tablo veya boş durum */}
         {loading ? (

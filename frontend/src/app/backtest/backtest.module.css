@@ -241,6 +241,69 @@
   margin: 0;
 }
 
+/* ─── Rejim Kırılım Bölümü ─── */
+.regimeSection {
+  margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 0.75rem;
+}
+
+.regimeTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.regimeTable th,
+.regimeTable td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.regimeTable th {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.regimeTable tbody tr:hover {
+  background: var(--card-hover, rgba(255, 255, 255, 0.03));
+}
+
+/* Rejim renk etiketleri (ASCII-safe sınıf isimleri) */
+.regimeBoga {
+  color: var(--accent-green);
+  font-weight: 600;
+}
+
+.regimeAyi {
+  color: var(--accent-red);
+  font-weight: 600;
+}
+
+.regimeYatay {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.regimeVolatil {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.regimeBilinmiyor {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .container {
