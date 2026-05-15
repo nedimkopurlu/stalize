@@ -436,7 +436,11 @@ Plans:
   2. Portföydeki pozisyonlar arası korelasyon matrisi portföy sayfasında görünür; yüksek korelasyonlu çiftler (>0.7) vurgulanır.
   3. Kullanıcı, potansiyel bir pozisyon için hisse detay sayfasında volatilite bazlı pozisyon büyüklüğü önerisi görür (%1-2 risk kuralı, ATR×2 stop mesafesi temelinde).
   4. Portföy beta ve korelasyon hesaplamaları için yeni API endpoint'leri oluşturulur; frontend bu endpoint'leri çağırır.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 52-01-PLAN.md — Backend: GET /portfolio/analytics (beta + correlation matrix) + GET /stocks/{symbol}/position-size
+- [ ] 52-02-PLAN.md — Frontend: api.ts types, portfolio page beta/correlation display, stock detail position size card
 
 ### Phase 53: Türkçe NLP & Sentiment
 **Goal**: VADER kaldırılır; KAP duyuruları OpenAI GPT-4o-mini ile Türkçe sentiment analizine tabi tutulur; RSS haber akışları Türkçe kural setiyle sınıflandırılır.
