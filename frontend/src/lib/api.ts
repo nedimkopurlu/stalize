@@ -55,6 +55,8 @@ export interface StockSummary {
   data_quality_score?: number | null;
   liquidity_score?: string | null;    // "yüksek" | "orta" | "düşük"
   amihud_ratio?: number | null;
+  sector_category?: string | null;    // "banka" | "gyo" | "holding" | null
+  nav_discount?: number | null;        // Holdings: NAV iskonto oranı (pozitif = iskonto)
   liquidity_level?: 'low' | 'medium' | 'high' | string | null;
   avg_traded_value?: number | null;
   market_cap: number | null;
@@ -391,6 +393,9 @@ export interface ScoreBreakdownResponse {
     };
   };
   guardrails?: DecisionGuardrails;
+  sector_category?: string | null;
+  sector_scoring_method?: string | null;
+  nav_discount?: number | null;
   timestamp: string;
 }
 
