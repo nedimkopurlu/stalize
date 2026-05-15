@@ -52,6 +52,10 @@ export interface StockSummary {
   daily_change_pct: number | null;
   volume: number | null;
   volume_ratio: number | null;
+  data_quality_score?: number | null;
+  liquidity_score?: number | null;
+  liquidity_level?: 'low' | 'medium' | 'high' | string | null;
+  avg_traded_value?: number | null;
   market_cap: number | null;
   is_bist30: boolean;
   is_bist100?: boolean;
@@ -385,11 +389,69 @@ export interface ScoreBreakdownResponse {
       weight_coverage: number;
     };
   };
+  guardrails?: DecisionGuardrails;
   timestamp: string;
 }
 
 export type InvestmentAction = 'strong_buy' | 'buy' | 'watch' | 'hold' | 'reduce' | 'exit';
 export type InvestmentRiskLevel = 'low' | 'medium' | 'high';
+
+export interface DecisionGuardrailCheck {
+  key: string;
+  label: string;
+  status: 'pass' | 'warning' | 'block' | string;
+  detail: string;
+}
+
+export interface DecisionGuardrails {
+  data_quality: {
+    score: number;
+    level: 'low' | 'medium' | 'high' | string;
+    label: string;
+    price_history_days?: number;
+    last_update_age_hours?: number | null;
+    issues: string[];
+    source_caveat: string;
+  };
+  liquidity: {
+    score: number;
+    level: 'low' | 'medium' | 'high' | string;
+    label: string;
+    avg_traded_value_20d?: number | null;
+    avg_volume_20d?: number | null;
+    source?: string;
+    issues: string[];
+  };
+  limit_lock: {
+    status: string;
+    label: string;
+    stop_reliability: string;
+    up_days_5d: number;
+    down_days_5d: number;
+    warning: string | null;
+  };
+  sector_profile: {
+    type: string;
+    label: string;
+    requires_special_model: boolean;
+    required_metrics: string[];
+    warning: string | null;
+  };
+  market_regime: {
+    label: string;
+    score: number;
+    detail?: string;
+    drawdown_pct?: number;
+    five_day_return_pct?: number;
+  };
+  pre_trade_checklist: DecisionGuardrailCheck[];
+  summary: {
+    action_blocks: string[];
+    warnings: string[];
+    confidence_adjustment: number;
+    tradable: boolean;
+  };
+}
 
 export interface InvestmentDecision {
   symbol: string;
@@ -423,7 +485,13 @@ export interface InvestmentDecision {
     trend: string;
     drawdown_pct: number | null;
     annualized_volatility_pct: number | null;
+    data_quality_score?: number | null;
+    liquidity_score?: number | null;
+    limit_lock_status?: string | null;
+    market_regime_label?: string | null;
+    sector_profile?: string | null;
   };
+  guardrails?: DecisionGuardrails;
   thesis: string[];
   invalidation: string;
   watch_items: string[];

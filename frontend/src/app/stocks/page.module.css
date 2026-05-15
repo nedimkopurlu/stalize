@@ -360,3 +360,25 @@
   color: var(--text-dim);
   text-align: right;
 }
+
+/* ── Veri Kalite Rozeti (VKL-02) ── */
+.qualityBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  margin-left: 6px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid currentColor;
+  background: transparent;
+}
+.qualityLow {
+  color: var(--accent-red);
+}
+.qualityMid {
+  color: var(--accent-yellow);
+}
+.qualityHigh {
+  color: var(--accent-green);
+}

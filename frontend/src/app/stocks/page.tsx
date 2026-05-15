@@ -321,6 +321,24 @@ export default function StocksPage() {
                         <span style={{ fontSize: '0.72rem', color: recSafeColor(stock.recommendation) }}>
                           {safeLabel(stock.recommendation)}
                         </span>
+                        {stock.data_quality_score != null && (
+                          <span
+                            className={`${styles.qualityBadge} ${
+                              stock.data_quality_score < 50
+                                ? styles.qualityLow
+                                : stock.data_quality_score <= 75
+                                ? styles.qualityMid
+                                : styles.qualityHigh
+                            }`}
+                            title={
+                              stock.data_quality_score < 50
+                                ? "Düşük Veri Güveni: Bu hissenin temel verileri yfinance'te USD cinsinden görünüyor olabilir. Skorlar tahmini."
+                                : `Veri Güven Skoru: ${Math.round(stock.data_quality_score)}/100`
+                            }
+                          >
+                            DK: {Math.round(stock.data_quality_score)}
+                          </span>
+                        )}
                       </td>
                       <td className={styles.tdStar}>☆</td>
                     </tr>

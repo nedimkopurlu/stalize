@@ -1380,3 +1380,20 @@
   vertical-align: middle;
   letter-spacing: 0.04em;
 }
+
+/* ── Veri Güven Skoru (VKL-01, VKL-02) ── */
+.qualityLow {
+  color: var(--accent-red);
+}
+.qualityMid {
+  color: var(--accent-yellow);
+}
+.qualityHigh {
+  color: var(--accent-green);
+}
+.qualityWarning {
+  font-size: 0.75rem;
+  color: var(--accent-red);
+  margin-left: 8px;
+  font-weight: 600;
+}

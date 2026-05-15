@@ -811,6 +811,32 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
               })}
             </div>
 
+            {s.data_quality_score != null && (
+              <div className={styles.breakdownBar}>
+                <div className={styles.breakdownBarHeader}>
+                  <span className={styles.breakdownBarLabel}>Veri Güven Skoru</span>
+                  <span className={styles.breakdownBarMeta}>
+                    <strong
+                      className={
+                        s.data_quality_score < 50
+                          ? styles.qualityLow
+                          : s.data_quality_score <= 75
+                          ? styles.qualityMid
+                          : styles.qualityHigh
+                      }
+                    >
+                      {Math.round(s.data_quality_score)}/100
+                    </strong>
+                    {s.data_quality_score < 50 && (
+                      <span className={styles.qualityWarning}>
+                        Düşük Veri Güveni
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <p className={styles.breakdownNote}>
               Skor, mevcut bileşenlerin normalize edilmiş ağırlıklı ortalamasıdır. Eksik bileşen varsa ağırlıklar yeniden dağıtılır.
             </p>
