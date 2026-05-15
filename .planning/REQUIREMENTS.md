@@ -10,8 +10,8 @@
 
 ### VKL — Veri Kalitesi
 
-- [ ] **VKL-01**: Kullanıcı, yfinance'den gelen BIST fundamental değerleri için USD→TRY sanity check sonucu "düşük güven" uyarısı görür; şüpheli değerlere dayanılarak karar alınmaz
-- [ ] **VKL-02**: Kullanıcı, her hisse için 0-100 data quality score'u hisse listesinde ve detay sayfasında görür
+- [x] **VKL-01**: Kullanıcı, yfinance'den gelen BIST fundamental değerleri için USD→TRY sanity check sonucu "düşük güven" uyarısı görür; şüpheli değerlere dayanılarak karar alınmaz
+- [x] **VKL-02**: Kullanıcı, her hisse için 0-100 data quality score'u hisse listesinde ve detay sayfasında görür
 - [ ] **VKL-03**: Kullanıcı, tavan/taban (devre kesici) durumundaki hisseleri fiyat kutusunda renkli badge ile anında fark eder
 - [ ] **VKL-04**: Kullanıcı, ince piyasalı hisselerde (düşük likidite) otomatik uyarı görür; Amihud illiquidity ratio tabanlı 3 kademeli likidite skoru (yüksek/orta/düşük)
 
