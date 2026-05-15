@@ -480,7 +480,11 @@ Plans:
   2. "Pozisyon Aç" bölümünde 7 maddelik ön-işlem checklist otomatik olarak doldurulur: piyasa rejimi, likidite durumu, toplam skor, diğer pozisyonlarla korelasyon, tavan/taban durumu, önerilen pozisyon büyüklüğü, çıkış planı; her madde geçti/başarısız/uyarı durumunu gösterir.
   3. Checklist'teki tüm 7 madde mevcut hesaplama verilerinden otomatik beslenir; kullanıcı manuel giriş yapmaz.
   4. Checklist sayfası render hatası durumunda bölüm gizlenir; sayfa çökmez.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 55-01-PLAN.md — Section hiyerarşisi, sticky sectionNav, Piyasa Rejimi section, id attribute'lar (UI-01)
+- [ ] 55-02-PLAN.md — Pre-trade checklist modal, "Pozisyon Aç" butonu, 7 auto-populated madde (UI-02)
 
 ---
 
@@ -523,7 +527,7 @@ v7.0 phases: 48 → 49+50+51+52 (parallel after 48) → 53 (after 49) → 54 (af
 | 52. Portföy Analizi | v7.0 | `/portfolio` + `/stocks/[symbol]` | TBD | ⬜ Not started | — |
 | 53. Türkçe NLP & Sentiment | v7.0 | `/intelligence` + `/stocks/[symbol]` + backend | TBD | ⬜ Not started | — |
 | 54. Backtest Kalitesi | v7.0 | `/backtest` + backend | TBD | ⬜ Not started | — |
-| 55. UI — Hisse Detay & Ön-işlem Checklist | v7.0 | `/stocks/[symbol]` | TBD | ⬜ Not started | — |
+| 55. UI — Hisse Detay & Ön-işlem Checklist | v7.0 | `/stocks/[symbol]` | 2 plans | ⬜ Not started | — |
 
 ## Kuzey Yıldızı
 
