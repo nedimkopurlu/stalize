@@ -44,6 +44,19 @@ def classify_turkish_sentiment(text: str) -> float:
     return max(-1.0, min(1.0, raw))
 
 
+def classify_turkish_sentiment_label(text: str) -> str:
+    """
+    Haber metnini Türkçe duygu etiketine çevirir.
+    Donus: 'pozitif', 'negatif' veya 'nötr' (NLP-02)
+    """
+    score = classify_turkish_sentiment(text)
+    if score > 0:
+        return "pozitif"
+    if score < 0:
+        return "negatif"
+    return "nötr"
+
+
 class MacroNewsCollector:
     """
     BIST100 haber ve olay ağı.
