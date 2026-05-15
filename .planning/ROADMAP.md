@@ -451,7 +451,11 @@ Plans:
   2. KAP duyuruları APScheduler job'u aracılığıyla OpenAI GPT-4o-mini'ye gönderilir; batch sentiment analizi sonuçları DB'ye yazılır; sentiment skoru hisse detay sayfasında KAP kartında görünür.
   3. RSS haber akışları Türkçe pozitif/negatif/nötr anahtar kelime kurallarıyla sınıflandırılır; sınıflandırma sonucu haber listesinde renk kodu ile gösterilir.
   4. APScheduler KAP sentiment job'u günlük çalışır; OpenAI API erişilemezse mevcut sentiment değerleri korunur, sistem çökmez.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 53-01-PLAN.md — Backend: KAP OpenAI batch sentiment, Türkçe keyword classifier, vaderSentiment kaldırma
+- [ ] 53-02-PLAN.md — Frontend: sentiment label Türkçe uyum, CSS renk kuralları genişletme
 
 ### Phase 54: Backtest Kalitesi
 **Goal**: Backtest simülasyonu gerçekçi maliyet modeliyle çalışır; sonuçlar likidite kademesi ve piyasa rejimine göre ayrılmış olarak sunulur.
