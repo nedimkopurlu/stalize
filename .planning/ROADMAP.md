@@ -424,7 +424,7 @@ Plans:
   4. yfinance'ten gelen sektör string değerleri normalizasyon haritasıyla standartlaştırılır; bilinmeyen sektörler genel skorlamaya düşer.
 **Plans**: 2 plans
 Plans:
-- [ ] 51-01-PLAN.md — Backend: migration 011, sector classification, bank/GYO/holding scoring, API exposure
+- [x] 51-01-PLAN.md — Backend: migration 011, sector classification, bank/GYO/holding scoring, API exposure
 - [ ] 51-02-PLAN.md — Frontend: api.ts types, Skor Dökümü sector method badge, GYO note, holding NAV discount
 
 ### Phase 52: Portföy Analizi

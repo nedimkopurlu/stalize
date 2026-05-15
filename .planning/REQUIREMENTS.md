@@ -28,9 +28,9 @@
 
 ### SEK — Sektör Bazlı Analiz
 
-- [ ] **SEK-01**: Bankacılık hisseleri sektöre özel skorlanır: F/DD (P/TBV) + ROE ağırlıklı; yanıltıcı standart PE/PB banka sektöründe uygulanmaz
-- [ ] **SEK-02**: GYO hisseleri P/B "NAV proxy" skoru alır; UI'da gerçek NAD verisinin mevcut olmadığı açıklama notu gösterilir
-- [ ] **SEK-03**: Holding hisseleri halka açık bağlı ortaklık piyasa değerleri toplanarak yaklaşık NAV iskontosu hesaplanır ve skorlamaya yansıtılır
+- [x] **SEK-01**: Bankacılık hisseleri sektöre özel skorlanır: F/DD (P/TBV) + ROE ağırlıklı; yanıltıcı standart PE/PB banka sektöründe uygulanmaz
+- [x] **SEK-02**: GYO hisseleri P/B "NAV proxy" skoru alır; UI'da gerçek NAD verisinin mevcut olmadığı açıklama notu gösterilir
+- [x] **SEK-03**: Holding hisseleri halka açık bağlı ortaklık piyasa değerleri toplanarak yaklaşık NAV iskontosu hesaplanır ve skorlamaya yansıtılır
 
 ### PORT — Portföy Analizi
 

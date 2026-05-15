@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: Analiz Kalitesi & Sistem Bütünlüğü
 status: completed
-last_updated: "2026-05-15T06:24:02.574Z"
+last_updated: "2026-05-15T16:33:27.757Z"
 last_activity: 2026-05-15
 progress:
   total_phases: 25
   completed_phases: 12
-  total_plans: 21
-  completed_plans: 26
+  total_plans: 23
+  completed_plans: 27
 ---
 
 # Project State
@@ -24,9 +24,9 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: 50 — Market Regime Engine (planning)
+Phase: 51 — Sektör Bazlı Skorlama (planning)
 Plan: —
-Status: Phase 49 complete ✅ — Phase 50 next
+Status: Phase 50 complete ✅ — Phase 51 next
 Last activity: 2026-05-15
 
 ## v7.0 Phases
@@ -41,7 +41,7 @@ Last activity: 2026-05-15
   - Goal: Tavan/taban badge, likidite skoru (Amihud), KAP duyuru kategorilendirme
   - Depends on: Phase 48
 
-- [ ] Phase 50: Market Regime Engine ⬜ Not started
+- [x] Phase 50: Market Regime Engine ✅ (2026-05-15)
   - Requirements: REJ-01, REJ-02
   - Goal: ADX+EMA200+ATR kural tabanlı rejim tespiti, USD-adjusted XU100.IS, regime badge
   - Depends on: Phase 48
@@ -154,7 +154,7 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-15T06:24:02.570Z
+**Last session:** 2026-05-15T16:33:27.753Z
 **Completed:** Phase 48 complete — VKL-01, VKL-02, TECH-01 delivered; 7/7 verification checks passed
 **Next action:** Plan + execute Phase 49 (Veri Zenginleştirme — VKL-03, VKL-04, KAP-01, KAP-02)
 
