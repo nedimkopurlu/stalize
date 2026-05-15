@@ -724,6 +724,30 @@ export interface PortfolioHistoryResponse {
   timestamp: string;
 }
 
+export interface PortfolioCorrelationMatrix {
+  symbols: string[];
+  matrix: number[][];
+  excluded_symbols: string[];
+}
+
+export interface PortfolioAnalyticsResponse {
+  beta: number | null;
+  correlation_matrix: PortfolioCorrelationMatrix | null;
+  calculated_at: string;
+}
+
+export interface PositionSizeResponse {
+  symbol: string;
+  current_price: number;
+  atr_14: number | null;
+  stop_distance: number | null;
+  portfolio_value: number;
+  risk_amount_1pct: number;
+  risk_amount_2pct: number;
+  max_shares_1pct: number | null;
+  max_shares_2pct: number | null;
+}
+
 export interface ModelPortfolioHolding {
   id: number;
   symbol: string;
@@ -1184,6 +1208,12 @@ export const api = {
 
   getPortfolioHistory: (days: number = 90) =>
     apiFetch<PortfolioHistoryResponse>(`/portfolio/history?days=${days}`),
+
+  getPortfolioAnalytics: () =>
+    apiFetch<PortfolioAnalyticsResponse>('/portfolio/analytics'),
+
+  getPositionSize: (symbol: string, portfolioValue: number = 100000) =>
+    apiFetch<PositionSizeResponse>(`/stocks/${symbol}/position-size?portfolio_value=${portfolioValue}`),
 
   addPosition: (data: {
     symbol: string;
