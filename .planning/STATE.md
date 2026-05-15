@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: Analiz Kalitesi & Sistem Bütünlüğü
 status: completed
-last_updated: "2026-05-15T06:05:53.320Z"
+last_updated: "2026-05-15T06:20:10.089Z"
 last_activity: 2026-05-15
 progress:
   total_phases: 25
   completed_phases: 11
-  total_plans: 19
-  completed_plans: 24
+  total_plans: 21
+  completed_plans: 25
 ---
 
 # Project State
@@ -24,9 +24,9 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: 49 — Veri Zenginleştirme (planning)
+Phase: 50 — Market Regime Engine (planning)
 Plan: —
-Status: Phase 48 complete ✅ — Phase 49 next
+Status: Phase 49 complete ✅ — Phase 50 next
 Last activity: 2026-05-15
 
 ## v7.0 Phases
@@ -36,7 +36,7 @@ Last activity: 2026-05-15
   - Goal: yfinance USD→TRY sanity check layer, data_quality_score per stock, safeLabel() tek kaynak
   - Depends on: Phase 47 (v6.0 complete)
 
-- [ ] Phase 49: Veri Zenginleştirme ⬜ Not started
+- [x] Phase 49: Veri Zenginleştirme ✅ (2026-05-15)
   - Requirements: VKL-03, VKL-04, KAP-01, KAP-02
   - Goal: Tavan/taban badge, likidite skoru (Amihud), KAP duyuru kategorilendirme
   - Depends on: Phase 48
@@ -154,7 +154,7 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-15T06:05:53.317Z
+**Last session:** 2026-05-15T06:20:10.084Z
 **Completed:** Phase 48 complete — VKL-01, VKL-02, TECH-01 delivered; 7/7 verification checks passed
 **Next action:** Plan + execute Phase 49 (Veri Zenginleştirme — VKL-03, VKL-04, KAP-01, KAP-02)
 

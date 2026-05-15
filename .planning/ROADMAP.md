@@ -410,7 +410,7 @@ Plans:
   4. `market_regimes` tablosu DB'ye eklenir; APScheduler 60 dakikada bir regime hesaplama jobunu çalıştırır.
 **Plans**: 2 plans
 Plans:
-- [ ] 50-01-PLAN.md — Backend: migration 010, MarketRegime model, regime detection service, APScheduler job, GET /api/market-regime
+- [x] 50-01-PLAN.md — Backend: migration 010, MarketRegime model, regime detection service, APScheduler job, GET /api/market-regime
 - [ ] 50-02-PLAN.md — Frontend: MarketRegimeResponse type, api.getMarketRegime(), RegimeBadge on dashboard and stock detail
 
 ### Phase 51: Sektör Bazlı Skorlama
