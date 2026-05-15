@@ -24,7 +24,7 @@
 
 - [x] **REJ-01**: Sistem, BIST100 için günlük piyasa rejimini otomatik tespit eder (Boğa / Ayı / Yatay / Volatil) — ADX+EMA200+ATR kural tabanlı, USD-adjusted XU100.IS
 - [x] **REJ-02**: Mevcut piyasa rejimi dashboard'da ve hisse detay sayfasında regime badge olarak gösterilir
-- [ ] **REJ-03**: Backtest sonuçları rejim bazında filtrelenebilir (Boğa/Ayı/Yatay/Volatil sinyal performans karşılaştırması)
+- [x] **REJ-03**: Backtest sonuçları rejim bazında filtrelenebilir (Boğa/Ayı/Yatay/Volatil sinyal performans karşılaştırması)
 
 ### SEK — Sektör Bazlı Analiz
 
@@ -45,8 +45,8 @@
 
 ### BACK — Backtest Kalitesi
 
-- [ ] **BACK-01**: Backtest simülasyonu likidite kademesine göre gerçekçi slipaj modeli içerir (BIST30: 10bps, sıra 30-70: 20bps, sıra 70-100: 40bps) + %0.1 komisyon
-- [ ] **BACK-02**: Backtest sonuçları rejim bazında ayrılmış olarak sunulur (Boğa/Ayı/Yatay/Volatil dönem performans karşılaştırması)
+- [x] **BACK-01**: Backtest simülasyonu likidite kademesine göre gerçekçi slipaj modeli içerir (BIST30: 10bps, sıra 30-70: 20bps, sıra 70-100: 40bps) + %0.1 komisyon
+- [x] **BACK-02**: Backtest sonuçları rejim bazında ayrılmış olarak sunulur (Boğa/Ayı/Yatay/Volatil dönem performans karşılaştırması)
 
 ### UI — Arayüz İyileştirmeleri
 

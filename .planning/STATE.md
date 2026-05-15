@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v7.0
 milestone_name: Analiz Kalitesi & Sistem Bütünlüğü
 status: completed
-last_updated: "2026-05-15T17:01:47.001Z"
+last_updated: "2026-05-15T17:17:42.586Z"
 last_activity: 2026-05-15
 progress:
   total_phases: 25
   completed_phases: 15
-  total_plans: 27
-  completed_plans: 32
+  total_plans: 29
+  completed_plans: 33
 ---
 
 # Project State
@@ -24,9 +24,9 @@ See: `.planning/PROJECT.md`
 
 ## Current Position
 
-Phase: 52/53 — Portföy Analizi + Türkçe NLP (parallel planning)
+Phase: 54 — Backtest Kalitesi (planning)
 Plan: —
-Status: Phase 51 complete ✅ — Phases 52 & 53 next
+Status: Phases 52 ✅ + 53 ✅ complete — Phase 54 next
 Last activity: 2026-05-15
 
 ## v7.0 Phases
@@ -51,12 +51,12 @@ Last activity: 2026-05-15
   - Goal: Banka P/TBV+ROE, GYO P/B proxy, Holding NAV yaklaşımı
   - Depends on: Phase 48
 
-- [ ] Phase 52: Portföy Analizi ⬜ Not started
+- [x] Phase 52: Portföy Analizi ✅ (2026-05-15)
   - Requirements: PORT-01, PORT-02, PORT-03
   - Goal: Portföy beta, korelasyon matrisi, pozisyon büyüklüğü rehberi
   - Depends on: Phase 48
 
-- [ ] Phase 53: Türkçe NLP & Sentiment ⬜ Not started
+- [x] Phase 53: Türkçe NLP & Sentiment ✅ (2026-05-15)
   - Requirements: NLP-01, NLP-02
   - Goal: VADER kaldır, GPT-4o-mini KAP sentiment, Türkçe RSS kural seti
   - Depends on: Phase 49
@@ -154,7 +154,7 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-05-15T17:01:46.997Z
+**Last session:** 2026-05-15T17:17:42.583Z
 **Completed:** Phase 48 complete — VKL-01, VKL-02, TECH-01 delivered; 7/7 verification checks passed
 **Next action:** Plan + execute Phase 49 (Veri Zenginleştirme — VKL-03, VKL-04, KAP-01, KAP-02)
 

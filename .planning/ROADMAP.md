@@ -468,7 +468,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 54-01-PLAN.md — Backend: slipaj/komisyon maliyet fonksiyonu, rejim etiketleme, calibration by_regime kırılımı, regime endpoint filtreleri
+- [x] 54-01-PLAN.md — Backend: slipaj/komisyon maliyet fonksiyonu, rejim etiketleme, calibration by_regime kırılımı, regime endpoint filtreleri
 - [ ] 54-02-PLAN.md — Frontend: api.ts type güncellemeleri, rejim kırılım tablosu, rejim filtresi, slipaj KPI kartı
 
 ### Phase 55: UI — Hisse Detay & Ön-işlem Checklist
