@@ -397,7 +397,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 49-01-PLAN.md — Backend: migration 009, Amihud computation, KAP category classification, API fields
-- [ ] 49-02-PLAN.md — Frontend: tavan/taban badge, liquidity badge, KAP category badges
+- [x] 49-02-PLAN.md — Frontend: tavan/taban badge, liquidity badge, KAP category badges
 
 ### Phase 50: Market Regime Engine
 **Goal**: Sistem, BIST100 piyasa rejimini otomatik olarak tespit eder ve bu bilgi hem dashboard'da hem hisse detay sayfasında görünür hale gelir.
