@@ -275,9 +275,9 @@ function horizonLabel(value: string | null | undefined) {
 }
 
 function sentimentLabel(item: StockNewsItem) {
-  if (item.sentiment_label === 'positive') return 'Olumlu';
-  if (item.sentiment_label === 'negative') return 'Olumsuz';
-  if (item.sentiment_label === 'neutral') return 'Nötr';
+  if (item.sentiment_label === 'positive' || item.sentiment_label === 'pozitif') return 'Olumlu';
+  if (item.sentiment_label === 'negative' || item.sentiment_label === 'negatif') return 'Olumsuz';
+  if (item.sentiment_label === 'neutral' || item.sentiment_label === 'nötr' || item.sentiment_label === 'notr') return 'Nötr';
   return item.sentiment_score != null ? formatSignedPct(item.sentiment_score * 100) : 'Etki yok';
 }
 

@@ -803,6 +803,20 @@
   color: var(--accent-red);
 }
 
+/* Türkçe label uyumu — Phase 53 NLP */
+.newsRowMeta span[data-sentiment='pozitif'] {
+  color: var(--accent-green);
+}
+
+.newsRowMeta span[data-sentiment='negatif'] {
+  color: var(--accent-red);
+}
+
+.newsRowMeta span[data-sentiment='nötr'],
+.newsRowMeta span[data-sentiment='notr'] {
+  color: var(--color-muted, inherit);
+}
+
 .stockNewsRow strong {
   color: var(--text-primary);
   font-size: 0.92rem;
