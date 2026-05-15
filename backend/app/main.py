@@ -15,7 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import models as _models  # noqa: F401
 from app.core.config import settings
 from app.core import database
-from app.api import stocks, intelligence, portfolio_v2, model_portfolio, market, system
+from app.api import stocks, intelligence, portfolio_v2, model_portfolio, market, system, signals, strategy
 from app.services.portfolio_snapshot import take_daily_snapshot
 from app.services.data_collector import data_collector
 
@@ -198,6 +198,42 @@ async def background_model_portfolio_snapshot():
         logging.error(f"Model portföy snapshot hatası: {e}")
 
 
+async def background_signal_snapshot():
+    from app.core.database import AsyncSessionLocal
+    from app.services.signal_tracking import signal_tracking_service
+
+    logging.info("JOB_START source=signal_snapshot")
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await signal_tracking_service.snapshot_top_signals(db, limit=40)
+            logging.info("SIGNAL_SNAPSHOT completed result=%s", result)
+    except Exception as e:
+        logging.error(f"Sinyal snapshot hatası: {e}", exc_info=True)
+
+
+async def background_signal_outcome_evaluation():
+    from app.core.database import AsyncSessionLocal
+    from app.services.signal_tracking import signal_tracking_service
+
+    logging.info("JOB_START source=signal_outcome_evaluation")
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await signal_tracking_service.evaluate_outcomes(db)
+            logging.info("SIGNAL_OUTCOME_EVALUATION completed result=%s", result)
+    except Exception as e:
+        logging.error(f"Sinyal sonuç ölçüm hatası: {e}", exc_info=True)
+
+
+async def background_market_regime_update():
+    from app.services.market_regime import market_regime_engine
+    logging.info("JOB_START source=market_regime")
+    try:
+        result = await market_regime_engine.update_regime()
+        logging.info("MARKET_REGIME_JOB_DONE regime=%s", result.get("regime"))
+    except Exception as e:
+        logging.error(f"Piyasa rejimi güncelleme hatası: {e}", exc_info=True)
+
+
 def background_daily_summary_reset() -> None:
     """Her sabah 09:05'te günlük AI piyasa özeti cache'ini sıfırlar."""
     from app.api.intelligence import _summary_cache
@@ -223,7 +259,7 @@ async def background_fundamentals_update():
 
 
 async def startup_seed_stock_universe():
-    """Fast startup seed: keep BIST100 metadata canonical without triggering heavy backfills."""
+    """Fast startup seed: keep BIST metadata canonical without triggering heavy backfills."""
     await data_collector.initialize_stocks()
     if await data_collector.live_price_refresh_needed(max_age_minutes=60):
         await data_collector.collect_live_bist_quotes()
@@ -333,7 +369,7 @@ async def lifespan(app: FastAPI):
         "interval",
         hours=168,  # 7 gün
         max_instances=1,
-        misfire_grace_time=3600,
+        misfire_grace_time=300,
         start_date=_now + timedelta(minutes=25),
     )
 
@@ -348,22 +384,61 @@ async def lifespan(app: FastAPI):
         misfire_grace_time=300,
     )
 
-    scheduler.start()
-    _task_startup_refresh = asyncio.create_task(
-        startup_refresh_sources(), name="startup_refresh_sources"
+    # Günlük sinyal kararlarını piyasa kapanışı sonrası kalıcılaştır
+    scheduler.add_job(
+        background_signal_snapshot,
+        "cron",
+        day_of_week="mon-fri",
+        hour=18,
+        minute=20,
+        timezone="Europe/Istanbul",
+        max_instances=1,
+        misfire_grace_time=300,
     )
-    _task_startup_refresh.add_done_callback(_log_task_error)
 
-    initial_load_coro = (
-        data_collector.full_initial_load()
-        if settings.RUN_FULL_INITIAL_LOAD_ON_STARTUP
-        else startup_seed_stock_universe()
+    # Olgunlaşan sinyallerin 1 hafta / 1 ay performansını ölç
+    scheduler.add_job(
+        background_signal_outcome_evaluation,
+        "cron",
+        day_of_week="mon-fri",
+        hour=9,
+        minute=15,
+        timezone="Europe/Istanbul",
+        max_instances=1,
+        misfire_grace_time=300,
     )
-    _task_initial_load = asyncio.create_task(
-        initial_load_coro,
-        name="full_initial_load" if settings.RUN_FULL_INITIAL_LOAD_ON_STARTUP else "startup_seed_stock_universe",
+
+    # Günlük piyasa rejimi tespiti — piyasa kapanışı sonrası 18:30
+    scheduler.add_job(
+        background_market_regime_update,
+        "cron",
+        day_of_week="mon-fri",
+        hour=18,
+        minute=30,
+        timezone="Europe/Istanbul",
+        max_instances=1,
+        misfire_grace_time=300,
     )
-    _task_initial_load.add_done_callback(_log_task_error)
+
+    scheduler.start()
+    if settings.ENVIRONMENT.lower() != "test":
+        _task_startup_refresh = asyncio.create_task(
+            startup_refresh_sources(), name="startup_refresh_sources"
+        )
+        _task_startup_refresh.add_done_callback(_log_task_error)
+
+        initial_load_coro = (
+            data_collector.full_initial_load()
+            if settings.RUN_FULL_INITIAL_LOAD_ON_STARTUP
+            else startup_seed_stock_universe()
+        )
+        _task_initial_load = asyncio.create_task(
+            initial_load_coro,
+            name="full_initial_load" if settings.RUN_FULL_INITIAL_LOAD_ON_STARTUP else "startup_seed_stock_universe",
+        )
+        _task_initial_load.add_done_callback(_log_task_error)
+    else:
+        logging.info("STARTUP_BACKGROUND_TASKS_SKIPPED environment=test")
     logging.info(
         "Zamanlanmış veri tarama görevleri başlatıldı "
         "(KAP hızlı, resmi kaynaklar ölçülü, model portföy haftalık mantıkla güncellenecek)."
@@ -377,8 +452,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Stalize — BIST100 Analiz API",
-    description="Teknik + Temel + Haber Analizi ile BIST100 hisse analizi",
+    title="Stalize — BIST Analiz API",
+    description="Teknik + Temel + Haber Analizi ile Borsa İstanbul hisse analizi",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -408,13 +483,15 @@ app.include_router(portfolio_v2.router, prefix="/api")
 app.include_router(model_portfolio.router, prefix="/api")
 app.include_router(market.router, prefix="/api")
 app.include_router(system.router, prefix="/api")
+app.include_router(signals.router, prefix="/api")
+app.include_router(strategy.router, prefix="/api")
 
 
 @app.get("/")
 async def root():
     return {
         "name": "Stalize",
-        "description": "BIST100 Hisse Analiz Platformu",
+        "description": "Borsa İstanbul Hisse Analiz Platformu",
         "version": "1.0.0",
         "api_docs": "/docs",
     }

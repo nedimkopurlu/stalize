@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.models.price import CommodityPrice
+from app.models.market_regime import MarketRegime
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -184,6 +185,24 @@ async def get_bist100_history(
     data = {"points": points, "count": len(points)}
     _market_cache[cache_key] = {"ts": datetime.now(timezone.utc).timestamp(), "data": data}
     return data
+
+
+@router.get("/market-regime")
+async def get_market_regime(db: AsyncSession = Depends(get_db)) -> dict:
+    """En güncel piyasa rejimini döndürür."""
+    result = await db.execute(
+        select(MarketRegime).order_by(MarketRegime.date.desc()).limit(1)
+    )
+    row = result.scalars().first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Rejim verisi henüz hesaplanmadı")
+    return {
+        "regime": row.regime,
+        "date": str(row.date),
+        "adx": row.adx,
+        "ema200": row.ema200,
+        "atr": row.atr,
+    }
 
 
 @router.get("/market/gold")
