@@ -908,6 +908,46 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
               </div>
             )}
 
+            {/* ── Sektör skorlama bilgisi ─────────────────────── */}
+            {scoreBreakdown?.sector_scoring_method && (
+              <div className={styles.liquidityRow}>
+                <span>Skorlama Yöntemi:</span>
+                <span style={{ fontWeight: 600, color: 'var(--accent)' }}>
+                  {scoreBreakdown.sector_scoring_method}
+                </span>
+              </div>
+            )}
+            {scoreBreakdown?.sector_category === 'gyo' && (
+              <div className={styles.breakdownMissingAlert} style={{ marginTop: '0.5rem' }}>
+                <span>ℹ</span>
+                <span>Gerçek NAD verisi mevcut değil; P/D değeri NAD yaklaşımı olarak kullanılmıştır.</span>
+              </div>
+            )}
+            {scoreBreakdown?.sector_category === 'holding' && scoreBreakdown.nav_discount != null && (
+              <div className={styles.liquidityRow}>
+                <span>NAV İskontosu (Yaklaşık):</span>
+                <span
+                  style={{
+                    fontWeight: 600,
+                    color: scoreBreakdown.nav_discount > 0.15
+                      ? 'var(--accent-green)'
+                      : scoreBreakdown.nav_discount < 0
+                      ? 'var(--accent-red)'
+                      : 'var(--fg-muted)',
+                  }}
+                >
+                  {scoreBreakdown.nav_discount >= 0
+                    ? `%${(scoreBreakdown.nav_discount * 100).toFixed(1)} iskonto`
+                    : `%${(Math.abs(scoreBreakdown.nav_discount) * 100).toFixed(1)} prim`}
+                </span>
+              </div>
+            )}
+            {scoreBreakdown?.sector_category === 'holding' && (
+              <p className={styles.breakdownNote} style={{ marginTop: '0.25rem' }}>
+                NAV hesabı halka açık bağlı ortaklık piyasa değerlerine dayanır; yaklaşık değerdir.
+              </p>
+            )}
+
             <p className={styles.breakdownNote}>
               Skor, mevcut bileşenlerin normalize edilmiş ağırlıklı ortalamasıdır. Eksik bileşen varsa ağırlıklar yeniden dağıtılır.
             </p>
