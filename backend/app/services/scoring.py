@@ -16,6 +16,107 @@ from app.models.stock import Stock
 
 logger = logging.getLogger(__name__)
 
+# ─── Sektör Sabitleri ───
+
+BANK_TICKERS: frozenset = frozenset({
+    "AKBNK", "GARAN", "ISCTR", "YKBNK", "HALKB", "VAKBN", "TSKB", "QNBFB", "ALBRK"
+})
+HOLDING_TICKERS: frozenset = frozenset({
+    "SAHOL", "KCHOL", "SISE", "TKFEN", "DOHOL"
+})
+HOLDING_SUBSIDIARIES: Dict[str, List[str]] = {
+    "SAHOL": ["AKBNK", "AKGRT", "AKENR"],
+    "KCHOL": ["ARCLK", "TOASO", "TUPRS", "AYGAZ"],
+    "SISE": ["TRKCM", "ANACM", "SODA"],
+    "TKFEN": ["TKFEN"],
+    "DOHOL": ["DOAS"],
+}
+
+
+def classify_sector_category(symbol: str, sector_str: Optional[str]) -> Optional[str]:
+    """Sembol ve sektör bilgisine göre sektör kategorisi döndürür.
+
+    Returns:
+        "banka" | "holding" | "gyo" | None
+    """
+    s = symbol.upper().replace(".IS", "")
+    if s in BANK_TICKERS:
+        return "banka"
+    if s in HOLDING_TICKERS:
+        return "holding"
+    if sector_str and "real estate" in sector_str.lower():
+        return "gyo"
+    return None
+
+
+def _score_ptbv_tier(pb_ratio: Optional[float]) -> float:
+    """Fiyat/Defter değer aralığına göre 0-100 skor (banka ve GYO için ortak)."""
+    if pb_ratio is None:
+        return 50.0
+    if pb_ratio < 0.8:
+        return 100.0
+    if pb_ratio < 1.2:
+        return 75.0
+    if pb_ratio < 2.0:
+        return 50.0
+    return 25.0
+
+
+def _score_roe_tier(roe: Optional[float]) -> float:
+    """Özsermaye karlılığı aralığına göre 0-100 skor."""
+    if roe is None:
+        return 50.0
+    if roe > 0.20:
+        return 100.0
+    if roe > 0.15:
+        return 75.0
+    if roe > 0.08:
+        return 50.0
+    return 25.0
+
+
+def calculate_bank_score(pb_ratio: Optional[float], roe: Optional[float]) -> float:
+    """Banka skoru: F/DD %60 + ROE %40 ağırlıklı.
+
+    Args:
+        pb_ratio: Fiyat/Defter değeri (P/TBV proxy)
+        roe: Özsermaye karlılığı (ondalık, örn. 0.18 = %18)
+
+    Returns:
+        0-100 arasında float skor
+    """
+    return 0.6 * _score_ptbv_tier(pb_ratio) + 0.4 * _score_roe_tier(roe)
+
+
+def calculate_gyo_score(pb_ratio: Optional[float]) -> float:
+    """GYO skoru: P/D değerini NAD proxy olarak kullanır.
+
+    Args:
+        pb_ratio: Fiyat/Defter değeri
+
+    Returns:
+        0-100 arasında float skor
+    """
+    return _score_ptbv_tier(pb_ratio)
+
+
+def calculate_holding_nav_discount(
+    holding_market_cap: Optional[float],
+    sub_sum: Optional[float],
+) -> Optional[float]:
+    """Holding NAV iskontosunu hesaplar.
+
+    Args:
+        holding_market_cap: Holding hissesinin piyasa değeri
+        sub_sum: Halka açık bağlı ortaklık piyasa değerleri toplamı
+
+    Returns:
+        NAV iskontosu oranı (pozitif = iskonto, negatif = prim), ya da None
+    """
+    if holding_market_cap is None or sub_sum is None or sub_sum == 0:
+        return None
+    return (sub_sum - holding_market_cap) / sub_sum
+
 
 def calculate_data_quality_score(fundamental) -> float:
     """0-100 veri kalite skoru. Fundamental satırı temel alınır.
@@ -453,6 +554,52 @@ class ScoringEngine:
                 amihud_ratio, liquidity_score = await calculate_amihud_liquidity(stock.id, db)
                 stock.amihud_ratio = amihud_ratio
                 stock.liquidity_score = liquidity_score
+
+                # ─── Sektör skoru ───
+                sector_cat = classify_sector_category(
+                    stock.symbol,
+                    getattr(fundamental, "sector", None) if fundamental is not None else stock.sector,
+                )
+                stock.sector_category = sector_cat
+
+                if sector_cat == "banka" and fundamental is not None:
+                    pb = getattr(fundamental, "pb_ratio", None)
+                    roe = getattr(fundamental, "roe", None)
+                    bank_score = calculate_bank_score(pb, roe)
+                    stock.sector_score = bank_score
+                    stock.sector_scoring_method = "F/DD+ROE"
+                    stock.fundamental_score = bank_score  # override — standart PE/PB uygulanmaz
+
+                elif sector_cat == "gyo" and fundamental is not None:
+                    pb = getattr(fundamental, "pb_ratio", None)
+                    gyo_score = calculate_gyo_score(pb)
+                    stock.sector_score = gyo_score
+                    stock.sector_scoring_method = "P/D NAV Proxy"
+                    stock.fundamental_score = gyo_score  # override
+
+                elif sector_cat == "holding":
+                    sub_symbols = HOLDING_SUBSIDIARIES.get(
+                        stock.symbol.replace(".IS", "").upper(), []
+                    )
+                    if sub_symbols:
+                        sub_result = await db.execute(
+                            select(Stock.market_cap).where(Stock.symbol.in_(sub_symbols))
+                        )
+                        sub_caps = [r for (r,) in sub_result.all() if r is not None]
+                        sub_sum = sum(sub_caps)
+                    else:
+                        sub_sum = 0.0
+                    discount = calculate_holding_nav_discount(stock.market_cap, sub_sum)
+                    stock.nav_discount = discount
+                    stock.sector_scoring_method = "NAV İskontosu"
+                    if discount is not None and stock.fundamental_score is not None:
+                        if discount > 0.30:
+                            stock.fundamental_score = min(100.0, stock.fundamental_score + 15)
+                        elif discount > 0.15:
+                            stock.fundamental_score = min(100.0, stock.fundamental_score + 7)
+                        elif discount < 0:
+                            stock.fundamental_score = max(0.0, stock.fundamental_score - 10)
+                    stock.sector_score = stock.fundamental_score
 
                 updated += 1
 
