@@ -9,10 +9,46 @@ from sqlalchemy import select
 
 from app.core.config import settings
 from app.core.database import AsyncSessionLocal
+from app.models.fundamental import Fundamental
 from app.models.news import NewsItem
 from app.models.stock import Stock
 
 logger = logging.getLogger(__name__)
+
+
+def calculate_data_quality_score(fundamental) -> float:
+    """0-100 veri kalite skoru. Fundamental satırı temel alınır.
+
+    Başlangıç: 100. Her USD-şüpheli alan için -30, her None alan için -10.
+    Minimum 0'a sabitlenir.
+
+    USD-şüpheli eşikler (BIST değerleri USD'ye dönüştürülünce gerçekçi olmayan
+    küçük değerler gösterir):
+      - pe_ratio: değer mevcut ve pe < 2 (0 < pe < 2 veya pe < 0.5 içerir)
+      - pb_ratio: değer mevcut ve pb < 0.05
+    Null ceza alanları: pe_ratio, pb_ratio, ev_ebitda, net_income, revenue
+    """
+    if fundamental is None:
+        return 0.0
+    score = 100.0
+    pe = getattr(fundamental, "pe_ratio", None)
+    pb = getattr(fundamental, "pb_ratio", None)
+    ev_eb = getattr(fundamental, "ev_ebitda", None)
+    net_income = getattr(fundamental, "net_income", None)
+    revenue = getattr(fundamental, "revenue", None)
+
+    # USD-şüpheli tespit (yalnızca değer mevcut olduğunda)
+    if pe is not None and pe < 2:
+        score -= 30
+    if pb is not None and pb < 0.05:
+        score -= 30
+
+    # Null cezası
+    for field_val in (pe, pb, ev_eb, net_income, revenue):
+        if field_val is None:
+            score -= 10
+
+    return max(0.0, score)
 
 
 class ScoringEngine:
@@ -357,6 +393,20 @@ class ScoringEngine:
                 recommendation = contextual["recommendation"]
                 stock.overall_score = overall
                 stock.recommendation = recommendation
+
+                # En güncel fundamental kaydını çek ve veri kalite skorunu hesapla
+                fund_result = await db.execute(
+                    select(Fundamental)
+                    .where(Fundamental.stock_id == stock.id)
+                    .order_by(Fundamental.updated_at.desc())
+                    .limit(1)
+                )
+                fundamental = fund_result.scalar_one_or_none()
+                if fundamental is not None:
+                    stock.data_quality_score = calculate_data_quality_score(fundamental)
+                else:
+                    stock.data_quality_score = None
+
                 updated += 1
 
             await db.commit()
