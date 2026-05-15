@@ -23,7 +23,7 @@
 ### REJ — Market Regime Engine
 
 - [x] **REJ-01**: Sistem, BIST100 için günlük piyasa rejimini otomatik tespit eder (Boğa / Ayı / Yatay / Volatil) — ADX+EMA200+ATR kural tabanlı, USD-adjusted XU100.IS
-- [ ] **REJ-02**: Mevcut piyasa rejimi dashboard'da ve hisse detay sayfasında regime badge olarak gösterilir
+- [x] **REJ-02**: Mevcut piyasa rejimi dashboard'da ve hisse detay sayfasında regime badge olarak gösterilir
 - [ ] **REJ-03**: Backtest sonuçları rejim bazında filtrelenebilir (Boğa/Ayı/Yatay/Volatil sinyal performans karşılaştırması)
 
 ### SEK — Sektör Bazlı Analiz

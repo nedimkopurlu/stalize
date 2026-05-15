@@ -411,7 +411,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 50-01-PLAN.md — Backend: migration 010, MarketRegime model, regime detection service, APScheduler job, GET /api/market-regime
-- [ ] 50-02-PLAN.md — Frontend: MarketRegimeResponse type, api.getMarketRegime(), RegimeBadge on dashboard and stock detail
+- [x] 50-02-PLAN.md — Frontend: MarketRegimeResponse type, api.getMarketRegime(), RegimeBadge on dashboard and stock detail
 
 ### Phase 51: Sektör Bazlı Skorlama
 **Goal**: Bankacılık, GYO ve Holding hisseleri için sektöre özgü skorlama mantığı devreye girer; yanıltıcı standart metrikler bu sektörlerde uygulanmaz.
