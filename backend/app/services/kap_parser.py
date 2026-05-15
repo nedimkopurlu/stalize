@@ -45,6 +45,28 @@ class KAPParser:
         self.scan_interval = settings.KAP_SCAN_INTERVAL_MIN
         self.max_age_hours = settings.KAP_MAX_AGE_HOURS
 
+    def _event_type_to_kap_category(self, event_type: str) -> str:
+        """Map internal event_type code to Türkçe display category for kap_category column."""
+        mapping = {
+            "dividend": "Temettü",
+            "bonus_issue": "Sermaye Artırımı",
+            "rights_issue": "Sermaye Artırımı",
+            "buyback": "Pay Geri Alımı",
+            "earnings": "Finansal Sonuçlar",
+            "investment": "Yatırım",
+            "tender": "İhale",
+            "contract": "Sözleşme",
+            "credit_rating": "Kredi Notu",
+            "financing": "Finansman",
+            "share_sale": "İçeriden Öğrenme",
+            "merger": "Birleşme/Devralma",
+            "governance": "Yönetim",
+            "legal": "Hukuki",
+            "restructuring": "Yeniden Yapılanma",
+            "other": "Diğer",
+        }
+        return mapping.get(event_type, "Diğer")
+
     def _normalize_text(self, value: str) -> str:
         mapping = str.maketrans("çğıöşüÇĞİÖŞÜ", "cgiosuCGIOSU")
         return value.translate(mapping).lower()
@@ -250,6 +272,7 @@ class KAPParser:
                         source="KAP",
                         language="tr",
                         category=event_type,
+                        kap_category=self._event_type_to_kap_category(event_type),
                         published_at=self._parse_date(ann["published"]) or datetime.now(timezone.utc),
                         sentiment_score=analysis["sentiment_score"],
                         sentiment_label=analysis["sentiment_label"],
@@ -291,7 +314,7 @@ class KAPParser:
     
     def _extract_symbols(self, text: str) -> List[str]:
         """
-        Metinden BIST100 sembollerini çıkar.
+        Metinden BIST sembollerini çıkar.
         
         Örned:
         "THYAO ve PEGASUS'un birleşmesi" → ["THYAO", "PEGASUS"]

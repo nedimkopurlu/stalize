@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.core.database import AsyncSessionLocal
 from app.models.fundamental import Fundamental
 from app.models.news import NewsItem
+from app.models.price import PriceHistory
 from app.models.stock import Stock
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,48 @@ def calculate_data_quality_score(fundamental) -> float:
             score -= 10
 
     return max(0.0, score)
+
+
+async def calculate_amihud_liquidity(stock_id: int, db) -> tuple:
+    """Compute 30-day Amihud illiquidity ratio for a stock.
+
+    Returns:
+        (amihud_ratio: float | None, liquidity_score: str | None)
+        liquidity_score: "yüksek" (ratio < 0.001), "orta" (0.001-0.01), "düşük" (> 0.01)
+        Returns (None, None) if fewer than 5 price rows or all volumes zero.
+    """
+    result = await db.execute(
+        select(PriceHistory)
+        .where(PriceHistory.stock_id == stock_id)
+        .order_by(PriceHistory.date.desc())
+        .limit(31)
+    )
+    rows = result.scalars().all()
+    # Need at least 5 to compute at least 4 returns (more robust signal)
+    if len(rows) < 5:
+        return (None, None)
+    # Order ascending for return computation (oldest first)
+    rows = list(reversed(rows))
+    amihud_values = []
+    for i in range(1, len(rows)):
+        prev_close = rows[i - 1].close
+        curr_close = rows[i].close
+        vol = rows[i].volume
+        if not prev_close or not vol or vol == 0:
+            continue
+        ret = abs((curr_close - prev_close) / prev_close)
+        amihud_values.append(ret / vol)
+    if not amihud_values:
+        return (None, None)
+    ratio = sum(amihud_values) / len(amihud_values)
+    ratio = min(ratio, 1.0)  # cap at 1.0 for display sanity
+    if ratio < 0.001:
+        score = "yüksek"
+    elif ratio <= 0.01:
+        score = "orta"
+    else:
+        score = "düşük"
+    return (ratio, score)
 
 
 class ScoringEngine:
@@ -406,6 +449,10 @@ class ScoringEngine:
                     stock.data_quality_score = calculate_data_quality_score(fundamental)
                 else:
                     stock.data_quality_score = None
+
+                amihud_ratio, liquidity_score = await calculate_amihud_liquidity(stock.id, db)
+                stock.amihud_ratio = amihud_ratio
+                stock.liquidity_score = liquidity_score
 
                 updated += 1
 
