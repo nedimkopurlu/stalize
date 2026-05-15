@@ -12,6 +12,38 @@ from app.models.stock import Stock
 
 logger = logging.getLogger(__name__)
 
+# ── Türkçe NLP: kural tabanlı duygu sınıflandırıcı ─────────────────────────
+TURKISH_POSITIVE_KEYWORDS = [
+    "artis", "buyume", "kar", "rekor", "guclu", "olumlu", "yukselis",
+    "kazanc", "basari", "ihracat artisi", "temettu", "yatirim", "anlesma",
+    "sozlesme", "ihale", "buyuyor", "artti", "yukseldi", "geri alim",
+    "not artirimi", "gorunum pozitif", "surplus", "beat", "strong", "growth",
+    "upgrade", "rally", "gain", "recovery",
+]
+TURKISH_NEGATIVE_KEYWORDS = [
+    "dusus", "zarar", "kayip", "risk", "zayif", "olumsuz", "kriz",
+    "baski", "gerileme", "endise", "iptal", "ceza", "dava", "sorusturma",
+    "geriledi", "azaldi", "konkordato", "not indirimi", "gorunum negatif",
+    "miss", "weak", "downgrade", "loss", "drop", "fall", "cut", "crash",
+    "tumble", "decline", "probe", "lawsuit",
+]
+
+
+def classify_turkish_sentiment(text: str) -> float:
+    """
+    Türkce ve Ingilizce karma anahtar kelimelerle haber basligini skora cevir.
+    Donus: -1.0 ile +1.0 arasi float (MacroNewsCollector._score_headline ile ayni aralik).
+    """
+    # Türkce karakterleri normalize et
+    mapping = str.maketrans("çğıöşüÇĞİÖŞÜ", "cgiosuCGIOSU")
+    text_norm = text.translate(mapping).lower()
+
+    pos = sum(1 for kw in TURKISH_POSITIVE_KEYWORDS if kw in text_norm)
+    neg = sum(1 for kw in TURKISH_NEGATIVE_KEYWORDS if kw in text_norm)
+    raw = (pos * 0.22) - (neg * 0.22)
+    return max(-1.0, min(1.0, raw))
+
+
 class MacroNewsCollector:
     """
     BIST100 haber ve olay ağı.
@@ -49,18 +81,20 @@ class MacroNewsCollector:
         self._rotation_index = 0
         self._all_bist_symbols = []
 
-        self.surge_keywords = ["surge", "jump", "soar", "spike", "skyrocket", "hike", "rally", "gain", "üstünde", "yükseliş"]
-        self.plunge_keywords = ["plunge", "crash", "tumble", "drop", "fall", "slide", "cut", "decline", "altında", "düşüş"]
-        self.extreme_keywords = ["record", "massive", "extreme", "historic", "shock", "panic", "collapse", "rekor", "şok", "çöküş"]
-        self.positive_keywords = [
-            "beat", "beats", "strong", "growth", "upgrade", "record", "contract",
-            "surge", "soar", "rally", "gain", "recovery", "temettü", "yatırım",
-            "ihale", "anlaşma", "güçlü", "rekor", "artış", "yükseliş",
+        self.surge_keywords = [
+            "surge", "jump", "soar", "spike", "skyrocket", "hike", "rally", "gain",
+            "ustunde", "yukselis", "artti", "rekor", "yukseldi",
+            "üstünde", "yükseliş", "artış",
         ]
-        self.negative_keywords = [
-            "miss", "weak", "downgrade", "loss", "drop", "fall", "cut", "crash",
-            "tumble", "decline", "risk", "probe", "lawsuit", "ceza", "dava",
-            "zarar", "düşüş", "iptal", "soruşturma", "kriz",
+        self.plunge_keywords = [
+            "plunge", "crash", "tumble", "drop", "fall", "slide", "cut", "decline",
+            "altinda", "dusus", "geriledi", "azaldi",
+            "altında", "düşüş", "gerileme",
+        ]
+        self.extreme_keywords = [
+            "record", "massive", "extreme", "historic", "shock", "panic", "collapse",
+            "rekor", "sok", "cokus", "tarihi", "asiri",
+            "şok", "çöküş", "tarihi",
         ]
 
     async def _update_bist100_list(self):
@@ -132,15 +166,7 @@ class MacroNewsCollector:
             return []
 
     def _score_headline(self, headline: str) -> float:
-        headline_lower = headline.lower()
-        positive_hits = sum(1 for w in self.positive_keywords if w in headline_lower)
-        negative_hits = sum(1 for w in self.negative_keywords if w in headline_lower)
-        raw_score = (positive_hits * 0.22) - (negative_hits * 0.22)
-
-        if any(w in headline_lower for w in self.extreme_keywords):
-            raw_score *= 1.25
-
-        return max(-1.0, min(1.0, raw_score))
+        return classify_turkish_sentiment(headline)
 
     def _determine_magnitude(self, headline: str, sentiment_compound: float) -> str:
         headline_lower = headline.lower()
