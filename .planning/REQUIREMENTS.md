@@ -50,7 +50,7 @@
 
 ### UI — Arayüz İyileştirmeleri
 
-- [ ] **UI-01**: Hisse detay sayfası hiyerarşik bölüm yapısına kavuşur (Hero → Skor Özeti → Teknik → Temel → Haberler → Regime → İlgili Hisseler)
+- [x] **UI-01**: Hisse detay sayfası hiyerarşik bölüm yapısına kavuşur (Hero → Skor Özeti → Teknik → Temel → Haberler → Regime → İlgili Hisseler)
 - [ ] **UI-02**: Pozisyon açmadan önce kullanıcıya otomatik doldurulmuş 7 maddelik ön-işlem checklist gösterilir (rejim, likidite, skor, korelasyon, tavan/taban, pozisyon büyüklüğü, çıkış planı)
 
 ### TECH — Tech Debt

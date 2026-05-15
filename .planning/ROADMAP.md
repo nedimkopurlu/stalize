@@ -483,7 +483,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 55-01-PLAN.md — Section hiyerarşisi, sticky sectionNav, Piyasa Rejimi section, id attribute'lar (UI-01)
+- [x] 55-01-PLAN.md — Section hiyerarşisi, sticky sectionNav, Piyasa Rejimi section, id attribute'lar (UI-01)
 - [ ] 55-02-PLAN.md — Pre-trade checklist modal, "Pozisyon Aç" butonu, 7 auto-populated madde (UI-02)
 
 ---
