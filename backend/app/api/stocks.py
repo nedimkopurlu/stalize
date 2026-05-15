@@ -15,6 +15,7 @@ from app.services.technical import technical_engine, compute_volume_ratio
 from app.services.scoring import scoring_engine
 from app.services.gemini_service import gemini_service
 from app.services.investment_decision import DecisionInput, investment_decision_engine
+from app.services.decision_guardrails import decision_guardrail_engine
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -28,6 +29,57 @@ def _finite_or_none(value: Optional[float]) -> Optional[float]:
     except (TypeError, ValueError):
         return None
     return numeric if math.isfinite(numeric) else None
+
+
+def _list_data_quality_score(stock: Stock) -> float:
+    score = 35.0
+    if stock.is_bist30:
+        score += 15
+    elif stock.is_bist100:
+        score += 10
+    elif stock.is_bist250:
+        score += 4
+    score += sum(
+        12
+        for value in (stock.fundamental_score, stock.technical_score, stock.overall_score)
+        if _finite_or_none(value) is not None
+    )
+    if _finite_or_none(stock.sentiment_score) is not None:
+        score += 6
+    last_data_update = getattr(stock, "last_data_update", None)
+    if isinstance(last_data_update, datetime):
+        last_update = last_data_update if last_data_update.tzinfo else last_data_update.replace(tzinfo=timezone.utc)
+        age_hours = (datetime.now(timezone.utc) - last_update).total_seconds() / 3600
+        if age_hours <= 12:
+            score += 8
+        elif age_hours > 48:
+            score -= 8
+    return round(max(0.0, min(100.0, score)), 2)
+
+
+def _list_liquidity(stock: Stock, avg_volume: Optional[float]) -> dict:
+    price = _finite_or_none(stock.current_price)
+    volume = _finite_or_none(avg_volume) or _finite_or_none(stock.volume)
+    traded_value = price * volume if price and volume else None
+    thresholds = decision_guardrail_engine.thresholds
+    if traded_value is None:
+        score = 55.0
+    elif traded_value >= thresholds.institutional_liquidity_traded_value:
+        score = 95.0
+    elif traded_value >= thresholds.high_liquidity_traded_value:
+        score = 82.0
+    elif traded_value >= thresholds.medium_liquidity_traded_value:
+        score = 63.0
+    elif traded_value >= thresholds.low_liquidity_traded_value:
+        score = 42.0
+    else:
+        score = 22.0
+    level = "high" if score >= 70 else "medium" if score >= 45 else "low"
+    return {
+        "score": round(score, 2),
+        "level": level,
+        "avg_traded_value": round(traded_value, 2) if traded_value is not None else None,
+    }
 
 
 @router.get("/stocks")
@@ -150,6 +202,10 @@ async def get_stocks(
                 "industry": s.industry, "current_price": s.current_price,
                 "daily_change_pct": s.daily_change_pct, "volume": s.volume,
                 "volume_ratio": compute_volume_ratio(s.volume, avg_volumes.get(s.id)),
+                "data_quality_score": s.data_quality_score,
+                "liquidity_score": _list_liquidity(s, avg_volumes.get(s.id))["score"],
+                "liquidity_level": _list_liquidity(s, avg_volumes.get(s.id))["level"],
+                "avg_traded_value": _list_liquidity(s, avg_volumes.get(s.id))["avg_traded_value"],
                 "market_cap": s.market_cap, "is_bist30": s.is_bist30,
                 "is_bist100": s.is_bist100,
                 "is_bist250": s.is_bist250,
@@ -289,6 +345,7 @@ async def get_stock_detail(
             "sentiment_score": stock.sentiment_score,
             "overall_score": stock.overall_score,
             "recommendation": stock.recommendation,
+            "data_quality_score": stock.data_quality_score,
             "last_data_update": stock.last_data_update.isoformat() if stock.last_data_update else None,
         },
         "recent_prices": [
@@ -406,11 +463,53 @@ async def get_stock_score_breakdown(
     if not stock:
         raise HTTPException(status_code=404, detail=f"Hisse bulunamadı: {symbol}")
 
-    breakdown = await scoring_engine.get_contextual_score_breakdown(stock)
+    prices_result = await db.execute(
+        select(PriceHistory)
+        .where(PriceHistory.stock_id == stock.id)
+        .order_by(PriceHistory.date.desc())
+        .limit(260)
+    )
+    prices = list(prices_result.scalars().all())
+    market_regime = await decision_guardrail_engine.market_regime(db)
+    guardrails = decision_guardrail_engine.evaluate(stock, prices, market_regime=market_regime)
+
+    breakdown = await scoring_engine.get_contextual_score_breakdown(stock, db=db)
+    guardrail_components = [
+        {
+            "key": "data_quality",
+            "label": "Veri Güveni",
+            "raw_score": guardrails["data_quality"]["score"],
+            "base_weight": 0.0,
+            "normalized_weight": 0.0,
+            "contribution": 0.0,
+            "reason": guardrails["data_quality"]["source_caveat"],
+        },
+        {
+            "key": "liquidity",
+            "label": "Likidite",
+            "raw_score": guardrails["liquidity"]["score"],
+            "base_weight": 0.0,
+            "normalized_weight": 0.0,
+            "contribution": 0.0,
+            "reason": "Ortalama işlem hacmi ve işlem yapılabilirlik kontrolü.",
+        },
+        {
+            "key": "limit_lock",
+            "label": "Tavan/Taban",
+            "raw_score": 100.0 if guardrails["limit_lock"]["status"] == "clear" else 35.0,
+            "base_weight": 0.0,
+            "normalized_weight": 0.0,
+            "contribution": 0.0,
+            "reason": guardrails["limit_lock"]["warning"] or "Son günlerde tavan/taban benzeri hareket saptanmadı.",
+        },
+    ]
+    breakdown["components"].extend(guardrail_components)
+    breakdown["summary"]["available_component_count"] += len(guardrail_components)
     return {
         "symbol": stock.symbol,
         "name": stock.name,
         "breakdown": breakdown,
+        "guardrails": guardrails,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -446,6 +545,7 @@ async def get_stock_decision(
         report = await signal_tracking_service.calibration_report(db, horizon="1w", min_count=1)
         policy = signal_tracking_service.policy_from_report(report)
 
+    market_regime = await decision_guardrail_engine.market_regime(db)
     decision = investment_decision_engine.build_decision(
         DecisionInput(
             stock=stock,
@@ -453,6 +553,7 @@ async def get_stock_decision(
             portfolio_value=portfolio_value,
             risk_per_trade_pct=risk_per_trade_pct,
             policy=policy,
+            market_regime=market_regime,
         )
     )
     decision["generated_at"] = datetime.now(timezone.utc).isoformat()
@@ -498,6 +599,8 @@ async def get_top_signals(
         report = await signal_tracking_service.calibration_report(db, horizon="1w", min_count=1)
         policy = signal_tracking_service.policy_from_report(report)
 
+    market_regime = await decision_guardrail_engine.market_regime(db)
+
     for stock in stocks:
         try:
             decisions.append(
@@ -508,6 +611,7 @@ async def get_top_signals(
                         portfolio_value=portfolio_value,
                         risk_per_trade_pct=risk_per_trade_pct,
                         policy=policy,
+                        market_regime=market_regime,
                     )
                 )
             )
@@ -650,8 +754,15 @@ async def analyze_stock(
 
     decision = None
     try:
+        market_regime = await decision_guardrail_engine.market_regime(db)
         decision = investment_decision_engine.build_decision(
-            DecisionInput(stock=stock, prices=prices, portfolio_value=100_000, risk_per_trade_pct=1)
+            DecisionInput(
+                stock=stock,
+                prices=prices,
+                portfolio_value=100_000,
+                risk_per_trade_pct=1,
+                market_regime=market_regime,
+            )
         )
     except ValueError:
         decision = None
@@ -733,6 +844,13 @@ async def analyze_stock(
 
     if decision:
         entry = decision["entry_zone"]
+        guardrails = decision.get("guardrails", {})
+        checklist = guardrails.get("pre_trade_checklist", [])
+        guardrail_lines = [
+            f"  - {item.get('label')}: {item.get('status')} — {item.get('detail')}"
+            for item in checklist
+        ]
+        guardrail_section = "\n".join(guardrail_lines) if guardrail_lines else "  - Guardrail verisi yok"
         decision_section = f"""  - Karar: {decision["action_label"]} ({decision["confidence"]}/100 güven)
   - Zaman ufku: 2-8 hafta
   - Giriş bölgesi: {entry["low"]:.2f} - {entry["high"]:.2f} TL
@@ -742,6 +860,7 @@ async def analyze_stock(
   - Pozisyon: {decision["position_size"]["shares"]} adet, yaklaşık %{decision["position_size"]["estimated_exposure_pct"]:.2f} portföy"""
     else:
         decision_section = "  - Karar motoru için yeterli fiyat verisi yok"
+        guardrail_section = "  - Guardrail verisi yok"
 
     news_lines = []
     for item in news_items:
@@ -766,6 +885,9 @@ async def analyze_stock(
 ## İşlem Planı
 {decision_section}
 
+## İşlem Öncesi Guardrail Kontrolleri
+{guardrail_section}
+
 ## Teknik Analiz Verileri
 {technical_section}
 
@@ -776,13 +898,15 @@ async def analyze_stock(
 {news_section}
 
 ## Analiz Talimatları
-1. İlk satırda net karar ver: AL / İZLE / UZAK DUR.
-2. "Neden alırım?" bölümünde teknik, temel ve haber kanıtlarını birleştir.
-3. "Neden almam?" bölümünde bu işlemin hangi senaryoda ters gideceğini yaz.
-4. Teknik analizde trend, momentum, destek/direnç, stop ve hedefi ayrı ayrı yorumla.
-5. Temel analizde değerleme, kârlılık, büyüme, bilanço kalitesi ve borç riskini yorumla.
-6. Haber/KAP tarafında olumlu/olumsuz etkileri ve takip edilmesi gereken başlıkları özetle.
-7. Son bölümde giriş bölgesi, stop, hedef, risk/ödül ve pozisyon büyüklüğünü uygulanabilir şekilde yaz.
+1. İlk satırda direkt emir verme; "Yüksek Öncelikli İzleme / Pozitif Görünüm / Nötr İzleme / Riskli Görünüm" dilini kullan.
+2. Guardrail kontrollerinden block/warning varsa pozitif dili mutlaka düşür ve nedenini açıkça yaz.
+3. "Neden takip ederim?" bölümünde teknik, temel ve haber kanıtlarını birleştir.
+4. "Neden vazgeçerim?" bölümünde bu işlemin hangi senaryoda ters gideceğini yaz.
+5. Teknik analizde trend, momentum, destek/direnç, stop ve hedefi ayrı ayrı yorumla.
+6. Temel analizde değerleme, kârlılık, büyüme, bilanço kalitesi ve borç riskini yorumla.
+7. Haber/KAP tarafında olumlu/olumsuz etkileri ve takip edilmesi gereken başlıkları özetle.
+8. Son bölümde giriş bölgesi, stop, hedef, risk/ödül ve pozisyon büyüklüğünü uygulanabilir şekilde yaz.
+9. Temel veriler resmi KAP finansallarıyla doğrulanmamışsa bunu güven notunda belirt.
 
 Türkçe yaz. Kısa ama yoğun olsun. Başlıklar kullan; gereksiz genel piyasa lafı ekleme. Veride yoksa açıkça "veri yok" de."""
 
