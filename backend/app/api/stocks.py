@@ -549,6 +549,67 @@ async def get_stock_score_breakdown(
     }
 
 
+# ─── GET /stocks/{symbol}/position-size ────────────────────────────────────
+
+@router.get("/stocks/{symbol}/position-size")
+async def get_position_size(
+    symbol: str,
+    portfolio_value: float = Query(100000.0, gt=0, description="Portföy büyüklüğü (TRY)"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    PORT-03: ATR tabanlı pozisyon büyüklüğü hesabı.
+    Stop mesafesi = ATR_14 × 2. Risk %1 ve %2 için max lot sayısı döner.
+    atr_14 PriceHistory tablosundan son satırdan okunur (önceden hesaplanmış).
+    """
+    sym = symbol.strip().upper().removesuffix(".IS")
+
+    # Fetch the stock
+    stock_result = await db.execute(
+        select(Stock).where(Stock.symbol == sym, Stock.is_active == True)  # noqa: E712
+    )
+    stock = stock_result.scalar_one_or_none()
+    if stock is None:
+        raise HTTPException(status_code=404, detail=f"Aktif hisse bulunamadı: {sym}")
+
+    # Fetch latest price row
+    price_result = await db.execute(
+        select(PriceHistory)
+        .where(PriceHistory.stock_id == stock.id, PriceHistory.close.is_not(None))
+        .order_by(PriceHistory.date.desc())
+        .limit(1)
+    )
+    latest_price = price_result.scalar_one_or_none()
+
+    if latest_price is None:
+        raise HTTPException(status_code=404, detail=f"Fiyat geçmişi bulunamadı: {sym}")
+
+    current_price = float(latest_price.close)
+    atr_14 = float(latest_price.atr_14) if latest_price.atr_14 is not None else None
+
+    stop_distance = round(atr_14 * 2, 4) if atr_14 is not None else None
+    risk_1pct = round(portfolio_value * 0.01, 2)
+    risk_2pct = round(portfolio_value * 0.02, 2)
+
+    max_shares_1pct = None
+    max_shares_2pct = None
+    if stop_distance is not None and stop_distance > 0:
+        max_shares_1pct = int(risk_1pct / stop_distance)
+        max_shares_2pct = int(risk_2pct / stop_distance)
+
+    return {
+        "symbol": sym,
+        "current_price": current_price,
+        "atr_14": atr_14,
+        "stop_distance": stop_distance,
+        "portfolio_value": portfolio_value,
+        "risk_amount_1pct": risk_1pct,
+        "risk_amount_2pct": risk_2pct,
+        "max_shares_1pct": max_shares_1pct,
+        "max_shares_2pct": max_shares_2pct,
+    }
+
+
 @router.get("/stocks/{symbol}/decision")
 async def get_stock_decision(
     symbol: str,
