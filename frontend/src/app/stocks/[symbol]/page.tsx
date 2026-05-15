@@ -14,6 +14,7 @@ import {
 import api, {
   InvestmentDecision,
   MarketRegimeResponse,
+  PositionSizeResponse,
   PricePoint,
   ScoreBreakdownResponse,
   StockAnalysisResponse,
@@ -312,6 +313,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
   const [decision, setDecision] = useState<InvestmentDecision | null>(null);
   const [news, setNews] = useState<StockNewsItem[]>([]);
   const [regime, setRegime] = useState<MarketRegimeResponse | null>(null);
+  const [positionSize, setPositionSize] = useState<PositionSizeResponse | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [chartError, setChartError] = useState<string | null>(null);
@@ -391,6 +393,20 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
       .catch(() => setNews([]));
 
     api.getMarketRegime().then(setRegime).catch(() => null);
+
+    // PORT-03: Pozisyon büyüklüğü — portföy değerini aktif pozisyonlardan hesapla
+    api.getPortfolioPositions()
+      .then((positions) => {
+        const activePositions = positions.filter((p) => p.is_active !== false);
+        const tv = activePositions.reduce(
+          (s, p) => s + (p.current_price ?? p.entry_price) * p.quantity,
+          0,
+        );
+        const portfolioValue = tv > 0 ? tv : 100000;
+        return api.getPositionSize(symbol, portfolioValue);
+      })
+      .then((r) => setPositionSize(r))
+      .catch(() => setPositionSize(null));
   }, [symbol]);
 
   useEffect(() => {
@@ -951,6 +967,64 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             <p className={styles.breakdownNote}>
               Skor, mevcut bileşenlerin normalize edilmiş ağırlıklı ortalamasıdır. Eksik bileşen varsa ağırlıklar yeniden dağıtılır.
             </p>
+          </section>
+        )}
+
+        {/* ─── PORT-03: Pozisyon Büyüklüğü Rehberi ─── */}
+        {positionSize && (
+          <section className={styles.positionSizeSection}>
+            <div className={styles.positionSizeCard}>
+              <p className={styles.positionSizeEyebrow}>POZİSYON BÜYÜKLÜĞÜ REHBERİ</p>
+              <h2 className={styles.positionSizeTitle}>Volatilite bazlı lot önerisi</h2>
+              <div className={styles.positionSizeGrid}>
+                <div className={styles.positionSizeItem}>
+                  <span className={styles.positionSizeLabel}>Güncel Fiyat</span>
+                  <span className={styles.positionSizeValue}>{formatPrice(positionSize.current_price)}</span>
+                </div>
+                <div className={styles.positionSizeItem}>
+                  <span className={styles.positionSizeLabel}>ATR (14 gün)</span>
+                  <span className={styles.positionSizeValue}>
+                    {positionSize.atr_14 != null ? positionSize.atr_14.toFixed(2) : '—'}
+                  </span>
+                </div>
+                <div className={styles.positionSizeItem}>
+                  <span className={styles.positionSizeLabel}>Stop Mesafesi (ATR×2)</span>
+                  <span className={styles.positionSizeValue}>
+                    {positionSize.stop_distance != null ? positionSize.stop_distance.toFixed(2) : '—'}
+                  </span>
+                </div>
+                <div className={styles.positionSizeItem}>
+                  <span className={styles.positionSizeLabel}>Portföy Değeri</span>
+                  <span className={styles.positionSizeValue}>
+                    {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(positionSize.portfolio_value)}
+                  </span>
+                </div>
+              </div>
+              <div className={styles.positionSizeRiskGrid}>
+                <div className={styles.positionSizeRiskCol}>
+                  <span className={styles.positionSizeRiskLabel}>%1 Risk</span>
+                  <span className={styles.positionSizeRiskAmount}>
+                    {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(positionSize.risk_amount_1pct)}
+                  </span>
+                  <span className={styles.positionSizeRiskShares}>
+                    {positionSize.max_shares_1pct != null ? `${positionSize.max_shares_1pct} lot` : '—'}
+                  </span>
+                </div>
+                <div className={styles.positionSizeRiskDivider} />
+                <div className={styles.positionSizeRiskCol}>
+                  <span className={styles.positionSizeRiskLabel}>%2 Risk</span>
+                  <span className={styles.positionSizeRiskAmount}>
+                    {new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(positionSize.risk_amount_2pct)}
+                  </span>
+                  <span className={styles.positionSizeRiskShares}>
+                    {positionSize.max_shares_2pct != null ? `${positionSize.max_shares_2pct} lot` : '—'}
+                  </span>
+                </div>
+              </div>
+              <p className={styles.positionSizeNote}>
+                Stop mesafesi ATR×2. Risk miktarını aşmamak için önerilen maksimum lot sayısı.
+              </p>
+            </div>
           </section>
         )}
 
