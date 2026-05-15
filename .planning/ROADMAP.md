@@ -465,7 +465,11 @@ Plans:
   1. Backtest simülasyonu BIST30 hisseleri için 10bps, sıra 30-70 için 20bps, sıra 70-100 için 40bps slipaj modeli uygular; ayrıca %0.1 işlem komisyonu hesaba katılır; sonuçlar mevcut ham sonuçlardan farklılaşır.
   2. `/backtest` sayfasında sonuçlar rejim bazında filtrelenebilir (Boğa / Ayı / Yatay / Volatil dönem performans karşılaştırması); her rejim için ayrı metrikler gösterilir.
   3. Kullanıcı, farklı piyasa koşullarında sinyallerin nasıl performans gösterdiğini karşılaştırmalı tabloda görür; "Boğa piyasasında %X başarı, Ayı piyasasında %Y başarı" gibi somut metrikler sunulur.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 54-01-PLAN.md — Backend: slipaj/komisyon maliyet fonksiyonu, rejim etiketleme, calibration by_regime kırılımı, regime endpoint filtreleri
+- [ ] 54-02-PLAN.md — Frontend: api.ts type güncellemeleri, rejim kırılım tablosu, rejim filtresi, slipaj KPI kartı
 
 ### Phase 55: UI — Hisse Detay & Ön-işlem Checklist
 **Goal**: Hisse detay sayfası hiyerarşik bölüm yapısına kavuşur; kullanıcı pozisyon açmadan önce otomatik doldurulmuş 7 maddelik ön-işlem checklist görür.
