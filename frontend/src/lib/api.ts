@@ -541,6 +541,7 @@ export interface SignalOutcomeItem {
   outcome_1m: 'success' | 'partial' | 'failure' | null;
   generated_at: string | null;
   evaluated_at: string | null;
+  regime: string | null;
 }
 
 export interface SignalOutcomesResponse {
@@ -582,6 +583,13 @@ export interface SignalCalibrationResponse {
     block_high_risk_buys: boolean;
     reasons: string[];
   };
+  by_regime: SignalCalibrationBucket[];
+  by_slippage_cost: {
+    assumed_round_trip_cost_pct: number;
+    gross_avg_return_pct: number | null;
+    net_avg_return_pct: number | null;
+    note: string;
+  } | null;
 }
 
 export interface StockNewsItem {
@@ -1184,11 +1192,15 @@ export const api = {
       method: 'POST',
     }),
 
-  getSignalOutcomes: (limit: number = 20, horizon: '1w' | '1m' = '1w') =>
-    apiFetch<SignalOutcomesResponse>(`/signals/outcomes?limit=${limit}&horizon=${horizon}`),
+  getSignalOutcomes: (limit: number = 20, horizon: '1w' | '1m' = '1w', regime?: string) =>
+    apiFetch<SignalOutcomesResponse>(
+      `/signals/outcomes?limit=${limit}&horizon=${horizon}${regime ? `&regime=${encodeURIComponent(regime)}` : ''}`
+    ),
 
-  getSignalCalibration: (horizon: '1w' | '1m' = '1w', minCount: number = 1) =>
-    apiFetch<SignalCalibrationResponse>(`/signals/calibration?horizon=${horizon}&min_count=${minCount}`),
+  getSignalCalibration: (horizon: '1w' | '1m' = '1w', minCount: number = 1, regime?: string) =>
+    apiFetch<SignalCalibrationResponse>(
+      `/signals/calibration?horizon=${horizon}&min_count=${minCount}${regime ? `&regime=${encodeURIComponent(regime)}` : ''}`
+    ),
 
   getStockFundamentals: (symbol: string) =>
     apiFetch<StockFundamentals>(`/stocks/${symbol}/fundamentals`),
