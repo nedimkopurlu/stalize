@@ -377,7 +377,12 @@ Full details: `.planning/milestones/v6.0-ROADMAP.md`
   2. Yfinance'ten gelen fundamental değer USD cinsinden görünüyorsa (örn. çok küçük F/K, beklenmedik oran) sistem otomatik "düşük güven" bayrağı koyar; kullanıcı bu veriye dayanarak karar almaya yönlendirilmez.
   3. `safeLabel()` fonksiyonu `StockHelpers.tsx`'te tek kaynak olarak tanımlanır; 5 sayfadaki inline kopyalar bu tek kaynaktan import edilir; kod tabanında duplikasyon kalmaz.
   4. `stocks.data_quality_score` sütunu Alembic migration ile DB'ye eklenir; mevcut kayıtlar `null` ile başlar, ilk hesaplama sonrası güncellenir.
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 48-01-PLAN.md — DB migration 008 + calculate_data_quality_score + API serialization (VKL-01, VKL-02)
+- [ ] 48-02-PLAN.md — safeLabel consolidation into StockHelpers.tsx; 3 pages updated (TECH-01)
+- [ ] 48-03-PLAN.md — Frontend quality badge (stocks list) + Veri Güven Skoru row (detail page) (VKL-01, VKL-02)
 
 ### Phase 49: Veri Zenginleştirme
 **Goal**: Kullanıcı, tavan/taban durumundaki hisseleri anında fark eder ve ince piyasalı hisselerde likidite uyarısıyla karşılaşır; KAP duyuruları kategori badge'iyle gösterilir.
