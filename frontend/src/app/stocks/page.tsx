@@ -282,6 +282,12 @@ export default function StocksPage() {
                         {stock.daily_change_pct !== null
                           ? `${isUp ? '+' : ''}${stock.daily_change_pct.toFixed(2)}%`
                           : '—'}
+                        {(stock.daily_change_pct ?? 0) >= 9.8 && (
+                          <span className={styles.tavanBadge}>TAVAN</span>
+                        )}
+                        {(stock.daily_change_pct ?? 0) <= -9.8 && (
+                          <span className={styles.tabanBadge}>TABAN</span>
+                        )}
                       </td>
                       <td className={`${styles.td} ${styles.tdRight} ${styles.hideMobile}`}>
                         <div className={styles.integrityCell}>
@@ -338,6 +344,12 @@ export default function StocksPage() {
                           >
                             DK: {Math.round(stock.data_quality_score)}
                           </span>
+                        )}
+                        {stock.liquidity_score === 'düşük' && (
+                          <span className={styles.liquidityBadgeLow} title="Düşük likidite">Düşük Lik.</span>
+                        )}
+                        {stock.liquidity_score === 'orta' && (
+                          <span className={styles.liquidityBadgeMedium} title="Orta likidite">Orta Lik.</span>
                         )}
                       </td>
                       <td className={styles.tdStar}>☆</td>

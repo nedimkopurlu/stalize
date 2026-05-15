@@ -382,3 +382,61 @@
 .qualityHigh {
   color: var(--accent-green);
 }
+
+/* ── Tavan/Taban badges ──────────────────────────────────── */
+.tavanBadge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background: var(--accent-green);
+  color: #fff;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+
+.tabanBadge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background: var(--accent-red);
+  color: #fff;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+
+/* ── Liquidity badge ─────────────────────────────────────── */
+.liquidityBadgeLow {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(255, 80, 80, 0.15);
+  color: var(--accent-red);
+  border: 1px solid rgba(255, 80, 80, 0.3);
+  vertical-align: middle;
+  line-height: 1.4;
+}
+
+.liquidityBadgeMedium {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(200, 150, 0, 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(200, 150, 0, 0.25);
+  vertical-align: middle;
+  line-height: 1.4;
+}
