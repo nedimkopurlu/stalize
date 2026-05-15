@@ -1397,3 +1397,118 @@
   margin-left: 8px;
   font-weight: 600;
 }
+
+/* ── Circuit breaker badges ─────────────────────────────── */
+.tavanBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: var(--accent-green);
+  color: #fff;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.tabanBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: var(--accent-red);
+  color: #fff;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* ── Liquidity section ───────────────────────────────────── */
+.liquidityRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.liquidityWarning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(255, 80, 80, 0.08);
+  border: 1px solid rgba(255, 80, 80, 0.25);
+  color: var(--accent-red);
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+.liquidityBadge {
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.liquidityBadgeLow {
+  background: rgba(255, 80, 80, 0.15);
+  color: var(--accent-red);
+  border: 1px solid rgba(255, 80, 80, 0.3);
+}
+
+.liquidityBadgeMedium {
+  background: rgba(200, 150, 0, 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(200, 150, 0, 0.25);
+}
+
+.liquidityBadgeHigh {
+  background: rgba(80, 200, 80, 0.12);
+  color: var(--accent-green);
+  border: 1px solid rgba(80, 200, 80, 0.25);
+}
+
+/* ── KAP category badge ──────────────────────────────────── */
+.kapCategoryBadge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-right: 6px;
+  vertical-align: middle;
+  border: 1px solid transparent;
+}
+
+.kapCategoryBadgeDefault {
+  background: var(--bg-card, rgba(255,255,255,0.05));
+  color: var(--text-muted);
+  border-color: rgba(128,128,128,0.2);
+}
+
+.kapCategoryBadgeHighImpact {
+  background: rgba(255, 80, 80, 0.12);
+  color: var(--accent-red);
+  border-color: rgba(255, 80, 80, 0.3);
+}
+
+.kapCategoryBadgePositive {
+  background: rgba(80, 200, 80, 0.12);
+  color: var(--accent-green);
+  border-color: rgba(80, 200, 80, 0.25);
+}
+
+.kapCategoryBadgeAmber {
+  background: rgba(200, 150, 0, 0.12);
+  color: var(--accent);
+  border-color: rgba(200, 150, 0, 0.25);
+}

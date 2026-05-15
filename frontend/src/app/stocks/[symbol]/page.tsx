@@ -86,6 +86,16 @@ function PlanMetric({
   );
 }
 
+function kapCategoryBadgeClass(category: string | null | undefined): string {
+  if (!category) return '';
+  const highImpact = ['İçeriden Öğrenme', 'Hukuki', 'Sermaye Artırımı'];
+  const positive = ['Temettü', 'Pay Geri Alımı'];
+  if (highImpact.includes(category)) return styles.kapCategoryBadgeHighImpact;
+  if (positive.includes(category)) return styles.kapCategoryBadgePositive;
+  if (category === 'Finansal Sonuçlar') return styles.kapCategoryBadgeAmber;
+  return styles.kapCategoryBadgeDefault;
+}
+
 function NewsRow({ item }: { item: StockNewsItem }) {
   const content = (
     <>
@@ -94,6 +104,11 @@ function NewsRow({ item }: { item: StockNewsItem }) {
         <span>{item.source || 'Kaynak yok'}</span>
         <span data-sentiment={item.sentiment_label || 'neutral'}>{sentimentLabel(item)}</span>
       </div>
+      {item.kap_category && (
+        <span className={`${styles.kapCategoryBadge} ${kapCategoryBadgeClass(item.kap_category)}`}>
+          {item.kap_category}
+        </span>
+      )}
       <strong>{item.title}</strong>
       {item.summary && <p>{item.summary}</p>}
     </>
@@ -618,6 +633,12 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                   <span className={styles.heroPriceChangeDate}>Bugün · itibarıyla</span>
                 </div>
               )}
+              {(s.daily_change_pct ?? 0) >= 9.8 && (
+                <span className={styles.tavanBadge}>⬆ TAVAN</span>
+              )}
+              {(s.daily_change_pct ?? 0) <= -9.8 && (
+                <span className={styles.tabanBadge}>⬇ TABAN</span>
+              )}
             </div>
 
             {/* Quick stats row — fills the vertical gap in heroLeft */}
@@ -834,6 +855,30 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                     )}
                   </span>
                 </div>
+              </div>
+            )}
+
+            {s.liquidity_score && (
+              <div className={styles.liquidityRow}>
+                <span>Likidite:</span>
+                <span
+                  className={`${styles.liquidityBadge} ${
+                    s.liquidity_score === 'düşük'
+                      ? styles.liquidityBadgeLow
+                      : s.liquidity_score === 'orta'
+                        ? styles.liquidityBadgeMedium
+                        : styles.liquidityBadgeHigh
+                  }`}
+                >
+                  {s.liquidity_score === 'yüksek' ? 'Yüksek Likidite'
+                   : s.liquidity_score === 'orta' ? 'Orta Likidite'
+                   : 'Düşük Likidite'}
+                </span>
+              </div>
+            )}
+            {s.liquidity_score === 'düşük' && (
+              <div className={styles.liquidityWarning}>
+                Bu hisse ince piyasalıdır. Alım/satım emirleri beklenen fiyattan işlem görmeyebilir.
               </div>
             )}
 
