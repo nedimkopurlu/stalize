@@ -40,6 +40,12 @@ class Stock(Base):
     liquidity_score = Column(String(20), nullable=True)   # "yüksek" / "orta" / "düşük"
     amihud_ratio = Column(Float, nullable=True)
 
+    # Sector scoring
+    sector_category = Column(String(20), nullable=True)   # "banka" / "gyo" / "holding" / None
+    sector_score = Column(Float, nullable=True)           # 0-100 sektör skoru
+    sector_scoring_method = Column(String(50), nullable=True)  # "F/DD+ROE" / "P/D NAV Proxy" / "NAV İskontosu"
+    nav_discount = Column(Float, nullable=True)           # Holding NAV iskontosu (oran)
+
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
