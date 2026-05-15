@@ -394,7 +394,10 @@ Plans:
   3. KAP duyuruları otomatik olarak tip koduna göre kategorize edilir (Finansal Sonuçlar, Temettü, Sermaye Artırımı, İçeriden Öğrenme, Düzenleyici); sınıflandırılamayan duyurular "Diğer" kategorisine düşer.
   4. Hisse detay sayfasındaki KAP listesinde her duyurunun yanında kategori badge'i görünür; Temettü ve Sermaye Artırımı kategorileri vurgulanır.
   5. `price_history.is_tavan`, `price_history.is_taban` ve `stocks.liquidity_score`, `stocks.liquidity_label` sütunları Alembic migration ile eklenir.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 49-01-PLAN.md — Backend: migration 009, Amihud computation, KAP category classification, API fields
+- [ ] 49-02-PLAN.md — Frontend: tavan/taban badge, liquidity badge, KAP category badges
 
 ### Phase 50: Market Regime Engine
 **Goal**: Sistem, BIST100 piyasa rejimini otomatik olarak tespit eder ve bu bilgi hem dashboard'da hem hisse detay sayfasında görünür hale gelir.
