@@ -12,6 +12,8 @@ from app.models.model_portfolio import ModelPortfolioWeek, ModelPortfolioHolding
 from app.models.source_health import SourceHealthRun
 from app.models.fund_snapshot import TefasFundSnapshot
 from app.models.bist_datastore import BistDatastoreFileSnapshot
+from app.models.signal import SignalDecisionSnapshot
+from app.models.market_regime import MarketRegime
 
 __all__ = [
     "Stock",
@@ -32,4 +34,6 @@ __all__ = [
     "SourceHealthRun",
     "TefasFundSnapshot",
     "BistDatastoreFileSnapshot",
+    "SignalDecisionSnapshot",
+    "MarketRegime",
 ]
