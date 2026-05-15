@@ -454,7 +454,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 53-01-PLAN.md — Backend: KAP OpenAI batch sentiment, Türkçe keyword classifier, vaderSentiment kaldırma
+- [x] 53-01-PLAN.md — Backend: KAP OpenAI batch sentiment, Türkçe keyword classifier, vaderSentiment kaldırma
 - [ ] 53-02-PLAN.md — Frontend: sentiment label Türkçe uyum, CSS renk kuralları genişletme
 
 ### Phase 54: Backtest Kalitesi

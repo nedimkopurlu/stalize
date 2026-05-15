@@ -40,8 +40,8 @@
 
 ### NLP — Türkçe Sentiment
 
-- [ ] **NLP-01**: VADER kaldırılır; KAP duyuruları mevcut OpenAI GPT-4o-mini entegrasyonu üzerinden Türkçe sentiment analizine tabi tutulur (batch, APScheduler ile)
-- [ ] **NLP-02**: RSS haber akışları keyword tabanlı Türkçe kural seti ile sınıflandırılır (pozitif/negatif/nötr); VADER bağımlılığı tamamen kaldırılır
+- [x] **NLP-01**: VADER kaldırılır; KAP duyuruları mevcut OpenAI GPT-4o-mini entegrasyonu üzerinden Türkçe sentiment analizine tabi tutulur (batch, APScheduler ile)
+- [x] **NLP-02**: RSS haber akışları keyword tabanlı Türkçe kural seti ile sınıflandırılır (pozitif/negatif/nötr); VADER bağımlılığı tamamen kaldırılır
 
 ### BACK — Backtest Kalitesi
 
