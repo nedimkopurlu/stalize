@@ -217,6 +217,10 @@ async def get_stocks(
                 "sentiment_score": s.sentiment_score,
                 "overall_score": s.overall_score,
                 "recommendation": s.recommendation,
+                "sector_category": s.sector_category,
+                "sector_score": s.sector_score,
+                "sector_scoring_method": s.sector_scoring_method,
+                "nav_discount": s.nav_discount,
                 "updated_at": s.updated_at.isoformat() if s.updated_at else None,
             }
             for s in stocks
@@ -351,6 +355,10 @@ async def get_stock_detail(
             "data_quality_score": stock.data_quality_score,
             "liquidity_score": stock.liquidity_score,
             "amihud_ratio": stock.amihud_ratio,
+            "sector_category": stock.sector_category,
+            "sector_score": stock.sector_score,
+            "sector_scoring_method": stock.sector_scoring_method,
+            "nav_discount": stock.nav_discount,
             "last_data_update": stock.last_data_update.isoformat() if stock.last_data_update else None,
         },
         "recent_prices": [
@@ -510,10 +518,32 @@ async def get_stock_score_breakdown(
     ]
     breakdown["components"].extend(guardrail_components)
     breakdown["summary"]["available_component_count"] += len(guardrail_components)
+
+    if stock.sector_scoring_method and stock.sector_score is not None:
+        sector_note_map = {
+            "F/DD+ROE": "Banka sektörü: F/DD (P/TBV) %60 + ROE %40 ağırlıklı skor; standart PE/PB uygulanmaz.",
+            "P/D NAV Proxy": "GYO sektörü: P/D değeri NAD yaklaşımı olarak kullanıldı. Gerçek NAD verisi mevcut değil.",
+            "NAV İskontosu": "Holding: halka açık bağlı ortaklık piyasa değerleri toplamından NAV iskontosu hesaplandı.",
+        }
+        sector_component = {
+            "key": "sector_score",
+            "label": stock.sector_scoring_method,
+            "raw_score": round(float(stock.sector_score), 2),
+            "base_weight": 0.0,
+            "normalized_weight": 0.0,
+            "contribution": 0.0,
+            "reason": sector_note_map.get(stock.sector_scoring_method, "Sektöre özgü skor."),
+        }
+        breakdown["components"].append(sector_component)
+        breakdown["summary"]["available_component_count"] += 1
+
     return {
         "symbol": stock.symbol,
         "name": stock.name,
         "breakdown": breakdown,
+        "sector_category": stock.sector_category,
+        "sector_scoring_method": stock.sector_scoring_method,
+        "nav_discount": stock.nav_discount,
         "guardrails": guardrails,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
