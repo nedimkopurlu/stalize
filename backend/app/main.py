@@ -79,13 +79,21 @@ def _should_run_startup_refresh(source_key: str, runtime: dict) -> bool:
     return age_hours >= _startup_refresh_due_hours(source_key)
 
 async def background_kap_scan():
-    from app.services.kap_parser import run_kap_scan
+    from app.services.kap_parser import run_kap_scan, kap_parser
     from app.services.scoring import scoring_engine
     logging.info("JOB_START source=kap")
     try:
-        stored = await run_kap_scan()
+        stored, stored_ids = await run_kap_scan()
         if stored > 0:
             await scoring_engine.update_all_scores()
+        # Yeni KAP duyuruları için OpenAI batch sentiment analizi
+        if stored_ids:
+            try:
+                await kap_parser.analyze_kap_sentiment_batch(stored_ids)
+                logging.info("KAP_SENTIMENT_BATCH tamamlandi item_count=%d", len(stored_ids))
+            except Exception as sentiment_err:
+                # Sentiment hatası taramayı durdurmasın
+                logging.warning("KAP_SENTIMENT_BATCH hatasi: %s", sentiment_err)
     except Exception as e:
         logging.error(f"KAP Tarama Hatası: {e}")
 
