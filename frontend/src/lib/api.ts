@@ -1039,6 +1039,16 @@ export interface LowCorrelationPairsResponse {
 export interface Bist100HistoryPoint { date: string; close: number; }
 export interface Bist100HistoryResponse { points: Bist100HistoryPoint[]; count: number; }
 
+// ── Market Regime Interface (Phase 50) ─────────────────────
+
+export interface MarketRegimeResponse {
+  regime: 'Boğa' | 'Ayı' | 'Yatay' | 'Volatil' | string;
+  date: string;
+  adx: number | null;
+  ema200: number | null;
+  atr: number | null;
+}
+
 // ── Market Interfaces (Phase 29) ───────────────────────────
 
 export interface MarketBist100Response {
@@ -1242,6 +1252,8 @@ export const api = {
   getMarketGold: () => apiFetch<MarketGoldResponse>('/market/gold'),
 
   getMarketBist100History: (days = 30) => apiFetch<Bist100HistoryResponse>(`/market/bist100/history?days=${days}`),
+
+  getMarketRegime: () => apiFetch<MarketRegimeResponse>('/market-regime'),
 };
 
 export default api;
