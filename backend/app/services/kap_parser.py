@@ -9,6 +9,7 @@ Kaynaklar:
 - KAP XML API: https://www.kap.org.tr (veri tabanı sorguları)
 """
 
+import json
 import logging
 import re
 from datetime import datetime, timedelta, timezone
@@ -229,16 +230,17 @@ class KAPParser:
 
         return announcements
 
-    async def store_announcements(self, announcements: List[Dict]) -> int:
+    async def store_announcements(self, announcements: List[Dict]):
         """
         Bildirimleri veritabanına kaydet.
-        
+
         Returns:
-            Kaydedilen benzersiz bildiri sayısı
+            tuple[int, list[int]]: (kaydedilen_sayı, yeni_kayıt_id_listesi)
         """
         async with AsyncSessionLocal() as db:
             stored_count = 0
-            
+            stored_ids: list[int] = []
+
             for ann in announcements:
                 try:
                     # Duplikasyon kontrol — (source, url) çifti yeterli
@@ -250,17 +252,17 @@ class KAPParser:
                     )
                     if result.scalar_one_or_none():
                         continue  # Zaten var, atla
-                    
+
                     # Hisseyi bul
                     stock_result = await db.execute(
                         select(Stock).where(Stock.symbol == ann['symbol'].upper())
                     )
                     stock = stock_result.scalar_one_or_none()
-                    
+
                     if not stock:
                         logger.warning(f"Hisse bulunamadı: {ann['symbol']}")
                         continue
-                    
+
                     event_type = ann.get("event_type") or self._classify_event(ann["title"])
                     analysis = self._analyze_announcement(ann["title"], event_type)
 
@@ -281,21 +283,124 @@ class KAPParser:
                         is_processed=False,
                     )
                     db.add(news)
+                    await db.flush()
+                    stored_ids.append(news.id)
                     self._apply_stock_sentiment(stock, news.sentiment_score, news.importance_score)
                     stored_count += 1
-                    
+
                 except Exception as e:
                     logger.warning(f"Haber kaydı hatası ({ann['symbol']}): {e}")
                     continue
-            
+
             try:
                 await db.commit()
                 logger.info(f"✅ {stored_count} KAP bildirimi veritabanına kaydedildi")
             except Exception as e:
                 logger.error(f"Commit hatası: {e}")
                 await db.rollback()
-            
-            return stored_count
+
+            return stored_count, stored_ids
+
+    async def analyze_kap_sentiment_batch(self, news_ids: list[int]) -> None:
+        """
+        Belirtilen NewsItem ID'leri için OpenAI GPT-4o-mini ile batch sentiment analizi yapar.
+        Sonuçları DB'deki sentiment_label alanına yazar.
+
+        Args:
+            news_ids: Analiz edilecek NewsItem id listesi
+        """
+        if not news_ids:
+            return
+
+        from app.services.gemini_service import gemini_service
+
+        if not gemini_service._configured:
+            logger.warning(
+                "KAP_SENTIMENT_BATCH atlandı: OpenAI yapılandırılmamış (OPENAI_API_KEY eksik)."
+            )
+            return
+
+        BATCH_SIZE = 20
+        for i in range(0, len(news_ids), BATCH_SIZE):
+            batch = news_ids[i : i + BATCH_SIZE]
+            await self._process_sentiment_batch(batch)
+
+    async def _process_sentiment_batch(self, batch_ids: list[int]) -> None:
+        """
+        Verilen ID'lere ait KAP haberlerini OpenAI ile toplu değerlendirip
+        DB'deki sentiment_label alanını günceller.
+        """
+        from app.services.gemini_service import gemini_service
+
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(
+                select(NewsItem).where(NewsItem.id.in_(batch_ids))
+            )
+            items = result.scalars().all()
+
+            if not items:
+                return
+
+            texts = [
+                f"{item.title or ''} {item.summary or ''}".strip()[:300]
+                for item in items
+            ]
+            numbered_list = "\n".join(f"{idx + 1}. {t}" for idx, t in enumerate(texts))
+
+            prompt = (
+                f"Asagidaki {len(items)} KAP duyurusunu tek tek degerlendir.\n"
+                "Her birini yalnizca 'pozitif', 'negatif' veya 'notr' olarak siniflandir.\n"
+                "Yanit olarak SADECE JSON array dondur, baska aciklama ekleme.\n"
+                'Ornek: ["pozitif", "notr", "negatif"]\n\n'
+                f"{numbered_list}"
+            )
+            system_prompt = (
+                "Sen bir Turk borsa uzmansin. "
+                "Verilen KAP duyurularini yatirimci bakis acisindan siniflandir."
+            )
+
+            try:
+                raw = await gemini_service.generate(
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                    model="gpt-4o-mini",
+                )
+
+                # JSON array'i çıkar
+                start = raw.find("[")
+                end = raw.rfind("]")
+                if start == -1 or end == -1:
+                    logger.warning("KAP_SENTIMENT_BATCH: JSON array bulunamadı: %s", raw[:200])
+                    return
+
+                labels_tr: list[str] = json.loads(raw[start : end + 1])
+
+            except Exception as parse_err:
+                logger.warning("KAP_SENTIMENT_BATCH parse hatası: %s", parse_err)
+                return
+
+            tr_to_en = {
+                "pozitif": "positive",
+                "negatif": "negative",
+                "notr": "neutral",
+                "nötr": "neutral",
+            }
+
+            try:
+                for idx, item in enumerate(items):
+                    if idx >= len(labels_tr):
+                        break
+                    en_label = tr_to_en.get(labels_tr[idx].lower().strip(), "neutral")
+                    item.sentiment_label = en_label
+                    item.is_processed = True
+
+                await db.commit()
+                logger.info(
+                    "KAP_SENTIMENT_BATCH DB güncellendi batch_size=%d", len(items)
+                )
+            except Exception as db_err:
+                logger.error("KAP_SENTIMENT_BATCH DB commit hatası: %s", db_err)
+                await db.rollback()
     
     def _parse_date(self, date_str: str) -> Optional[datetime]:
         """Parse RFC 2822 tarih formatını."""
@@ -617,28 +722,31 @@ class KAPParser:
 kap_parser = KAPParser()
 
 
-async def run_kap_scan() -> int:
+async def run_kap_scan():
     """
     Düzenli KAP taraması (arka plan görevi).
     APScheduler tarafından her 5 dakikada çağrılır.
+
+    Returns:
+        tuple[int, list[int]]: (stored_count, stored_ids)
     """
     logger.info("🔴 KAP Tarayıcısı Başlıyor...")
-    
+
     try:
         # Yeni bildirimleri çek
         announcements = await kap_parser.fetch_latest_announcements()
-        
+
         # Veritabanına kaydet
-        stored = await kap_parser.store_announcements(announcements)
+        stored, stored_ids = await kap_parser.store_announcements(announcements)
         record_source_success(
             "kap",
             detail={"fetched_count": len(announcements), "stored_count": stored},
         )
-        
+
         logger.info(f"🟢 KAP Taraması Tamamlandı: {stored} yeni bildiri")
-        return stored
-        
+        return stored, stored_ids
+
     except Exception as e:
         logger.error(f"KAP taraması başarısız: {e}")
         record_source_failure("kap", str(e))
-        return 0
+        return 0, []
