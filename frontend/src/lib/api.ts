@@ -53,7 +53,8 @@ export interface StockSummary {
   volume: number | null;
   volume_ratio: number | null;
   data_quality_score?: number | null;
-  liquidity_score?: number | null;
+  liquidity_score?: string | null;    // "yüksek" | "orta" | "düşük"
+  amihud_ratio?: number | null;
   liquidity_level?: 'low' | 'medium' | 'high' | string | null;
   avg_traded_value?: number | null;
   market_cap: number | null;
@@ -589,6 +590,7 @@ export interface StockNewsItem {
   sentiment_score: number | null;
   sentiment_label: string | null;
   importance_score: number | null;
+  kap_category?: string | null;
 }
 
 /** Alias for KAP/news items used by KAPNewsCard */
