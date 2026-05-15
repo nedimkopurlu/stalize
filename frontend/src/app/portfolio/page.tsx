@@ -5,7 +5,7 @@ import Link from 'next/link';
 import AppShell from '@/components/AppShell';
 import { formatPrice, formatVolume } from '@/components/StockHelpers';
 import BistComparisonChart from '@/components/BistComparisonChart';
-import api, { PortfolioHistoryResponse, PortfolioPosition, PortfolioRiskResponse, StockSummary } from '@/lib/api';
+import api, { PortfolioAnalyticsResponse, PortfolioHistoryResponse, PortfolioPosition, PortfolioRiskResponse, StockSummary } from '@/lib/api';
 import styles from './page.module.css';
 
 const PERIOD_OPTIONS = ['1H', '1A', '3A', '6A', '1Y', 'TÜMÜ'] as const;
@@ -241,6 +241,8 @@ export default function PortfolioPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [riskGuard, setRiskGuard] = useState<PortfolioRiskResponse | null>(null);
   const [loadingRiskGuard, setLoadingRiskGuard] = useState(true);
+  const [analytics, setAnalytics] = useState<PortfolioAnalyticsResponse | null>(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
   // PORT-02: position close state
   const [closingId, setClosingId] = useState<number | null>(null);
@@ -262,6 +264,7 @@ export default function PortfolioPage() {
     void fetchPositions();
     void fetchHistory();
     void fetchWatchlist();
+    void fetchAnalytics();
   }, []);
 
   useEffect(() => {
@@ -269,7 +272,6 @@ export default function PortfolioPage() {
     const active = positions.filter((p) => p.is_active !== false);
     const tv = active.reduce((s, p) => s + (p.current_price ?? p.entry_price) * p.quantity, 0);
     void fetchRiskGuard(tv);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [positions, loadingPositions]);
 
   async function fetchPositions() {
@@ -293,6 +295,18 @@ export default function PortfolioPage() {
       // History is non-blocking — silently skip
     } finally {
       setLoadingHistory(false);
+    }
+  }
+
+  async function fetchAnalytics() {
+    setLoadingAnalytics(true);
+    try {
+      const data = await api.getPortfolioAnalytics();
+      setAnalytics(data);
+    } catch {
+      // Non-blocking — silently skip
+    } finally {
+      setLoadingAnalytics(false);
     }
   }
 
@@ -747,6 +761,95 @@ export default function PortfolioPage() {
                 ))}
             </div>
           )}
+        </section>
+
+        {/* ─── Portföy Analizi (PORT-01, PORT-02) ─── */}
+        <section className={styles.analyticsSection} aria-label="Portföy analizi">
+          <div className={styles.analyticsGrid}>
+
+            {/* Beta Card */}
+            <div className={styles.analyticsCard}>
+              <p className={styles.cardEyebrow}>PORTFÖY BETASI</p>
+              <h2 className={styles.analyticsTitle}>Piyasaya göre risk</h2>
+              {loadingAnalytics ? (
+                <div className={styles.loadingWrap}>Hesaplanıyor…</div>
+              ) : analytics?.beta == null ? (
+                <div className={styles.transEmpty}>
+                  {activePositions.length < 2 ? 'Beta için en az 2 aktif pozisyon gerekli' : 'Beta hesaplanamadı'}
+                </div>
+              ) : (
+                <>
+                  <div className={styles.betaValue}>{analytics.beta.toFixed(2)}</div>
+                  <div className={`${styles.betaTag} ${analytics.beta > 1 ? styles.betaTagHigh : styles.betaTagLow}`}>
+                    {analytics.beta > 1 ? 'Piyasadan Daha Volatil' : 'Piyasadan Daha Savunmacı'}
+                  </div>
+                  <p className={styles.betaDesc}>
+                    {analytics.beta > 1
+                      ? `Portföyün BIST100'den ${((analytics.beta - 1) * 100).toFixed(0)}% daha volatil hareket etme eğiliminde.`
+                      : analytics.beta < 1
+                        ? `Portföyün BIST100'den daha düşük volatiliteyle hareket etme eğiliminde.`
+                        : 'Portföyün BIST100 ile yaklaşık aynı volatilitede hareket etme eğiliminde.'}
+                  </p>
+                  <p className={styles.betaNote}>252 günlük pencere — XU100.IS benchmark</p>
+                </>
+              )}
+            </div>
+
+            {/* Correlation Matrix Card */}
+            <div className={styles.analyticsCard}>
+              <p className={styles.cardEyebrow}>KORELASYON MATRİSİ</p>
+              <h2 className={styles.analyticsTitle}>Pozisyonlar arası ilişki</h2>
+              {loadingAnalytics ? (
+                <div className={styles.loadingWrap}>Hesaplanıyor…</div>
+              ) : analytics?.correlation_matrix == null ? (
+                <div className={styles.transEmpty}>
+                  {activePositions.length < 2 ? 'Matris için en az 2 pozisyon gerekli' : 'Korelasyon hesaplanamadı'}
+                </div>
+              ) : (
+                <>
+                  <div className={styles.corrTableWrap}>
+                    <table className={styles.corrTable}>
+                      <thead>
+                        <tr>
+                          <th></th>
+                          {analytics.correlation_matrix.symbols.map((sym) => (
+                            <th key={sym} className={styles.corrHeader}>{sym}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {analytics.correlation_matrix.matrix.map((row, i) => (
+                          <tr key={analytics.correlation_matrix!.symbols[i]}>
+                            <td className={styles.corrRowLabel}>{analytics.correlation_matrix!.symbols[i]}</td>
+                            {row.map((val, j) => {
+                              const isHighCorr = i !== j && Math.abs(val) > 0.7;
+                              const isDiag = i === j;
+                              return (
+                                <td
+                                  key={j}
+                                  className={`${styles.corrCell} ${isDiag ? styles.corrCellDiag : ''} ${isHighCorr ? styles.corrCellHigh : ''}`}
+                                  title={isHighCorr ? `Yüksek korelasyon: ${val.toFixed(2)}` : undefined}
+                                >
+                                  {isDiag ? '—' : val.toFixed(2)}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {analytics.correlation_matrix.excluded_symbols.length > 0 && (
+                    <p className={styles.corrNote}>
+                      Yetersiz veri: {analytics.correlation_matrix.excluded_symbols.join(', ')} (min 20 gün gerekli)
+                    </p>
+                  )}
+                  <p className={styles.betaNote}>90 günlük pencere — sarı hücreler r&gt;0.7</p>
+                </>
+              )}
+            </div>
+
+          </div>
         </section>
 
         {/* ─── Takip Listesi ─── */}

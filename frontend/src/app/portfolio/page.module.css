@@ -1240,3 +1240,129 @@
   color: var(--text-muted, #8b8d93);
   border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
 }
+
+/* ─── Portföy Analizi (PORT-01, PORT-02) ─── */
+
+.analyticsSection {
+  margin-bottom: 24px;
+}
+
+.analyticsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 900px) {
+  .analyticsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.analyticsCard {
+  background: var(--bg-secondary, #16181c);
+  border: 1px solid var(--border-primary, rgba(255,255,255,0.06));
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.analyticsTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px;
+}
+
+.betaValue {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.betaTag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.betaTagHigh {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--accent-red, #ef4444);
+}
+
+.betaTagLow {
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--accent-green, #22c55e);
+}
+
+.betaDesc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0 0 6px;
+}
+
+.betaNote {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.corrTableWrap {
+  overflow-x: auto;
+  margin-bottom: 8px;
+}
+
+.corrTable {
+  border-collapse: collapse;
+  font-size: 12px;
+  width: 100%;
+}
+
+.corrHeader {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 4px 6px;
+  text-align: center;
+  border-bottom: 1px solid var(--border-primary, rgba(255,255,255,0.06));
+}
+
+.corrRowLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 4px 6px;
+  white-space: nowrap;
+  border-right: 1px solid var(--border-primary, rgba(255,255,255,0.06));
+}
+
+.corrCell {
+  text-align: center;
+  padding: 4px 6px;
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary, rgba(255,255,255,0.04));
+  border-radius: 2px;
+}
+
+.corrCellDiag {
+  color: var(--text-dim);
+}
+
+.corrCellHigh {
+  background: rgba(234, 179, 8, 0.14);
+  color: #eab308;
+  font-weight: 600;
+}
+
+.corrNote {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin: 6px 0 0;
+}
