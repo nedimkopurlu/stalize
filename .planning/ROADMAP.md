@@ -422,7 +422,10 @@ Plans:
   2. GYO hisseleri için P/B değeri NAV proxy olarak kullanılır ve skor buna göre hesaplanır; detay sayfasında "Gerçek NAD verisi mevcut değil" uyarı notu gösterilir.
   3. Holding hisseleri için halka açık bağlı ortaklıkların piyasa değerleri toplanarak yaklaşık NAV iskontosu hesaplanır ve skora yansıtılır; bu hesaplama yaklaşık olduğuna dair not gösterilir.
   4. yfinance'ten gelen sektör string değerleri normalizasyon haritasıyla standartlaştırılır; bilinmeyen sektörler genel skorlamaya düşer.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 51-01-PLAN.md — Backend: migration 011, sector classification, bank/GYO/holding scoring, API exposure
+- [ ] 51-02-PLAN.md — Frontend: api.ts types, Skor Dökümü sector method badge, GYO note, holding NAV discount
 
 ### Phase 52: Portföy Analizi
 **Goal**: Kullanıcı, portföyünün piyasaya karşı betasını, pozisyonlar arası korelasyonu ve volatilite bazlı pozisyon büyüklüğü önerisini portföy sayfasında görür.
