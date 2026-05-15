@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import AppShell from '@/components/AppShell';
+import { safeLabel, safeLabelTooltip } from '@/components/StockHelpers';
 import api, {
   ModelPortfolioCurrentResponse,
   ModelPortfolioHistoryResponse,
@@ -37,33 +38,6 @@ function toneClass(value: number | null | undefined): string {
 function score(value: number | null | undefined): string {
   if (value === null || value === undefined) return '-';
   return Math.round(value).toString();
-}
-
-// ── Safe label mapping (KARAR-01) ─────────────────────────
-const SAFE_LABEL_MAP: Record<string, string> = {
-  'GÜÇLÜ AL': 'Yüksek Öncelikli İzleme',
-  'AL': 'Pozitif Görünüm',
-  'TUT': 'Nötr İzleme',
-  'SAT': 'Zayıflayan Görünüm',
-  'GÜÇLÜ SAT': 'Riskli Görünüm',
-};
-
-const SAFE_LABEL_TOOLTIP: Record<string, string> = {
-  'GÜÇLÜ AL': 'Teknik ve temel göstergeler güçlü; yakından takip edilebilir.',
-  'AL': 'Göstergeler genel olarak olumlu; dikkatli değerlendirilebilir.',
-  'TUT': 'Karma sinyaller; net yön için bekleme önerilir.',
-  'SAT': 'Göstergeler baskı altında; dikkatli olunmalı.',
-  'GÜÇLÜ SAT': 'Yüksek risk sinyalleri mevcut; değerlendirme önerilmez.',
-};
-
-function safeLabel(rec: string | null): string {
-  if (!rec) return '—';
-  return SAFE_LABEL_MAP[rec] ?? rec;
-}
-
-function safeLabelTooltip(rec: string | null): string {
-  if (!rec) return '';
-  return SAFE_LABEL_TOOLTIP[rec] ?? '';
 }
 
 function safeColor(rec: string | null): string {
