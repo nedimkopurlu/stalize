@@ -425,7 +425,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 51-01-PLAN.md — Backend: migration 011, sector classification, bank/GYO/holding scoring, API exposure
-- [ ] 51-02-PLAN.md — Frontend: api.ts types, Skor Dökümü sector method badge, GYO note, holding NAV discount
+- [x] 51-02-PLAN.md — Frontend: api.ts types, Skor Dökümü sector method badge, GYO note, holding NAV discount
 
 ### Phase 52: Portföy Analizi
 **Goal**: Kullanıcı, portföyünün piyasaya karşı betasını, pozisyonlar arası korelasyonu ve volatilite bazlı pozisyon büyüklüğü önerisini portföy sayfasında görür.
