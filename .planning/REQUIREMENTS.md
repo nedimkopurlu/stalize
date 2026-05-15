@@ -13,11 +13,11 @@
 - [x] **VKL-01**: Kullanıcı, yfinance'den gelen BIST fundamental değerleri için USD→TRY sanity check sonucu "düşük güven" uyarısı görür; şüpheli değerlere dayanılarak karar alınmaz
 - [x] **VKL-02**: Kullanıcı, her hisse için 0-100 data quality score'u hisse listesinde ve detay sayfasında görür
 - [ ] **VKL-03**: Kullanıcı, tavan/taban (devre kesici) durumundaki hisseleri fiyat kutusunda renkli badge ile anında fark eder
-- [ ] **VKL-04**: Kullanıcı, ince piyasalı hisselerde (düşük likidite) otomatik uyarı görür; Amihud illiquidity ratio tabanlı 3 kademeli likidite skoru (yüksek/orta/düşük)
+- [x] **VKL-04**: Kullanıcı, ince piyasalı hisselerde (düşük likidite) otomatik uyarı görür; Amihud illiquidity ratio tabanlı 3 kademeli likidite skoru (yüksek/orta/düşük)
 
 ### KAP — Duyuru Sınıflandırması
 
-- [ ] **KAP-01**: KAP duyuruları tip koduna göre otomatik kategorize edilir (Finansal Sonuçlar / Temettü / Sermaye Artırımı / İçeriden Öğrenme / Düzenleyici)
+- [x] **KAP-01**: KAP duyuruları tip koduna göre otomatik kategorize edilir (Finansal Sonuçlar / Temettü / Sermaye Artırımı / İçeriden Öğrenme / Düzenleyici)
 - [ ] **KAP-02**: Kullanıcı, hisse detay sayfasında KAP duyurularını kategori badge'iyle görür; yüksek etkili kategoriler vurgulanır
 
 ### REJ — Market Regime Engine

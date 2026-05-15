@@ -396,7 +396,7 @@ Plans:
   5. `price_history.is_tavan`, `price_history.is_taban` ve `stocks.liquidity_score`, `stocks.liquidity_label` sütunları Alembic migration ile eklenir.
 **Plans**: 2 plans
 Plans:
-- [ ] 49-01-PLAN.md — Backend: migration 009, Amihud computation, KAP category classification, API fields
+- [x] 49-01-PLAN.md — Backend: migration 009, Amihud computation, KAP category classification, API fields
 - [ ] 49-02-PLAN.md — Frontend: tavan/taban badge, liquidity badge, KAP category badges
 
 ### Phase 50: Market Regime Engine
