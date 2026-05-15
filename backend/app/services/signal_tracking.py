@@ -119,6 +119,7 @@ class SignalTrackingService:
         action: Optional[str] = None,
         outcome: Optional[str] = None,
         horizon: str = "1w",
+        regime: Optional[str] = None,
     ) -> dict[str, Any]:
         query = select(SignalDecisionSnapshot)
         if action:
@@ -130,9 +131,19 @@ class SignalTrackingService:
 
         result = await db.execute(query)
         rows = list(result.scalars().all())
+
+        # Rejim haritası: decision_date → regime string
+        dates = list({row.decision_date for row in rows})
+        regime_map = await self._fetch_regime_map(db, dates)
+
+        # Rejim filtresi
+        if regime:
+            rows = [r for r in rows if regime_map.get(r.decision_date, "Bilinmiyor") == regime]
+
+        serialized = [self._serialize_with_regime(row, regime_map) for row in rows]
         return {
-            "items": [self._serialize(row) for row in rows],
-            "count": len(rows),
+            "items": serialized,
+            "count": len(serialized),
             "summary": self._summary(rows, horizon),
         }
 
@@ -141,6 +152,7 @@ class SignalTrackingService:
         db: AsyncSession,
         horizon: str = "1w",
         min_count: int = 1,
+        regime: Optional[str] = None,
     ) -> dict[str, Any]:
         result = await db.execute(
             select(SignalDecisionSnapshot)
@@ -153,6 +165,15 @@ class SignalTrackingService:
             .limit(1000)
         )
         rows = list(result.scalars().all())
+
+        # Rejim haritası: decision_date → regime string
+        dates = list({row.decision_date for row in rows})
+        regime_map = await self._fetch_regime_map(db, dates)
+
+        # Rejim filtresi uygulanmışsa rows'u filtrele
+        if regime:
+            rows = [r for r in rows if regime_map.get(r.decision_date, "Bilinmiyor") == regime]
+
         return {
             "horizon": horizon,
             "sample_size": len(rows),
@@ -160,6 +181,8 @@ class SignalTrackingService:
             "by_action": self._bucket_rows(rows, horizon, "action", min_count),
             "by_risk_level": self._bucket_rows(rows, horizon, "risk_level", min_count),
             "by_sector": self._bucket_rows(rows, horizon, "sector", min_count),
+            "by_regime": self._bucket_rows_by_regime(rows, regime_map, horizon),
+            "by_slippage_cost": self._slippage_cost_summary(rows, horizon),
             "recommendations": self._calibration_recommendations(rows, horizon),
             "suggested_policy": self.suggest_policy(rows, horizon),
         }
@@ -362,6 +385,46 @@ class SignalTrackingService:
             reverse=True,
         )
 
+    def _bucket_rows_by_regime(
+        self,
+        rows: list[SignalDecisionSnapshot],
+        regime_map: dict,
+        horizon: str,
+    ) -> list[dict[str, Any]]:
+        """Sinyalleri piyasa rejimine göre gruplar ve her rejim için kalibrasyon metriği döner."""
+        buckets: dict[str, list[SignalDecisionSnapshot]] = {}
+        for row in rows:
+            key = regime_map.get(row.decision_date, "Bilinmiyor")
+            buckets.setdefault(key, []).append(row)
+        return [
+            self._calibration_bucket(key, bucket_rows, horizon)
+            for key, bucket_rows in buckets.items()
+        ]
+
+    def _slippage_cost_summary(self, rows: list[SignalDecisionSnapshot], horizon: str) -> dict[str, Any]:
+        """Slipaj maliyeti sonrası net getiri özeti (BACK-01).
+
+        Notlar: Snapshot'ta is_bist30/liquidity_score saklanmamakta.
+        Ortalama maliyet varsayımı kullanılır: %0.6 (20bps × 2 + 0.1% × 2).
+        """
+        return_attr = "actual_return_1m_pct" if horizon == "1m" else "actual_return_1w_pct"
+        assumed_cost_pct = 0.6  # 20bps orta kademe × 2 yön + komisyon
+        gross_returns = [getattr(r, return_attr) for r in rows if getattr(r, return_attr) is not None]
+        if not gross_returns:
+            return {
+                "assumed_round_trip_cost_pct": assumed_cost_pct,
+                "net_avg_return_pct": None,
+                "gross_avg_return_pct": None,
+            }
+        gross_avg = round(sum(gross_returns) / len(gross_returns), 2)
+        net_avg = round(gross_avg - assumed_cost_pct, 2)
+        return {
+            "assumed_round_trip_cost_pct": assumed_cost_pct,
+            "gross_avg_return_pct": gross_avg,
+            "net_avg_return_pct": net_avg,
+            "note": "Orta kademe likidite varsayımı (20bps). Gerçek maliyet Stock.is_bist30 ve liquidity_score'a göre değişir.",
+        }
+
     def _calibration_bucket(
         self,
         key: str,
@@ -454,6 +517,12 @@ class SignalTrackingService:
             "failure": sum(1 for row in rows if getattr(row, outcome_attr) == "failure"),
             "pending": sum(1 for row in rows if getattr(row, outcome_attr) is None),
         }
+
+    def _serialize_with_regime(self, row: SignalDecisionSnapshot, regime_map: dict) -> dict[str, Any]:
+        """_serialize çıktısına regime alanı ekler."""
+        data = self._serialize(row)
+        data["regime"] = regime_map.get(row.decision_date, "Bilinmiyor")
+        return data
 
     def _serialize(self, row: SignalDecisionSnapshot) -> dict[str, Any]:
         return {
