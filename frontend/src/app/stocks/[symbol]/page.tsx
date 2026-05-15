@@ -13,6 +13,7 @@ import {
 } from '@/components/StockHelpers';
 import api, {
   InvestmentDecision,
+  MarketRegimeResponse,
   PricePoint,
   ScoreBreakdownResponse,
   StockAnalysisResponse,
@@ -154,6 +155,26 @@ function ScoreBar({ label, value }: { label: string; value: number | null }) {
   );
 }
 
+// ── Regime Badge ─────────────────────────────────────────────
+
+function RegimeBadge({ regime }: { regime: MarketRegimeResponse | null }) {
+  if (!regime) return null;
+  const colorMap: Record<string, string> = {
+    'Boğa': 'var(--accent-green)',
+    'Ayı': 'var(--accent-red)',
+    'Yatay': 'var(--text-muted)',
+    'Volatil': '#f59e0b',
+  };
+  const color = colorMap[regime.regime] ?? 'var(--text-muted)';
+  return (
+    <div className={styles.regimeBadge}>
+      <span className={styles.regimeDot} style={{ background: color }} />
+      <span>Piyasa Rejimi</span>
+      <strong style={{ color }}>{regime.regime}</strong>
+    </div>
+  );
+}
+
 // ── Signal color helper ──────────────────────────────────────
 
 function recColor(rec: string | null): string {
@@ -290,6 +311,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
   const [prices, setPrices] = useState<StockPricesResponse | null>(null);
   const [decision, setDecision] = useState<InvestmentDecision | null>(null);
   const [news, setNews] = useState<StockNewsItem[]>([]);
+  const [regime, setRegime] = useState<MarketRegimeResponse | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [chartError, setChartError] = useState<string | null>(null);
@@ -367,6 +389,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
     api.getStockNews(symbol, 50)
       .then((r) => setNews(r.items))
       .catch(() => setNews([]));
+
+    api.getMarketRegime().then(setRegime).catch(() => null);
   }, [symbol]);
 
   useEffect(() => {
@@ -668,6 +692,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
                 </div>
               )}
             </div>
+
+            <RegimeBadge regime={regime} />
           </div>
 
           {/* Right column — AI Score Card */}

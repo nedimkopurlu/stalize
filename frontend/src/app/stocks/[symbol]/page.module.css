@@ -1512,3 +1512,24 @@
   color: var(--accent);
   border-color: rgba(200, 150, 0, 0.25);
 }
+
+/* ── Regime Badge (Phase 50) ──────────────────────────────── */
+
+.regimeBadge {
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  display: inline-flex;
+  font-size: 0.85rem;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 6px 14px;
+}
+
+.regimeDot {
+  border-radius: 50%;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+}

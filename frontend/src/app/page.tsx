@@ -12,6 +12,7 @@ import {
   MarketBist100Response,
   MarketForexResponse,
   MarketGoldResponse,
+  MarketRegimeResponse,
   StockSummary,
 } from '@/lib/api';
 import styles from './page.module.css';
@@ -117,6 +118,7 @@ export default function DashboardPage() {
   const [forex, setForex] = useState<MarketForexResponse | null>(null);
   const [gold, setGold] = useState<MarketGoldResponse | null>(null);
   const [dailySummary, setDailySummary] = useState<string | null>(null);
+  const [regime, setRegime] = useState<MarketRegimeResponse | null>(null);
   const [period, setPeriod] = useState<Period>('1A');
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -130,6 +132,7 @@ export default function DashboardPage() {
     api.getMarketForex().then(setForex).catch(() => null);
     api.getMarketGold().then(setGold).catch(() => null);
     api.getDailySummary().then((value) => setDailySummary(value.summary)).catch(() => null);
+    api.getMarketRegime().then(setRegime).catch(() => null);
   }, []);
 
   useEffect(() => {
@@ -192,6 +195,7 @@ export default function DashboardPage() {
               <Fact label="Ortalama skor" value={stats?.avg_score != null ? stats.avg_score.toFixed(1) : '-'} />
               <Fact label="Al bölgesi" value={stats ? String(stats.buy_count + stats.strong_buy_count) : '-'} />
             </div>
+            <RegimeBadge regime={regime} />
           </div>
 
           <div className={styles.indexCard}>
@@ -334,6 +338,24 @@ function AssetRow({ label, value, change }: { label: string; value: string; chan
       <span>{label}</span>
       <strong>{value}</strong>
       {change !== undefined && <PriceChange value={change ?? null} />}
+    </div>
+  );
+}
+
+function RegimeBadge({ regime }: { regime: MarketRegimeResponse | null }) {
+  if (!regime) return null;
+  const colorMap: Record<string, string> = {
+    'Boğa': 'var(--accent-green)',
+    'Ayı': 'var(--accent-red)',
+    'Yatay': 'var(--text-muted)',
+    'Volatil': '#f59e0b',
+  };
+  const color = colorMap[regime.regime] ?? 'var(--text-muted)';
+  return (
+    <div className={styles.regimeBadge}>
+      <span className={styles.regimeDot} style={{ background: color }} />
+      <span>Piyasa Rejimi</span>
+      <strong style={{ color }}>{regime.regime}</strong>
     </div>
   );
 }
