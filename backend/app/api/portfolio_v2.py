@@ -1,5 +1,6 @@
 """Model portföy API router — MPRT-03, MPRT-05"""
 import logging
+import numpy as np
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional, List
 
@@ -12,7 +13,7 @@ from app.core.database import get_db
 from app.core.security import verify_api_key
 from app.models.portfolio_v2 import PortfolioPosition, PortfolioDailySnapshot, PortfolioChangeLog
 from app.models.stock import Stock
-from app.models.price import CommodityPrice
+from app.models.price import CommodityPrice, PriceHistory
 from app.services.data_collector import get_yahoo_chart_history
 from app.services.portfolio_snapshot import _fetch_close_price
 
@@ -353,5 +354,174 @@ async def close_position(
         "symbol": pos.symbol,
         "realized_pnl": realized_pnl,
         "status": "closed",
+    }
+
+
+# ─── Endpoint 5: GET /portfolio/analytics ──────────────────────────────────
+
+@router.get("/portfolio/analytics")
+async def get_portfolio_analytics(db: AsyncSession = Depends(get_db)):
+    """
+    PORT-01: Portföy betası (252 günlük, [0,3] kırpılmış, BIST100 benchmark).
+    PORT-02: Pozisyonlar arası korelasyon matrisi (90 günlük).
+    Aktif pozisyon yoksa beta=None, correlation_matrix=None döner.
+    """
+    # 1. Fetch active positions
+    result = await db.execute(
+        select(PortfolioPosition).where(PortfolioPosition.is_active == True)  # noqa: E712
+    )
+    positions = result.scalars().all()
+
+    if not positions:
+        return {
+            "beta": None,
+            "correlation_matrix": None,
+            "calculated_at": datetime.now(timezone.utc).isoformat(),
+            "position_count": 0,
+        }
+
+    # 2. Resolve stock_id for each symbol
+    symbols = list({p.symbol for p in positions})
+    stock_result = await db.execute(
+        select(Stock).where(Stock.symbol.in_(symbols), Stock.is_active == True)  # noqa: E712
+    )
+    stocks = stock_result.scalars().all()
+    symbol_to_id = {s.symbol: s.id for s in stocks}
+
+    if not symbol_to_id:
+        return {
+            "beta": None,
+            "correlation_matrix": None,
+            "calculated_at": datetime.now(timezone.utc).isoformat(),
+            "position_count": len(positions),
+        }
+
+    # 3. Fetch 252+ days of daily close prices per stock (beta window)
+    beta_cutoff = date.today() - timedelta(days=252 + 10)
+
+    price_result = await db.execute(
+        select(PriceHistory)
+        .where(
+            PriceHistory.stock_id.in_(list(symbol_to_id.values())),
+            PriceHistory.date >= beta_cutoff,
+            PriceHistory.close.is_not(None),
+        )
+        .order_by(PriceHistory.stock_id, PriceHistory.date.asc())
+    )
+    price_rows = price_result.scalars().all()
+
+    # Group closes by symbol
+    id_to_symbol = {v: k for k, v in symbol_to_id.items()}
+    closes_by_symbol: dict[str, list[tuple[str, float]]] = {sym: [] for sym in symbols}
+    for row in price_rows:
+        sym = id_to_symbol.get(row.stock_id)
+        if sym:
+            closes_by_symbol[sym].append((row.date.isoformat(), float(row.close)))
+
+    # 4. Fetch benchmark (XU100.IS) for 252 days
+    benchmark_map = await _fetch_benchmark_history(252, db)
+
+    # 5. Compute portfolio beta
+    beta_value = None
+    # Build portfolio daily returns (value-weighted by entry_price * quantity)
+    pos_by_symbol: dict[str, float] = {}
+    for p in positions:
+        pos_by_symbol[p.symbol] = pos_by_symbol.get(p.symbol, 0.0) + p.entry_price * p.quantity
+    total_value = sum(pos_by_symbol.values()) or 1.0
+
+    active_symbols = [sym for sym in symbols if sym in symbol_to_id]
+    if active_symbols and benchmark_map:
+        # Align dates across all symbols and benchmark
+        all_dates_sets = [
+            set(d for d, _ in closes_by_symbol[sym])
+            for sym in active_symbols
+            if closes_by_symbol[sym]
+        ]
+        benchmark_dates = set(benchmark_map.keys())
+        if all_dates_sets and benchmark_dates:
+            common_dates = sorted(
+                all_dates_sets[0].intersection(*all_dates_sets[1:]).intersection(benchmark_dates)
+            )
+            if len(common_dates) >= 20:
+                closes_dict_by_sym = {sym: dict(closes_by_symbol[sym]) for sym in active_symbols}
+                port_closes = []
+                bench_closes = []
+                for d in common_dates:
+                    port_close = sum(
+                        closes_dict_by_sym[sym].get(d, 0.0) * (pos_by_symbol.get(sym, 0.0) / total_value)
+                        for sym in active_symbols
+                        if d in closes_dict_by_sym.get(sym, {})
+                    )
+                    port_closes.append(port_close)
+                    bench_closes.append(benchmark_map[d])
+
+                port_arr = np.array(port_closes, dtype=float)
+                bench_arr = np.array(bench_closes, dtype=float)
+                port_returns = np.diff(port_arr) / port_arr[:-1]
+                bench_returns = np.diff(bench_arr) / bench_arr[:-1]
+
+                # Remove NaN/inf
+                mask = np.isfinite(port_returns) & np.isfinite(bench_returns)
+                port_returns = port_returns[mask]
+                bench_returns = bench_returns[mask]
+
+                if len(port_returns) >= 10:
+                    bench_var = float(np.var(bench_returns, ddof=1))
+                    if bench_var > 1e-12:
+                        cov = float(np.cov(port_returns, bench_returns)[0, 1])
+                        raw_beta = cov / bench_var
+                        beta_value = round(float(np.clip(raw_beta, 0.0, 3.0)), 4)
+
+    # 6. Compute correlation matrix (90-day window)
+    corr_cutoff = date.today() - timedelta(days=90 + 10)
+    corr_cutoff_str = corr_cutoff.isoformat()
+    included_symbols = []
+    return_series: dict[str, np.ndarray] = {}
+
+    for sym in active_symbols:
+        recent_closes = [(d, c) for d, c in closes_by_symbol[sym] if d >= corr_cutoff_str]
+        if len(recent_closes) < 20:
+            continue
+        recent_closes.sort(key=lambda x: x[0])
+        close_arr = np.array([c for _, c in recent_closes], dtype=float)
+        if len(close_arr) < 2:
+            continue
+        returns = np.diff(close_arr) / close_arr[:-1]
+        valid = np.isfinite(returns)
+        if valid.sum() < 20:
+            continue
+        return_series[sym] = returns[valid]
+        included_symbols.append(sym)
+
+    excluded_symbols = [s for s in active_symbols if s not in included_symbols]
+    correlation_matrix = None
+
+    if len(included_symbols) >= 2:
+        # Align return series lengths (use minimum length)
+        min_len = min(len(return_series[s]) for s in included_symbols)
+        matrix_data = np.array([return_series[s][-min_len:] for s in included_symbols], dtype=float)
+        corr = np.corrcoef(matrix_data)
+        corr = np.clip(corr, -1.0, 1.0)
+        correlation_matrix = {
+            "symbols": included_symbols,
+            "matrix": [[round(float(v), 4) for v in row] for row in corr.tolist()],
+            "excluded_symbols": excluded_symbols,
+        }
+    elif len(included_symbols) == 1:
+        correlation_matrix = {
+            "symbols": included_symbols,
+            "matrix": [[1.0]],
+            "excluded_symbols": excluded_symbols,
+        }
+
+    logger.info(
+        f"GET /portfolio/analytics — beta={beta_value}, "
+        f"symbols={len(active_symbols)}, corr_included={len(included_symbols)}"
+    )
+    return {
+        "beta": beta_value,
+        "correlation_matrix": correlation_matrix,
+        "calculated_at": datetime.now(timezone.utc).isoformat(),
+        "position_count": len(positions),
     }
 
