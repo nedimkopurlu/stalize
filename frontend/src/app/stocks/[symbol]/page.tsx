@@ -298,6 +298,80 @@ function marketUniverseLabel(stock: StockDetail['stock']) {
   return stock.market_tier ? `BIST · ${stock.market_tier}` : 'BIST';
 }
 
+// ── Section Nav ───────────────────────────────────────────
+
+const SECTION_NAV_ITEMS = [
+  { id: 'hero', label: 'Özet' },
+  { id: 'skor-ozeti', label: 'Skor' },
+  { id: 'teknik', label: 'Teknik' },
+  { id: 'temel', label: 'Temel' },
+  { id: 'haberler', label: 'Haberler' },
+  { id: 'piyasa-rejimi', label: 'Piyasa Rejimi' },
+  { id: 'ilgili-hisseler', label: 'İlgili' },
+] as const;
+
+function SectionNav({ activeSection }: { activeSection: string }) {
+  return (
+    <nav className={styles.sectionNav} aria-label="Sayfa bölümleri">
+      {SECTION_NAV_ITEMS.map((item) => (
+        <a
+          key={item.id}
+          href={`#${item.id}`}
+          className={`${styles.sectionNavLink} ${activeSection === item.id ? styles.sectionNavLinkActive : ''}`}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+  );
+}
+
+// ── Regime Section ────────────────────────────────────────
+
+function RegimeSection({ regime }: { regime: MarketRegimeResponse | null }) {
+  if (!regime) return null;
+  const colorMap: Record<string, string> = {
+    'Boğa': 'var(--accent-green)',
+    'Ayı': 'var(--accent-red)',
+    'Yatay': 'var(--text-muted)',
+    'Volatil': '#f59e0b',
+  };
+  const color = colorMap[regime.regime] ?? 'var(--text-muted)';
+  return (
+    <section id="piyasa-rejimi" className={styles.regimeSection}>
+      <div className={styles.regimeSectionCard}>
+        <div className={styles.sectionEyebrow}>Piyasa Rejimi</div>
+        <div className={styles.regimeSectionTitle} style={{ color }}>
+          {regime.regime}
+        </div>
+        <div className={styles.regimeSectionGrid}>
+          <div className={styles.regimeSectionItem}>
+            <span className={styles.regimeSectionLabel}>ADX</span>
+            <span className={styles.regimeSectionValue}>
+              {indicatorValue(regime.adx, '', 1)}
+            </span>
+            <small>Trend gücü — 25 üstü güçlü trend</small>
+          </div>
+          <div className={styles.regimeSectionItem}>
+            <span className={styles.regimeSectionLabel}>EMA 200</span>
+            <span className={styles.regimeSectionValue}>
+              {indicatorValue(regime.ema200, '', 0)}
+            </span>
+            <small>Uzun vadeli trend filtresi</small>
+          </div>
+          <div className={styles.regimeSectionItem}>
+            <span className={styles.regimeSectionLabel}>ATR</span>
+            <span className={styles.regimeSectionValue}>
+              {indicatorValue(regime.atr, '', 2)}
+            </span>
+            <small>Piyasa volatilitesi</small>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ── Main Page ────────────────────────────────────────────────
 
 export default function StockDetailPage({ params }: { params: Promise<{ symbol: string }> }) {
@@ -322,6 +396,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [analysisDate, setAnalysisDate] = useState<string | null>(null);
   const [analyzeLoading, setAnalyzeLoading] = useState(false);
+  const [activeSection, setActiveSection] = useState('hero');
 
   // ── Load watchlist state ──────────────────────────────────
   useEffect(() => {
@@ -427,6 +502,27 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
   useEffect(() => {
     void loadPrices();
   }, [loadPrices]);
+
+  // ── Section IntersectionObserver ──────────────────────────
+  useEffect(() => {
+    const sectionIds = SECTION_NAV_ITEMS.map((item) => item.id);
+    const observers: IntersectionObserver[] = [];
+
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) setActiveSection(id);
+        },
+        { threshold: 0.2, rootMargin: '-60px 0px -60% 0px' }
+      );
+      observer.observe(el);
+      observers.push(observer);
+    });
+
+    return () => observers.forEach((o) => o.disconnect());
+  }, [loading]);
 
   // ── Loading skeleton ──────────────────────────────────────
   if (loading) {
@@ -628,8 +724,11 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
           </div>
         </div>
 
+        {/* ── Section Nav ── */}
+        <SectionNav activeSection={activeSection} />
+
         {/* ── Hero section ──────────────────────────────────── */}
-        <section className={styles.hero}>
+        <section id="hero" className={styles.hero}>
           {/* Left column */}
           <div className={styles.heroLeft}>
             <p className={styles.eyebrow}>
@@ -818,6 +917,9 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             </div>
           </div>
         </section>
+
+        {/* ── Skor Özeti wrapper ───────────────────────────── */}
+        <div id="skor-ozeti">
 
         {/* ── Score breakdown section ──────────────────────── */}
         {bd && bd.components.length > 0 && (
@@ -1083,6 +1185,11 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
           </article>
         </section>
 
+        </div>{/* end skor-ozeti */}
+
+        {/* ── Chart + Teknik wrapper ───────────────────────── */}
+        <div id="teknik">
+
         {/* ── Chart section ────────────────────────────────── */}
         <section className={styles.chartSection}>
           <div className={styles.chartCard}>
@@ -1216,8 +1323,13 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
           </article>
         </section>
 
+        </div>{/* end teknik */}
+
+        {/* ── Temel anchor ─────────────────────────────────── */}
+        <div id="temel" />
+
         {/* ── News dossier ─────────────────────────────────── */}
-        <section className={styles.newsDossier}>
+        <section id="haberler" className={styles.newsDossier}>
           <div className={styles.cardHeaderLine}>
             <div>
               <div className={styles.sectionEyebrow}>Haber ve KAP Takibi</div>
@@ -1232,6 +1344,12 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             {!news.length && <p className={styles.inlineEmpty}>Bu hisseye bağlı haber kaydı yok.</p>}
           </div>
         </section>
+
+        {/* ── Piyasa Rejimi ─────────────────────────────────── */}
+        <RegimeSection regime={regime} />
+
+        {/* ── İlgili Hisseler wrapper ───────────────────────── */}
+        <div id="ilgili-hisseler">
 
         {/* ── Model rationale section ───────────────────── */}
         {scoreReasonRows.length > 0 && (
@@ -1301,6 +1419,8 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             </div>
           </section>
         )}
+
+        </div>{/* end ilgili-hisseler */}
 
       </div>
     </AppShell>

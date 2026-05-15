@@ -1097,6 +1097,125 @@
   100% { background-position: -200% 0; }
 }
 
+/* ── Section Nav (Phase 55 UI-01) ───────────────────────── */
+.sectionNav {
+  position: sticky;
+  top: 53px; /* topNav height */
+  z-index: 9;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-primary);
+  display: flex;
+  gap: 0;
+  padding: 0 40px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sectionNav::-webkit-scrollbar {
+  display: none;
+}
+
+.sectionNavLink {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  cursor: pointer;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+
+.sectionNavLink:hover {
+  color: var(--text-primary);
+}
+
+.sectionNavLinkActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+@media (max-width: 768px) {
+  .sectionNav {
+    padding: 0 20px;
+  }
+}
+
+/* ── Regime Section (Phase 55 UI-01) ────────────────────── */
+.regimeSection {
+  padding: 0 40px 32px;
+}
+
+.regimeSectionCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  padding: 22px;
+}
+
+.regimeSectionTitle {
+  font-family: var(--font-fraunces);
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 8px 0 20px;
+}
+
+.regimeSectionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border-primary);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-primary);
+}
+
+.regimeSectionItem {
+  background: var(--bg-elevated);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.regimeSectionLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.regimeSectionValue {
+  font-family: var(--font-fraunces);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.regimeSectionItem small {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+  .regimeSection {
+    padding: 0 20px 32px;
+  }
+  .regimeSectionGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Empty/error ─────────────────────────────────────────── */
 .emptyMsg {
   color: var(--text-muted);
