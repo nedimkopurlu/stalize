@@ -1776,3 +1776,208 @@
   color: var(--text-dim);
   margin: 0;
 }
+
+/* ── Pre-trade Checklist Modal (Phase 55 UI-02) ─────────── */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.modalCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 28px;
+  width: 100%;
+  max-width: 540px;
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.modalTitle {
+  font-family: var(--font-fraunces);
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.modalSubtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+.modalCloseBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 0 0 12px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.modalCloseBtn:hover {
+  color: var(--text-primary);
+}
+
+.checklistItems {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.checklistItem {
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  gap: 10px;
+  align-items: start;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.checklistItem:last-child {
+  border-bottom: none;
+}
+
+.checklistIcon {
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.checklistContent {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.checklistLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.checklistValue {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.checklistNote {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.checklistWarning {
+  font-size: 0.8rem;
+  color: var(--accent-red);
+  font-weight: 600;
+}
+
+.checklistCheckbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+.exitPlanTextarea {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 64px;
+  font-family: inherit;
+}
+
+.exitPlanTextarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.modalDivider {
+  height: 1px;
+  background: var(--border-primary);
+  margin: 20px 0;
+}
+
+.modalConfirmBtn {
+  width: 100%;
+  padding: 12px 20px;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-green);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.modalConfirmBtn:hover {
+  background: rgba(16, 185, 129, 0.25);
+}
+
+/* ── Pozisyon Aç button (hero) ── */
+.positionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--accent-green);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  letter-spacing: 0.02em;
+  margin-top: 4px;
+}
+
+.positionBtn:hover {
+  background: rgba(16, 185, 129, 0.22);
+}
+
+@media (max-width: 480px) {
+  .modalCard {
+    padding: 20px;
+    border-radius: 8px;
+  }
+  .modalBackdrop {
+    padding: 12px;
+  }
+}

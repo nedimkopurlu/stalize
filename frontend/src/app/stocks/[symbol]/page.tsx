@@ -372,6 +372,229 @@ function RegimeSection({ regime }: { regime: MarketRegimeResponse | null }) {
   );
 }
 
+// ── Pre-trade Checklist Modal ─────────────────────────────────
+
+interface ChecklistModalProps {
+  open: boolean;
+  onClose: () => void;
+  regime: MarketRegimeResponse | null;
+  liquidityScore: string | null | undefined;
+  overallScore: number | null | undefined;
+  recommendation: string | null;
+  dailyChangePct: number | null | undefined;
+  positionSize: PositionSizeResponse | null;
+  planStop: number | null;
+  planTarget: number | null;
+  symbol: string;
+}
+
+function PreTradeChecklistModal({
+  open,
+  onClose,
+  regime,
+  liquidityScore,
+  overallScore,
+  recommendation,
+  dailyChangePct,
+  positionSize,
+  planStop,
+  planTarget,
+  symbol,
+}: ChecklistModalProps) {
+  const [exitPlan, setExitPlan] = React.useState(() => {
+    const stopStr = planStop != null ? `₺${formatPrice(planStop)}` : 'ATR×2 aşağısı';
+    const targetStr = planTarget != null ? `₺${formatPrice(planTarget)}` : 'ATR×3 yukarısı';
+    return `Stop: ${stopStr}, Hedef: ${targetStr}`;
+  });
+
+  // Body scroll kilitle
+  React.useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
+  if (!open) return null;
+
+  const regimeColor: Record<string, string> = {
+    'Boğa': 'var(--accent-green)',
+    'Ayı': 'var(--accent-red)',
+    'Yatay': 'var(--text-muted)',
+    'Volatil': '#f59e0b',
+  };
+  const regimeCol = regime ? (regimeColor[regime.regime] ?? 'var(--text-muted)') : 'var(--text-muted)';
+
+  const isLimit = Math.abs(dailyChangePct ?? 0) >= 9.8;
+  const limitDir = (dailyChangePct ?? 0) >= 9.8 ? 'TAVAN' : 'TABAN';
+
+  const liqLabel =
+    liquidityScore === 'yüksek' ? 'Yüksek'
+    : liquidityScore === 'orta' ? 'Orta'
+    : liquidityScore === 'düşük' ? 'Düşük'
+    : 'Bilinmiyor';
+
+  return (
+    <div
+      className={styles.modalBackdrop}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="checklist-title"
+    >
+      <div className={styles.modalCard}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle} id="checklist-title">
+            Ön-işlem Kontrol Listesi
+          </h2>
+          <button className={styles.modalCloseBtn} onClick={onClose} aria-label="Kapat">
+            ×
+          </button>
+        </div>
+        <p className={styles.modalSubtitle}>
+          {symbol} için pozisyon açmadan önce her maddeyi gözden geçirin ve onaylayın.
+        </p>
+
+        <div className={styles.checklistItems}>
+
+          {/* 1. Piyasa Rejimi */}
+          <div className={styles.checklistItem}>
+            <span className={styles.checklistIcon}>📊</span>
+            <div className={styles.checklistContent}>
+              <span className={styles.checklistLabel}>Piyasa Rejimi</span>
+              <span className={styles.checklistValue} style={{ color: regimeCol }}>
+                {regime ? regime.regime : 'Bilinmiyor'}
+              </span>
+              <span className={styles.checklistNote}>
+                {regime?.regime === 'Ayı' || regime?.regime === 'Volatil'
+                  ? 'Dikkat: Zor piyasa koşulları — pozisyon büyüklüğünü azaltın.'
+                  : 'Rejim pozisyon kararını destekliyor.'}
+              </span>
+            </div>
+            <input type="checkbox" className={styles.checklistCheckbox} />
+          </div>
+
+          {/* 2. Likidite */}
+          <div className={styles.checklistItem}>
+            <span className={styles.checklistIcon}>💧</span>
+            <div className={styles.checklistContent}>
+              <span className={styles.checklistLabel}>Likidite</span>
+              <span className={styles.checklistValue}>{liqLabel}</span>
+              {liquidityScore === 'düşük' && (
+                <span className={styles.checklistWarning}>
+                  Düşük likidite — emirler beklenen fiyattan işlem görmeyebilir.
+                </span>
+              )}
+            </div>
+            <input type="checkbox" className={styles.checklistCheckbox} />
+          </div>
+
+          {/* 3. Genel Skor */}
+          <div className={styles.checklistItem}>
+            <span className={styles.checklistIcon}>✦</span>
+            <div className={styles.checklistContent}>
+              <span className={styles.checklistLabel}>Genel Skor</span>
+              <span className={styles.checklistValue}>
+                {overallScore != null ? overallScore.toFixed(1) : '—'}
+                {recommendation ? ` — ${safeLabel(recommendation)}` : ''}
+              </span>
+              <span className={styles.checklistNote}>
+                {(overallScore ?? 0) >= 60
+                  ? 'Skor yeterli — devam edilebilir.'
+                  : 'Skor düşük — yüksek riskli giriş.'}
+              </span>
+            </div>
+            <input type="checkbox" className={styles.checklistCheckbox} />
+          </div>
+
+          {/* 4. Korelasyon */}
+          <div className={styles.checklistItem}>
+            <span className={styles.checklistIcon}>🔗</span>
+            <div className={styles.checklistContent}>
+              <span className={styles.checklistLabel}>Korelasyon</span>
+              <span className={styles.checklistValue}>Manuel kontrol gerekli</span>
+              <span className={styles.checklistNote}>
+                Portföydeki diğer pozisyonlarla korelasyonu kontrol edin. Portföy sayfasındaki korelasyon matrisini kullanın.
+              </span>
+            </div>
+            <input type="checkbox" className={styles.checklistCheckbox} />
+          </div>
+
+          {/* 5. Tavan / Taban */}
+          <div className={styles.checklistItem}>
+            <span className={styles.checklistIcon}>⚡</span>
+            <div className={styles.checklistContent}>
+              <span className={styles.checklistLabel}>Tavan / Taban Durumu</span>
+              {isLimit ? (
+                <>
+                  <span
+                    className={styles.checklistValue}
+                    style={{ color: limitDir === 'TAVAN' ? 'var(--accent-green)' : 'var(--accent-red)' }}
+                  >
+                    {limitDir} devre kesici aktif
+                  </span>
+                  <span className={styles.checklistWarning}>
+                    Hisse bugün {limitDir}&#39;da. İşlem fiyatları garanti edilemez.
+                  </span>
+                </>
+              ) : (
+                <span className={styles.checklistValue}>Tavan/taban yok — normal işlem</span>
+              )}
+            </div>
+            <input type="checkbox" className={styles.checklistCheckbox} />
+          </div>
+
+          {/* 6. Pozisyon Büyüklüğü */}
+          <div className={styles.checklistItem}>
+            <span className={styles.checklistIcon}>📐</span>
+            <div className={styles.checklistContent}>
+              <span className={styles.checklistLabel}>Pozisyon Büyüklüğü</span>
+              <span className={styles.checklistValue}>
+                {positionSize
+                  ? `%1 risk → ${positionSize.max_shares_1pct ?? '—'} lot · %2 risk → ${positionSize.max_shares_2pct ?? '—'} lot`
+                  : "Portföyünüzün %1-2'sini risk edin."}
+              </span>
+              <span className={styles.checklistNote}>
+                Stop mesafesi ATR×2. Önerilen maksimum lot sayısı.
+              </span>
+            </div>
+            <input type="checkbox" className={styles.checklistCheckbox} />
+          </div>
+
+          {/* 7. Çıkış Planı */}
+          <div className={styles.checklistItem}>
+            <span className={styles.checklistIcon}>🚪</span>
+            <div className={styles.checklistContent}>
+              <span className={styles.checklistLabel}>Çıkış Planı</span>
+              <span className={styles.checklistNote}>Planınızı aşağıda düzenleyebilirsiniz:</span>
+              <textarea
+                className={styles.exitPlanTextarea}
+                value={exitPlan}
+                onChange={(e) => setExitPlan(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <input type="checkbox" className={styles.checklistCheckbox} />
+          </div>
+
+        </div>
+
+        <div className={styles.modalDivider} />
+
+        <button className={styles.modalConfirmBtn} onClick={onClose}>
+          Tümünü Onayladım — Devam Et
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ────────────────────────────────────────────────
 
 export default function StockDetailPage({ params }: { params: Promise<{ symbol: string }> }) {
@@ -389,6 +612,7 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
   const [regime, setRegime] = useState<MarketRegimeResponse | null>(null);
   const [positionSize, setPositionSize] = useState<PositionSizeResponse | null>(null);
 
+  const [checklistOpen, setChecklistOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [chartError, setChartError] = useState<string | null>(null);
   const [inWatchlist, setInWatchlist] = useState(false);
@@ -809,6 +1033,12 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
             </div>
 
             <RegimeBadge regime={regime} />
+            <button
+              className={styles.positionBtn}
+              onClick={() => setChecklistOpen(true)}
+            >
+              + Pozisyon Aç
+            </button>
           </div>
 
           {/* Right column — AI Score Card */}
@@ -1421,6 +1651,22 @@ export default function StockDetailPage({ params }: { params: Promise<{ symbol: 
         )}
 
         </div>{/* end ilgili-hisseler */}
+
+        {checklistOpen && (
+          <PreTradeChecklistModal
+            open={checklistOpen}
+            onClose={() => setChecklistOpen(false)}
+            regime={regime}
+            liquidityScore={s.liquidity_score}
+            overallScore={s.overall_score}
+            recommendation={recommendation}
+            dailyChangePct={s.daily_change_pct}
+            positionSize={positionSize}
+            planStop={planStop}
+            planTarget={planTarget}
+            symbol={symbol}
+          />
+        )}
 
       </div>
     </AppShell>
