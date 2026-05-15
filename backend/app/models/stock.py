@@ -37,6 +37,8 @@ class Stock(Base):
     overall_score = Column(Float, nullable=True)
     recommendation = Column(String(20), nullable=True)  # GÜÇLÜ AL, AL, TUT, SAT, GÜÇLÜ SAT
     data_quality_score = Column(Float, nullable=True)
+    liquidity_score = Column(String(20), nullable=True)   # "yüksek" / "orta" / "düşük"
+    amihud_ratio = Column(Float, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())

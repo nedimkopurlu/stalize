@@ -23,6 +23,7 @@ class NewsItem(Base):
     source = Column(String(100), nullable=True)  # Reuters, Bloomberg HT, KAP, etc.
     language = Column(String(10), default="tr")  # tr, en
     category = Column(String(50), nullable=True)  # geopolitics, macro, sector, company
+    kap_category = Column(String(50), nullable=True)  # Türkçe display label: "Temettü", "Finansal Sonuçlar", etc.
     published_at = Column(DateTime(timezone=True), nullable=True)
 
     # Sentiment Analysis
