@@ -295,7 +295,16 @@ function marketUniverseLabel(stock: StockDetail['stock']) {
   if (stock.is_bist30) return 'BIST 30';
   if (stock.is_bist100) return 'BIST 100';
   if (stock.is_bist250) return 'BIST 250';
-  return stock.market_tier ? `BIST · ${stock.market_tier}` : 'BIST';
+  if (stock.market_tier) {
+    const tierLabel: Record<string, string> = {
+      'ANA': 'BIST Ana Pazar',
+      'STAR': 'BIST Star',
+      'GIP': 'BIST GIP',
+      'YAKINSAK': 'BIST Yakınsak',
+    };
+    return tierLabel[stock.market_tier.toUpperCase()] ?? `BIST ${stock.market_tier}`;
+  }
+  return 'BIST';
 }
 
 // ── Section Nav ───────────────────────────────────────────
@@ -329,13 +338,24 @@ function SectionNav({ activeSection }: { activeSection: string }) {
 // ── Regime Section ────────────────────────────────────────
 
 function RegimeSection({ regime }: { regime: MarketRegimeResponse | null }) {
-  if (!regime) return null;
   const colorMap: Record<string, string> = {
     'Boğa': 'var(--accent-green)',
     'Ayı': 'var(--accent-red)',
     'Yatay': 'var(--text-muted)',
     'Volatil': '#f59e0b',
   };
+  if (!regime) {
+    return (
+      <section id="piyasa-rejimi" className={styles.regimeSection}>
+        <div className={styles.regimeSectionCard}>
+          <div className={styles.sectionEyebrow}>Piyasa Rejimi</div>
+          <div style={{ color: 'var(--text-muted)', padding: '16px 0' }}>
+            Rejim verisi henüz hesaplanmadı. Her işgünü 18:30&apos;da güncellenir.
+          </div>
+        </div>
+      </section>
+    );
+  }
   const color = colorMap[regime.regime] ?? 'var(--text-muted)';
   return (
     <section id="piyasa-rejimi" className={styles.regimeSection}>
