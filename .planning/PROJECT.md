@@ -34,40 +34,31 @@ Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıkl
 - ✓ BIST100 özeti, döviz, altın takibi dashboard — v2.0/v4.0
 - ✓ Giriş yok, responsive, tamamen Türkçe — v2.0
 
-### Active (v7.0 — Analiz Kalitesi & Sistem Bütünlüğü)
+**v7.0 — Analiz Kalitesi & Sistem Bütünlüğü (2026-05-15)**
+- ✓ Veri kalitesi skoru (0-100) — yfinance USD→TRY sanity check, her hissede görünür badge — v7.0
+- ✓ Tavan/taban (devre kesici) badge — ±9.8% eşiği, liste ve detay sayfasında — v7.0
+- ✓ Amihud likidite skoru — 3 kademe (yüksek/orta/düşük), düşük için uyarı — v7.0
+- ✓ KAP duyuru sınıflandırması — 16 kategori, badge, yüksek etkili vurgulu — v7.0
+- ✓ Market Regime Engine — ADX+EMA200+ATR, günlük cron, dashboard + detay badge — v7.0
+- ✓ Sektör bazlı skorlama — Banka (F/DD+ROE), GYO (P/B proxy), Holding (NAV) — v7.0
+- ✓ Portföy beta + korelasyon matrisi + pozisyon büyüklüğü rehberi — v7.0
+- ✓ Türkçe NLP — VADER kaldırıldı, GPT-4o-mini KAP batch + Türkçe kural seti — v7.0
+- ✓ Backtest slipaj modeli (BIST30: 10bps, 30-70: 20bps, 70-100: 40bps) + %0.1 komisyon — v7.0
+- ✓ Hisse detay hiyerarşisi — 7 bölüm, sticky SectionNav — v7.0
+- ✓ Pre-trade ön-işlem checklist — 7 madde, otomatik doldurulmuş modal — v7.0
+- ✓ safeLabel() → StockHelpers.tsx ortak export — v7.0
 
-**Veri Kalitesi:**
-- [ ] yfinance BIST fundamental veri güvenilirlik katmanı — sanity check + data quality score
-- [ ] Tavan/taban (devre kesici) tespiti ve UI göstergesi
-- [ ] Likidite skoru — hacim tutarlılığı, spread proxy, thinly traded uyarısı
-- [ ] `safeLabel()` ortak utility'e taşı (StockHelpers.tsx) — 5 dosyada duplikasyon giderilmeli
+### Active (v8.0 — Sonraki Milestone)
 
-**Türkçe NLP & Sentiment:**
-- [ ] VADER → Türkçe NLP (BERTurk/zemberek) migration
-- [ ] KAP duyuru sınıflandırması — temettü, sermaye artırımı, mali sonuçlar, vs.
+*(Yeni milestone için `/gsd:new-milestone` ile tanımlanacak)*
 
-**Teknik Analiz Derinliği:**
-- [ ] Multi-timeframe teknik analiz (günlük + haftalık + aylık)
-- [ ] Market Regime Engine — boğa/ayı/yatay/volatil rejim tespiti
-
-**Sektör Bazlı Analiz:**
-- [ ] Banka sektörü skor adaptasyonu — NIM, NPL oranı, sermaye yeterlilik rasyosu
-- [ ] GYO sektörü skor adaptasyonu — NAV iskonto, kira getirisi
-- [ ] Holding sektörü skor adaptasyonu — NAV iskonto hesabı
-
-**Portföy Analizi:**
-- [ ] Portföy beta hesabı (BIST100'e göre)
-- [ ] Pozisyon büyüklüğü rehberi
-- [ ] Holding korelasyon matrisi
-- [ ] İşlem sonrası öğrenme döngüsü — geçmiş kararların analizi
-
-**Backtest Kalitesi:**
-- [ ] Slipaj + komisyon modellemesi
-- [ ] Rejim bazlı sinyal performans analizi
-
-**UI/UX:**
-- [ ] Hisse detay sayfa hiyerarşisi yeniden yapılandırması
-- [ ] Ön-işlem checklist
+**v7.0'dan ertelenen öncelikler:**
+- [ ] Post-trade öğrenme döngüsü — "bu karar doğru muydu?" formu + istatistik
+- [ ] Scheduler/job sağlık paneli — hangi cron ne zaman çalıştı, hata var mı
+- [ ] AI prompt şeffaflığı — hangi veri gönderildiğini logla ve göster
+- [ ] Enflasyon muhasebesi notu (TMS 29) — nominal kâr uyarısı
+- [ ] Multi-timeframe teknik analiz (haftalık + aylık) — on-demand hesaplama
+- [ ] BIST tatil takvimi entegrasyonu — scheduler'ı tatil günü durdur
 
 ### Out of Scope
 
@@ -77,12 +68,14 @@ Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıkl
 - Otomatik alım-satım — karar her zaman kullanıcıda
 - BIST100 dışı hisseler — v1 için likit evren yeterli
 
-## Current State: v7.0 IN PROGRESS — Analiz Kalitesi & Sistem Bütünlüğü
+## Current State: v7.0 SHIPPED — Analiz Kalitesi & Sistem Bütünlüğü ✅
 
-**Started:** 2026-05-14  
-**Goal:** BIST audit bulgularındaki tüm eksiklikleri kapatmak — Türkçe NLP, veri kalitesi, sektör bazlı scoring, market regime, portföy derinliği, backtest kalitesi
+**Shipped:** 2026-05-15 (8 faz, 17 plan, 77 dosya, 13,197 satır ekleme)
+**Archive:** `.planning/milestones/v7.0-ROADMAP.md`
 
 **Previous:** v6.0 Shipped 2026-05-14 | **Archive:** `.planning/milestones/v6.0-ROADMAP.md`
+
+**Next:** v8.0 — `/gsd:new-milestone` ile başlat
 
 ## Context
 
@@ -113,7 +106,11 @@ Kullanıcının "bu hisseyi neden almalıyım?" sorusuna hem veriyle hem açıkl
 | Gemini 2.0 Flash | Ücretsiz tier yeterli, Türkçe mükemmel, DeepSeek'in yerini alıyor | ✓ Good — v5.0'da doğrulandı |
 | LLM güvenli fallback | Gemini quota dolsa endpoint hata değil placeholder döner | ✓ Good — v5.1'de iyileştirildi |
 | Direktif olmayan karar dili | "GÜÇLÜ AL/SAT" yerine yorum içermeyen etiket sistemi | ✓ Good — v6.0'da uygulandı; safeLabel 5 sayfada |
-| safeLabel inline (tech debt) | 5 dosyada kopya — shared utility'e taşınmadı | ⚠️ Revisit — v7.0'da StockHelpers.tsx'e taşı |
+| safeLabel inline (tech debt) | 5 dosyada kopya — shared utility'e taşınmadı | ✓ Good — v7.0'da StockHelpers.tsx'e taşındı |
+| Türkçe NLP için OpenAI GPT-4o-mini | BERTurk 440MB RAM aşıyor, Railway 512MB sınırı | ✓ Good — v7.0'da batch sentiment ile doğrulandı |
+| Rule-based Market Regime Engine | HMM bakım yükü yüksek; ADX+EMA200+ATR yeterli | ✓ Good — v7.0'da uygulandı, 6/6 test geçti |
+| Amihud ratio likidite proxy | Gerçek bid-ask spread ücretli; Amihud ücretsiz proxy | ✓ Good — v7.0'da 3 kademeli skor ile doğrulandı |
+| Sektor-spesifik scoring (Banka/GYO/Holding) | Standart F/K bankaları için yanıltıcı | ✓ Good — v7.0 Phase 51'de ayrı metodlar ile uygulandı |
 
 ## Evolution
 
@@ -131,4 +128,4 @@ Bu döküman her fazda ve milestone sınırında güncellenir.
 3. Out of Scope'daki gerekçeler hâlâ geçerli mi?
 
 ---
-*Last updated: 2026-05-14 — v7.0 milestone started: Analiz Kalitesi & Sistem Bütünlüğü*
+*Last updated: 2026-05-16 — v7.0 milestone tamamlandı: Analiz Kalitesi & Sistem Bütünlüğü*

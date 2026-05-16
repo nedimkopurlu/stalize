@@ -1,5 +1,43 @@
 # Milestones: Stalize
 
+## v7.0 Analiz Kalitesi & Sistem Bütünlüğü (Shipped: 2026-05-16)
+
+**Phases completed:** 22 phases, 31 plans, 35 tasks
+
+**Key accomplishments:**
+
+- ASYNC-01 — time.sleep() cleanup:
+- ASYNC-03 — Scheduler job staggering (main.py):
+- Market domain router skeleton (market.py) with GOLD_COIN_WEIGHTS + FOREX_PAIRS constants, JPY/CHF config additions, and xfail test scaffolds for Plans 28-02/03 to implement against
+- One-liner:
+- One-liner:
+- Türkçe Piyasa Özeti dashboard with BIST100 banner, 6-pair Döviz widget, 5-form Altın widget, and 30-second auto-refresh using independent per-widget state buckets
+- Portfolio empty-state card with exact UI-SPEC copy ('Henüz portföy eklenmedi'), dashed-border treatment, and browser-verified coexistence with BIST100/Döviz/Altın widgets
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- 1. Lazy import of gemini_service inside endpoint function
+- 1. [Rule 1 - Bug] verify_api_key passes through in dev when API_KEY not set
+- Plan:
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- Task 1 — api.ts type extensions
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- `calculate_round_trip_cost(is_bist30: bool, liquidity_score: Optional[str]) -> float`
+- One-liner:
+- SectionNav classes:
+
+---
+
 ## v6.0 Karar Güvenliği & Sistem Olgunlaşması (Shipped: 2026-05-14)
 
 **Phases completed:** 19 phases, 25 plans, 30 tasks
