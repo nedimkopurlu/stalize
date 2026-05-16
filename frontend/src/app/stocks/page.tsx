@@ -97,7 +97,7 @@ export default function StocksPage() {
 
   // Fetch stocks on mount
   useEffect(() => {
-    api.getStocks({ sort_by: 'overall_score', limit: 1000 })
+    api.getStocks({ sort_by: 'overall_score', limit: 200 })
       .then((res) => {
         setStocks(res.stocks);
         setTotal(res.total);

@@ -35,7 +35,11 @@ async function apiFetch<T>(endpoint: string, options: FetchOptions = {}): Promis
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ detail: 'API Hatası' }));
-    throw new Error(error.detail || `HTTP ${res.status}`);
+    const detail = error.detail;
+    const msg = Array.isArray(detail)
+      ? (detail[0]?.msg || 'Doğrulama hatası')
+      : (typeof detail === 'string' ? detail : `HTTP ${res.status}`);
+    throw new Error(msg);
   }
 
   return res.json();
