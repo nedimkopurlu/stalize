@@ -5,16 +5,30 @@ Async PostgreSQL connection using SQLAlchemy 2.0
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import create_engine
+from sqlalchemy.pool import NullPool
 from app.core.config import settings
 
+
+_async_engine_kwargs = {
+    "echo": settings.DEBUG,
+    "pool_pre_ping": True,
+}
+
+if settings.ENVIRONMENT.lower() == "test":
+    # TestClient and ASGITransport can exercise the app on different event loops.
+    # asyncpg pooled connections are loop-bound, so tests use one-shot
+    # connections while production keeps the normal pool below.
+    _async_engine_kwargs["poolclass"] = NullPool
+else:
+    _async_engine_kwargs.update(
+        pool_size=20,
+        max_overflow=10,
+    )
 
 # Async engine for FastAPI
 async_engine = create_async_engine(
     settings.DATABASE_URL,
-    echo=settings.DEBUG,
-    pool_size=20,
-    max_overflow=10,
-    pool_pre_ping=True,
+    **_async_engine_kwargs,
 )
 
 # Sync engine for Alembic migrations and data collection scripts

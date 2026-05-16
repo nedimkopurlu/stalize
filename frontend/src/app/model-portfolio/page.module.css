@@ -1,437 +1,433 @@
-/* ── Design Token Reference ──────────────────────────────────
-   --bg-surface, --bg-elevated, --border-primary
-   --text-primary, --text-muted
-   --accent (#f59e0b), --accent-soft, --on-accent
-   --accent-green (#10b981), --accent-red (#ef4444)
-   --font-fraunces
-*/
-
-/* ── Page Layout ─────────────────────────────────────────────── */
 .page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 28px 80px;
   display: grid;
-  gap: 40px;
+  gap: 18px;
+  padding-bottom: 44px;
 }
 
-/* ── Page Header ─────────────────────────────────────────────── */
-.header {
+.hero {
   display: grid;
-  gap: 8px;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr);
+}
+
+.heroCopy,
+.sideCard,
+.holdingsPanel,
+.panel,
+.historyPanel,
+.loadingPanel,
+.emptyPanel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+}
+
+.heroCopy {
+  min-height: 320px;
+  padding: 28px;
 }
 
 .eyebrow {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--text-muted, #8b8d93);
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
-.title {
-  font-family: var(--font-fraunces, 'Fraunces', Georgia, serif);
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--text-primary, #f5f5f7);
-  line-height: 1.15;
-  margin: 0;
+.heroCopy h1 {
+  color: var(--text-primary);
+  font-family: var(--font-fraunces, Georgia, serif);
+  font-size: 3.7rem;
+  letter-spacing: 0;
+  line-height: 1.02;
+  margin: 14px 0 0;
+  max-width: 820px;
 }
 
-.subtitle {
-  font-size: 14px;
-  color: var(--text-muted, #8b8d93);
+.heroCopy p {
+  color: var(--text-secondary);
+  font-size: 1rem;
   line-height: 1.65;
-  margin: 0;
-  max-width: 600px;
+  margin: 20px 0 0;
+  max-width: 880px;
 }
 
-/* ── AI Weekly Portfolio Section ─────────────────────────────── */
-.aiSection {
-  background: var(--bg-elevated, #1c1f24);
-  border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.06));
-  border-radius: 16px;
-  padding: 28px 32px;
+.heroFacts {
   display: grid;
-  gap: 20px;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 28px;
 }
 
-.aiSectionHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.aiSectionMeta {
+.heroFacts div,
+.sideRows div,
+.extremeGrid div {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
   display: grid;
-  gap: 4px;
+  gap: 6px;
+  padding: 12px;
 }
 
-.aiSectionTitle {
-  font-family: var(--font-fraunces, 'Fraunces', Georgia, serif);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-primary, #f5f5f7);
+.heroFacts span,
+.sideRows span,
+.extremeGrid span {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.heroFacts strong,
+.sideRows strong,
+.extremeGrid strong {
+  color: var(--text-primary);
+  font-size: 1.06rem;
+}
+
+.positive {
+  color: var(--accent-green) !important;
+}
+
+.negative {
+  color: var(--accent-red) !important;
+}
+
+.neutral {
+  color: var(--text-primary) !important;
+}
+
+.sideCard {
+  align-content: start;
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+}
+
+.sideCard > strong {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  line-height: 1.25;
+}
+
+.sideCard p {
+  color: var(--text-muted);
   margin: 0;
-  line-height: 1.2;
 }
 
-.weekBadge {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-muted, #8b8d93);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 20px;
-  padding: 4px 12px;
-  white-space: nowrap;
-  align-self: center;
-}
-
-/* AI Holdings chips grid */
-.aiHoldings {
-  display: flex;
-  flex-wrap: wrap;
+.sideRows {
+  display: grid;
   gap: 10px;
 }
 
-.aiHoldingCard {
+.errorMsg {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.24);
+  border-radius: 8px;
+  color: #f87171;
+  font-size: 0.86rem;
+  padding: 12px 14px;
+}
+
+.holdingsPanel,
+.panel,
+.historyPanel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.panelHeader {
+  align-items: flex-end;
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.panelHeader h2 {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  margin: 6px 0 0;
+}
+
+.panelHeader > span {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.tableHeader,
+.holdingRow {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(150px, 1.05fr) 0.8fr 76px 86px 78px 82px 126px minmax(220px, 1.35fr);
+}
+
+.tableHeader {
+  border-bottom: 1px solid var(--border-primary);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  padding: 0 0 10px;
+  text-transform: uppercase;
+}
+
+.holdingList {
+  display: grid;
+  gap: 8px;
+}
+
+.holdingRow {
   align-items: center;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 10px;
-  padding: 10px 16px;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  color: inherit;
+  min-height: 76px;
+  padding: 12px;
   text-decoration: none;
-  transition: background 0.12s ease, border-color 0.12s ease;
-  min-width: 72px;
+  transition: border-color 140ms ease, transform 140ms ease;
 }
 
-.aiHoldingCard:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.14);
+.holdingRow:hover {
+  border-color: var(--border-accent);
+  transform: translateY(-1px);
 }
 
-.aiHoldingSymbol {
-  font-size: 12.5px;
-  font-weight: 700;
-  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace;
-  color: var(--text-primary, #f5f5f7);
+.holdingRow > span,
+.holdingRow > p {
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.42;
+  margin: 0;
 }
 
-.aiHoldingAlloc {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--accent, #f59e0b);
+.holdingRow > strong {
+  color: var(--text-primary);
+  font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
 }
 
-.aiHoldingReturn {
-  font-size: 11px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-/* AI Section stats bar */
-.aiStats {
-  display: flex;
-  gap: 28px;
-  flex-wrap: wrap;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-primary, rgba(255, 255, 255, 0.06));
-}
-
-.aiStat {
-  display: flex;
-  flex-direction: column;
+.symbolCell {
+  display: grid;
   gap: 3px;
 }
 
-.aiStatLabel {
-  font-size: 10.5px;
-  font-weight: 500;
-  color: var(--text-muted, #8b8d93);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.aiStatValue {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary, #f5f5f7);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-/* Skeleton & states */
-.aiSkeleton {
-  display: flex;
-  gap: 10px;
-}
-
-.aiSkeletonChip {
-  width: 72px;
-  height: 62px;
-  border-radius: 10px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.04) 0%,
-    rgba(255, 255, 255, 0.08) 50%,
-    rgba(255, 255, 255, 0.04) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.4s infinite;
-}
-
-@keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-.aiError {
-  font-size: 13px;
-  color: var(--accent-red);
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: 8px;
-  padding: 10px 14px;
-}
-
-.aiEmpty {
-  font-size: 13.5px;
-  color: var(--text-muted, #8b8d93);
-  margin: 0;
-}
-
-.aiEmptyState {
-  padding: 32px 24px;
-  text-align: center;
-}
-
-.aiEmptyIcon {
-  font-size: 2.5rem;
-  margin-bottom: 10px;
-}
-
-.aiEmptyTitle {
-  font-size: 1rem;
-  font-weight: 600;
+.symbolCell strong {
   color: var(--text-primary);
-  margin: 0 0 6px;
+  font-size: 1.05rem;
 }
 
-/* ── Strategy Templates ──────────────────────────────────────── */
-.strategiesSection {
-  margin-top: 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.strategiesHeader {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.strategiesTitle {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin: 0;
-}
-
-.strategiesSub {
-  font-size: 13px;
+.symbolCell span,
+.scoreStack span {
   color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.scoreStack {
+  display: grid;
+  gap: 3px;
+}
+
+.analysisGrid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.reviewText {
+  color: var(--text-secondary);
+  font-size: 0.94rem;
+  line-height: 1.64;
   margin: 0;
 }
 
-.strategyGrid {
+.actionList,
+.changeChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actionList span,
+.changeChips span {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
+.sectorList {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
 }
 
-@media (max-width: 900px) { .strategyGrid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 600px) { .strategyGrid { grid-template-columns: 1fr; } }
-
-.strategyCard {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-top: 3px solid var(--accent);
-  border-radius: 10px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
+.sectorRow {
+  display: grid;
   gap: 8px;
-  transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
-.strategyCard:hover { transform: translateY(-2px); }
-
-.strategyIcon { font-size: 22px; line-height: 1; }
-.strategyName { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-.strategyDesc { font-size: 13px; line-height: 1.5; color: var(--text-muted); }
-.strategyBadge {
-  align-self: flex-start;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  margin-top: 4px;
-}
-
-/* ── Responsive ──────────────────────────────────────────────── */
-@media (max-width: 700px) {
-  .page {
-    padding: 24px 16px 60px;
-    gap: 28px;
-  }
-
-  .title {
-    font-size: 26px;
-  }
-
-  .aiSection {
-    padding: 20px 18px;
-  }
-
-  .aiSectionTitle {
-    font-size: 18px;
-  }
-}
-
-/* ── Gemini Review Summary (LLM-04) ───────────────────────────── */
-.reviewSummary {
+.sectorRow div:first-child {
+  align-items: center;
   display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  margin-top: 16px;
-  padding: 12px 14px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: 8px;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.reviewSummaryIcon {
-  color: var(--accent);
-  font-size: 14px;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.reviewSummaryText {
-  font-size: 13px;
-  line-height: 1.6;
+.sectorRow span {
   color: var(--text-secondary);
+  font-size: 0.86rem;
+}
+
+.sectorRow strong {
+  color: var(--text-primary);
+  font-size: 0.86rem;
+}
+
+.barTrack {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.barTrack span {
+  background: linear-gradient(90deg, var(--accent), var(--accent-green));
+  display: block;
+  height: 100%;
+}
+
+.smallNote {
+  color: var(--text-muted);
+  font-size: 0.82rem;
   margin: 0;
 }
 
-/* ── Getiri Karşılaştırması (MODEL-04) ───────────────────────── */
-.comparisonCard {
-  margin-top: 16px;
-  padding: 14px 16px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-
-.comparisonTitle {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 10px;
-}
-
-.comparisonRow {
-  display: flex;
-  gap: 16px;
-}
-
-.comparisonCol {
-  flex: 1;
-  text-align: center;
-}
-
-.comparisonLabel {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-}
-
-.comparisonValue {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-/* ── Geçmiş Haftalar (MODEL-03) ───────────────────────────────── */
-.historySection {
-  margin-top: 8px;
-}
-
-.historySectionTitle {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 14px;
-}
-
-.historyTable {
-  display: flex;
-  flex-direction: column;
+.extremeGrid {
+  display: grid;
   gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.extremeGrid b {
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.historyList {
+  display: grid;
+  gap: 8px;
 }
 
 .historyRow {
-  padding: 14px 16px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 6px 16px;
   align-items: center;
+  border-bottom: 1px solid var(--border-primary);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(160px, 1fr) 96px 116px 104px;
+  padding-bottom: 10px;
 }
 
-.historyDate {
-  font-size: 13px;
-  font-weight: 500;
+.historyRow:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.historyRow span {
+  color: var(--text-secondary);
+  font-size: 0.84rem;
+}
+
+.historyRow strong {
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.loadingPanel {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.loadingPanel span {
+  animation: shimmer 1.3s ease-in-out infinite;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  height: 64px;
+}
+
+.emptyPanel {
+  display: grid;
+  gap: 8px;
+  padding: 34px 24px;
+  text-align: center;
+}
+
+.emptyPanel strong {
   color: var(--text-primary);
 }
 
-.historyReturn {
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.historyBenchmark {
-  font-size: 12px;
+.emptyPanel p {
   color: var(--text-muted);
+  margin: 0;
 }
 
-.historyReview {
-  grid-column: 1 / -1;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--text-secondary);
-  margin: 4px 0 0;
-  font-style: italic;
+@keyframes shimmer {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.42;
+  }
 }
 
-.historyLoading {
-  font-size: 13px;
-  color: var(--text-muted);
-  padding: 12px 0;
+@media (max-width: 1280px) {
+  .tableHeader {
+    display: none;
+  }
+
+  .holdingRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .holdingRow > p {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1180px) {
+  .hero,
+  .analysisGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroCopy h1 {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .heroCopy {
+    min-height: auto;
+    padding: 22px;
+  }
+
+  .heroCopy h1 {
+    font-size: 2.35rem;
+  }
+
+  .heroFacts,
+  .holdingRow,
+  .extremeGrid,
+  .historyRow {
+    grid-template-columns: 1fr;
+  }
 }

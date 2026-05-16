@@ -193,6 +193,7 @@ class ExternalNewsRSSCollector:
     def _normalize_entry(self, entry: Any, feed_def: dict[str, Any]) -> Optional[dict[str, Any]]:
         title = html.unescape(str(entry.get("title") or "")).strip()
         summary = html.unescape(re.sub(r"<[^>]+>", " ", str(entry.get("summary") or ""))).strip()
+        summary = re.sub(r"\s+", " ", summary)
         if not title:
             return None
 
@@ -229,6 +230,7 @@ class ExternalNewsRSSCollector:
             "magnitude": magnitude,
             "headline": title,
             "original_headline": title,
+            "summary": summary[:420] if summary else "",
             "source_url": str(entry.get("link") or "").strip(),
             "publisher": str(feed_def["publisher"]),
             "sentiment_score": sentiment_score,

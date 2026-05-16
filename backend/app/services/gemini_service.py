@@ -1,6 +1,6 @@
 """
 LLM Servis Katmanı — Phase 35.
-Groq (llama-3.3-70b) birincil sağlayıcı, Gemini yedek.
+OpenAI ChatGPT API sağlayıcısı.
 Tüm LLM çağrıları bu modülden geçer.
 Hata durumunda Türkçe fallback döner.
 """
@@ -26,77 +26,56 @@ Asla "bu bir yatırım tavsiyesi değildir" gibi yasal uyarılar ekleme.
 Kısa ama özlü ol — 5-8 cümle ideal."""
 
 
-class GeminiService:
-    """LLM servis katmanı — Groq birincil, Gemini yedek."""
+class OpenAIService:
+    """LLM servis katmanı — OpenAI Chat Completions API."""
 
     def __init__(self) -> None:
-        self._groq_client = None
-        self._gemini_configured = False
+        self._client = None
+        self._configured = False
 
-        # Groq istemcisini başlat
-        if settings.GROQ_API_KEY:
+        if settings.OPENAI_API_KEY:
             try:
-                from groq import AsyncGroq
-                self._groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
-                logger.info("Groq istemcisi başlatıldı (llama-3.3-70b).")
-            except Exception as e:
-                logger.error("Groq başlatma hatası: %s", e)
+                from openai import AsyncOpenAI
 
-        # Gemini yedek olarak
-        if settings.GEMINI_API_KEY:
-            try:
-                import google.generativeai as genai
-                genai.configure(api_key=settings.GEMINI_API_KEY)
-                self._gemini_configured = True
+                self._client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+                self._configured = True
+                logger.info("OpenAI istemcisi başlatıldı (%s).", settings.OPENAI_MODEL)
             except Exception as e:
-                logger.warning("Gemini yapılandırma hatası: %s", e)
+                logger.error("OpenAI başlatma hatası: %s", e)
 
     async def generate(
         self,
         prompt: str,
         system_prompt: Optional[str] = None,
-        model: str = "llama-3.3-70b-versatile",
+        model: Optional[str] = None,
     ) -> str:
         """
         Verilen prompt ile LLM'e istek gönderir.
-        Groq başarısız olursa Gemini'yi dener.
-        Her iki sağlayıcı da başarısız olursa FALLBACK_MESSAGE döner.
+        OpenAI başarısız olursa FALLBACK_MESSAGE döner.
         """
         sys = system_prompt or SYSTEM_PROMPT
+        if not self._configured or self._client is None:
+            logger.error("OpenAI API anahtarı yapılandırılmamış.")
+            return FALLBACK_MESSAGE
 
-        # 1. Groq ile dene
-        if self._groq_client:
-            try:
-                response = await self._groq_client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=[
-                        {"role": "system", "content": sys},
-                        {"role": "user", "content": prompt},
-                    ],
-                    max_tokens=1024,
-                    temperature=0.65,
-                )
-                text = response.choices[0].message.content
-                if text:
-                    return text.strip()
-            except Exception as e:
-                logger.warning("Groq generate hatası, Gemini'ye geçiliyor: %s", e)
+        try:
+            response = await self._client.chat.completions.create(
+                model=model or settings.OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": sys},
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=1024,
+                temperature=0.65,
+            )
+            text = response.choices[0].message.content
+            if text:
+                return text.strip()
+        except Exception as e:
+            logger.error("OpenAI generate hatası: %s", e)
 
-        # 2. Gemini yedek
-        if self._gemini_configured:
-            try:
-                import google.generativeai as genai
-                llm = genai.GenerativeModel(
-                    "gemini-2.0-flash",
-                    system_instruction=sys,
-                )
-                response = await llm.generate_content_async(prompt)
-                return response.text.strip()
-            except Exception as e:
-                logger.error("Gemini generate hatası: %s", e)
-
-        logger.error("Tüm LLM sağlayıcıları başarısız.")
         return FALLBACK_MESSAGE
 
 
-gemini_service = GeminiService()
+GeminiService = OpenAIService
+gemini_service = OpenAIService()

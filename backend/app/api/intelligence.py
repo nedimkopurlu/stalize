@@ -24,7 +24,7 @@ Yanıtı 4-6 cümlelik akıcı Türkçe paragraflar olarak yaz. Gereksiz yasal u
 
 @router.get("/intelligence/daily-summary")
 async def get_daily_summary():
-    """Günlük Gemini piyasa özeti — in-memory cache, her sabah 09:05'te sıfırlanır."""
+    """Günlük OpenAI piyasa özeti — in-memory cache, her sabah 09:05'te sıfırlanır."""
     from app.services.gemini_service import gemini_service
 
     today = datetime.date.today().isoformat()
@@ -68,9 +68,13 @@ async def get_intelligence_overview(limit: int = 10):
             "scenarios": [],
             "source_summary": {},
             "horizon_summary": {},
+            "ai_digest": {
+                "summary": "Haber akışı şu anda alınamadı; sistem kaynakları tekrar deneyecek.",
+                "generated_by": "fallback",
+                "confidence": 0,
+                "generated_at": datetime.datetime.now(timezone.utc).isoformat(),
+            },
             "priority_mode": "kap_first",
             "primary_source": "KAP",
             "error": "Piyasa akışı alınamadı",
         }
-
-

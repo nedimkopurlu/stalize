@@ -1,5 +1,5 @@
 """
-Data Collector Service — BIST100 veri toplama orchestrator
+Data Collector Service — BIST veri toplama orchestrator
 
 Veri kaynakları:
 1. Yahoo Finance (yfinance) — Hisse fiyatları, emtia, endeksler, döviz
@@ -132,24 +132,110 @@ async def _fetch_json_from_bloomberght(path: str) -> dict:
     return await loop.run_in_executor(None, _fetch)
 
 
-async def _fetch_bloomberght_stock_slugs(symbols: list[str]) -> dict[str, str]:
-    cache_key = "bloomberght:stock_slugs"
+def _is_unknown_sector(value: object) -> bool:
+    text = str(value or "").strip().lower()
+    return text in {"", "bilinmeyen", "unknown", "other", "diğer", "diger"}
+
+
+def _clean_live_company_name(value: object, fallback: str) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return fallback
+    return " ".join(text.split())
+
+
+def _classify_live_sector(symbol: str, name: str) -> str:
+    text = f"{symbol} {name}".upper()
+    rules: tuple[tuple[str, tuple[str, ...]], ...] = (
+        ("Gayrimenkul", ("GYO", "GMYO", "GAYRIMENKUL", "EMLAK")),
+        ("Enerji", ("ENERJI", "ELEKTRIK", "YENILENEBILIR", "PETROL", "DOGAL GAZ", "JEOTERMAL", "URETIM")),
+        ("Madencilik", ("MADEN", "ALTIN", "KOMUR", "MERMER")),
+        ("Banka", ("BANK", "KATILIM")),
+        ("Sigorta", ("SIGORTA", "EMEKLILIK")),
+        ("Finansal Hizmetler", ("MENKUL", "YATIRIM", "PORTFOY", "FAKTORING", "FINANS", "VARLIK", "LEASING", "KIRALAMA")),
+        ("Holding", ("HOLDING", "HOLDG")),
+        ("Teknoloji", ("TEKNOLOJI", "YAZILIM", "BILISIM", "ELEKTRONIK", "BILGI", "NETAS", "KAREL")),
+        ("Telekomünikasyon", ("TELEKOM", "ILETISIM")),
+        ("Gıda", ("GIDA", "UN", "SUT", "ET", "YAG", "ICECEK", "BISKUVI", "SEKER", "TARIM", "BALIK", "MAKARNA")),
+        ("Perakende", ("PERAKENDE", "MAGAZA", "MARKET", "AVM")),
+        ("Çimento", ("CIMENTO", "BETON")),
+        ("Metal", ("DEMIR", "CELIK", "METAL", "DOKUM", "ALUMINYUM", "BAKIR", "BORU")),
+        ("Otomotiv", ("OTOMOTIV", "MOTOR", "TRAKTOR", "LASTIK", "JANT", "FREN")),
+        ("Tekstil", ("TEKSTIL", "GIYIM", "DERI", "KONFEKSIYON", "MENSUCAT", "DOKUMA")),
+        ("Kimya", ("KIMYA", "BOYA", "PLASTIK", "PETROKIMYA", "SELULOZ")),
+        ("Sağlık", ("SAGLIK", "ILAC", "ECZA", "HASTANE", "MEDIKAL", "BIYOTEKNOLOJI")),
+        ("İnşaat", ("INSAAT", "YAPI", "TAAHHUT")),
+        ("İnşaat Malzemeleri", ("SERAMIK", "GRANIT", "KARO", "CAM", "YALITIM")),
+        ("Kağıt ve Ambalaj", ("KAGIT", "KARTON", "AMBALAJ", "OLUKLU")),
+        ("Turizm", ("TURIZM", "OTEL", "TATIL")),
+        ("Ulaştırma", ("LOJISTIK", "ULASIM", "LIMAN", "DENIZ", "HAVA", "KARGO")),
+        ("Savunma", ("SAVUNMA", "HAVACILIK")),
+        ("Medya", ("MEDYA", "YAYIN", "BASIM", "GAZETE")),
+        ("Spor", ("SPOR",)),
+    )
+    for sector, keywords in rules:
+        if any(keyword in text for keyword in keywords):
+            return sector
+    return "Çeşitlendirilmiş Sanayi"
+
+
+async def _fetch_bloomberght_stock_items() -> list[dict]:
+    cache_key = "bloomberght:stock_items"
     cached = _yf_cache.get(cache_key)
     if cached is not None:
-        return {symbol: cached[symbol] for symbol in symbols if symbol in cached}
+        return cached
 
     payload = await _fetch_json_from_bloomberght("ekonomi/borsa/bist/tum/hisseler")
     items = (((payload.get("body") or {}).get("allStocks") or {}).get("items") or [])
+    normalized = [item for item in items if (item.get("sec_code") or item.get("ibsSymbol"))]
+    if normalized:
+        _yf_cache.set(cache_key, normalized, expire=3600)
+    return normalized
+
+
+async def _fetch_bloomberght_stock_slugs(symbols: list[str] | None = None) -> dict[str, str]:
+    cache_key = "bloomberght:stock_slugs:v2"
+    cached = _yf_cache.get(cache_key)
+    if cached is not None:
+        if symbols is None:
+            return cached
+        return {symbol: cached[symbol] for symbol in symbols if symbol in cached}
+
+    items = await _fetch_bloomberght_stock_items()
     slug_map: dict[str, str] = {}
     for item in items:
-        symbol = (item.get("sec_code") or item.get("ibsSymbol") or "").upper().strip()
+        symbol = (item.get("ibsSymbol") or item.get("sec_code") or "").upper().strip()
         slug = _detail_slug_from_bloomberght_url(item.get("url"))
         if symbol and slug:
             slug_map[symbol] = slug
 
     if slug_map:
         _yf_cache.set(cache_key, slug_map, expire=3600)
+    if symbols is None:
+        return slug_map
     return {symbol: slug_map[symbol] for symbol in symbols if symbol in slug_map}
+
+
+async def _fetch_bloomberght_stock_metadata() -> dict[str, dict[str, str]]:
+    items = await _fetch_bloomberght_stock_items()
+    metadata: dict[str, dict[str, str]] = {}
+    for item in items:
+        symbol = (item.get("ibsSymbol") or item.get("sec_code") or "").upper().strip()
+        if not symbol:
+            continue
+        custom_name = _clean_live_company_name(item.get("secLongNameCustom"), "")
+        fallback_name = item.get("secLongName") or item.get("secName")
+        name = _clean_live_company_name(
+            custom_name if custom_name and custom_name != symbol else fallback_name,
+            symbol,
+        )
+        metadata[symbol] = {
+            "symbol": symbol,
+            "name": name,
+            "sector": _classify_live_sector(symbol, name),
+            "market_tier": "canlı",
+        }
+    return metadata
 
 
 async def get_bloomberght_live_quotes(symbols: list[str]) -> dict[str, LiveBistQuote]:
@@ -306,7 +392,7 @@ class DataCollector:
     """Main data collection orchestrator for Borsa İstanbul stocks."""
 
     def __init__(self):
-        self.universe = list(settings.BIST100_UNIVERSE)
+        self.universe = list(settings.BIST_FULL_UNIVERSE)
         self.symbols = [item["symbol"] for item in self.universe]
         self._universe_by_symbol = {item["symbol"]: item for item in self.universe}
         self.commodity_symbols = settings.COMMODITY_SYMBOLS
@@ -314,11 +400,54 @@ class DataCollector:
         self.currency_pairs = settings.CURRENCY_PAIRS
         self.bond_symbols = settings.BOND_SYMBOLS
 
+    async def refresh_runtime_universe(self) -> None:
+        """Expand canonical BIST universe with currently quoted BloombergHT symbols."""
+        canonical_by_symbol = {item["symbol"]: dict(item) for item in settings.BIST_FULL_UNIVERSE}
+        try:
+            live_metadata = await _fetch_bloomberght_stock_metadata()
+        except Exception as exc:
+            logger.warning("BloombergHT tüm hisse sembolleri alınamadı; kanonik evren kullanılacak: %s", exc)
+            live_metadata = {}
+
+        if live_metadata:
+            universe_by_symbol = {}
+            for symbol in sorted(live_metadata):
+                live = live_metadata[symbol]
+                canonical = canonical_by_symbol.get(symbol, {})
+                sector = canonical.get("sector")
+                if _is_unknown_sector(sector):
+                    sector = live["sector"]
+                canonical_name = str(canonical.get("name") or "").strip()
+                universe_by_symbol[symbol] = {
+                    "symbol": symbol,
+                    "name": canonical_name if canonical_name and canonical_name != symbol else live["name"],
+                    "sector": sector,
+                    "market_tier": canonical.get("market_tier") or live["market_tier"],
+                    "is_bist30": bool(canonical.get("is_bist30", False)),
+                    "is_bist100": bool(canonical.get("is_bist100", False)),
+                    "is_bist250": bool(canonical.get("is_bist250", False)),
+                }
+            ordered_symbols = sorted(universe_by_symbol)
+        else:
+            universe_by_symbol = canonical_by_symbol
+            ordered_symbols = [item["symbol"] for item in settings.BIST_FULL_UNIVERSE]
+
+        self.universe = [universe_by_symbol[symbol] for symbol in ordered_symbols]
+        self.symbols = [item["symbol"] for item in self.universe]
+        self._universe_by_symbol = {item["symbol"]: item for item in self.universe}
+        if live_metadata:
+            logger.info(
+                "BIST evreni güncellendi: %s kanonik referans, %s canlı işlem gören hisse",
+                len(settings.BIST_FULL_SYMBOLS),
+                len(self.symbols),
+            )
+
     # ─── STOCK INITIALIZATION ────────────────────────────────────────────
 
-    async def initialize_stocks(self):
-        """Initialize BIST100 stocks in database with metadata from Yahoo Finance."""
-        logger.info(f"📊 BIST100 hisseleri veritabanına ekleniyor ({len(self.symbols)} hisse)...")
+    async def initialize_stocks(self, fetch_yahoo_metadata: bool = False):
+        """Initialize BIST stocks in database with canonical metadata."""
+        await self.refresh_runtime_universe()
+        logger.info("BIST hisseleri veritabanına ekleniyor (%s hisse)...", len(self.symbols))
 
         async with AsyncSessionLocal() as db:
             processed = 0
@@ -346,10 +475,14 @@ class DataCollector:
                     existing.sector = canonical_sector
                     existing.is_bist30 = canonical_is_bist30
                 else:
-                    # Fetch info from Yahoo Finance
-                    try:
-                        info = await get_ticker_info(yahoo_symbol)
+                    info = {}
+                    if fetch_yahoo_metadata:
+                        try:
+                            info = await get_ticker_info(yahoo_symbol)
+                        except Exception as e:
+                            logger.warning(f"  ⚠️ {symbol} Yahoo metadata alınamadı: {e}")
 
+                    try:
                         stock = Stock(
                             symbol=symbol,
                             yahoo_symbol=yahoo_symbol,
@@ -387,17 +520,19 @@ class DataCollector:
                 processed += 1
                 if processed % 10 == 0:
                     await db.commit()
-                    await asyncio.sleep(1)
+                    if fetch_yahoo_metadata:
+                        await asyncio.sleep(1)
                     logger.info(f"  ⏱️ {processed}/{len(self.symbols)} hisse işlendi")
 
             await self._deactivate_noncanonical_stocks(db)
             await db.commit()
-            logger.info("✅ BIST100 hisseleri veritabanına eklendi")
+            logger.info("✅ BIST hisseleri veritabanına eklendi")
 
     # ─── PRICE DATA COLLECTION ───────────────────────────────────────────
 
     async def collect_price_data(self, period: str = "5y"):
-        """Collect OHLCV price data for all BIST100 stocks."""
+        """Collect OHLCV price data for all active BIST stocks."""
+        await self.refresh_runtime_universe()
         logger.info(f"📈 Fiyat verileri toplanıyor (period={period})...")
 
         async with AsyncSessionLocal() as db:
@@ -415,11 +550,12 @@ class DataCollector:
 
     async def collect_live_bist_quotes(self) -> int:
         """
-        Refresh current BIST100 quotes from BloombergHT's Foreks-backed JSON API.
+        Refresh current BIST quotes from BloombergHT's Foreks-backed JSON API.
 
         Yahoo can lag or rate-limit BIST symbols. This lightweight pass keeps the
         decision screens current with real delayed/live market quotes.
         """
+        await self.refresh_runtime_universe()
         logger.info("📡 BloombergHT/Foreks canlı BIST fiyatları toplanıyor...")
         quotes = await get_bloomberght_live_quotes(self.symbols)
         if not quotes:
@@ -681,7 +817,7 @@ class DataCollector:
     # ─── FUNDAMENTAL DATA COLLECTION ─────────────────────────────────────
 
     async def collect_fundamentals(self):
-        """Collect fundamental data for all BIST100 stocks."""
+        """Collect fundamental data for all active BIST stocks."""
         logger.info("📑 Temel analiz verileri toplanıyor...")
         
         engine = FundamentalAnalysisEngine()
@@ -727,7 +863,7 @@ class DataCollector:
     async def full_initial_load(self):
         """Complete initial data load — run once on first setup."""
         logger.info("JOB_START source=full_initial_load")
-        await self.initialize_stocks()
+        await self.initialize_stocks(fetch_yahoo_metadata=True)
         await self.collect_price_data(period="5y")
         await self.collect_market_data(period="2y")
         await self.collect_fundamentals()

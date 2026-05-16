@@ -49,6 +49,7 @@ def test_normalize_entry_keeps_macro_relevant_item():
     assert item is not None
     assert item["publisher"] == "Bloomberg HT"
     assert item["trigger_id"] == "bist100_index"
+    assert item["summary"] == "BIST 100 endeksi bankacılık hisseleri öncülüğünde yükseldi."
     assert item["thesis_horizon"] == "medium_term"
 
 

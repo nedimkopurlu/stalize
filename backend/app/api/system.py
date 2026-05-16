@@ -8,8 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import verify_api_key
+from app.core.config import settings
 from app.data.official_sources import OFFICIAL_SOURCE_CATALOG
 from app.models.news import NewsItem
+from app.models.portfolio_v2 import PortfolioPosition
+from app.models.price import CommodityPrice, PriceHistory
+from app.models.signal import SignalDecisionSnapshot
 from app.models.stock import Stock
 from app.services.official_ingest import get_source_runner
 from app.services.source_health import (
@@ -19,6 +23,24 @@ from app.services.source_health import (
 )
 
 router = APIRouter()
+
+
+def _diagnostic_item(
+    key: str,
+    title: str,
+    status: str,
+    detail: str,
+    remediation: str,
+    metadata: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
+    return {
+        "key": key,
+        "title": title,
+        "status": status,
+        "detail": detail,
+        "remediation": remediation,
+        "metadata": metadata or {},
+    }
 
 
 def _parse_runtime_ts(value: Optional[str]) -> Optional[datetime]:
@@ -73,6 +95,8 @@ async def health_check(db: AsyncSession = Depends(get_db)):
     return {
         "status": "ok",
         "stocks_in_db": stock_count,
+        "canonical_universe_count": len(settings.BIST_FULL_SYMBOLS),
+        "universe_sync": stock_count >= len(settings.BIST_FULL_SYMBOLS),
         "sources": {
             "kap": {
                 "status": "fresh" if latest_kap else "missing",
@@ -80,6 +104,258 @@ async def health_check(db: AsyncSession = Depends(get_db)):
             }
         },
         "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.get("/system/diagnostics")
+async def get_system_diagnostics(db: AsyncSession = Depends(get_db)):
+    """Hidden operator dashboard feed: reports working, degraded, and broken subsystems."""
+    now = datetime.now(timezone.utc)
+    items: list[dict[str, Any]] = []
+
+    stock_count = (
+        await db.execute(select(func.count(Stock.id)).where(Stock.is_active))
+    ).scalar() or 0
+    items.append(
+        _diagnostic_item(
+            key="db.stocks",
+            title="Aktif hisse evreni",
+            status="ok" if stock_count > 0 else "critical",
+            detail=f"{stock_count} aktif hisse kayıtlı.",
+            remediation="Initial load veya stock universe seed işlemini çalıştır.",
+            metadata={"active_stock_count": stock_count},
+        )
+    )
+
+    latest_price = (
+        await db.execute(select(func.max(PriceHistory.date)))
+    ).scalar_one_or_none()
+    price_count = (await db.execute(select(func.count(PriceHistory.id)))).scalar() or 0
+    price_age_days = (now.date() - latest_price).days if latest_price else None
+    if latest_price is None:
+        price_status = "critical"
+        price_detail = "Fiyat geçmişi hiç yok."
+    elif price_age_days is not None and price_age_days > 4:
+        price_status = "critical"
+        price_detail = f"Son fiyat verisi {price_age_days} gün eski."
+    elif price_age_days is not None and price_age_days > 2:
+        price_status = "warning"
+        price_detail = f"Son fiyat verisi {price_age_days} gün eski."
+    else:
+        price_status = "ok"
+        price_detail = f"Son fiyat tarihi {latest_price.isoformat()}."
+    items.append(
+        _diagnostic_item(
+            key="market.price_history",
+            title="Hisse fiyat verisi",
+            status=price_status,
+            detail=price_detail,
+            remediation="Data update job veya yfinance canlı fiyat yenilemesini çalıştır.",
+            metadata={"price_rows": price_count, "latest_price_date": latest_price.isoformat() if latest_price else None},
+        )
+    )
+
+    commodity_symbols = ["XU100.IS", "USDTRY=X", "GC=F"]
+    commodity_rows = (
+        await db.execute(
+            select(CommodityPrice.symbol, func.max(CommodityPrice.date), func.count(CommodityPrice.id))
+            .where(CommodityPrice.symbol.in_(commodity_symbols))
+            .group_by(CommodityPrice.symbol)
+        )
+    ).all()
+    commodity_map = {symbol: {"latest": latest, "count": count} for symbol, latest, count in commodity_rows}
+    missing_market = [symbol for symbol in commodity_symbols if symbol not in commodity_map]
+    stale_market = [
+        symbol
+        for symbol, payload in commodity_map.items()
+        if payload["latest"] and (now.date() - payload["latest"]).days > 4
+    ]
+    market_status = "critical" if missing_market else "warning" if stale_market else "ok"
+    items.append(
+        _diagnostic_item(
+            key="market.reference_data",
+            title="Referans piyasa verisi",
+            status=market_status,
+            detail=(
+                f"Eksik: {', '.join(missing_market)}"
+                if missing_market
+                else f"Eski: {', '.join(stale_market)}"
+                if stale_market
+                else "BIST100, USDTRY ve altın referans verileri mevcut."
+            ),
+            remediation="Market data update job veya commodity/index backfill çalıştır.",
+            metadata={
+                "symbols": {
+                    k: {"latest": v["latest"].isoformat() if v["latest"] else None, "count": v["count"]}
+                    for k, v in commodity_map.items()
+                }
+            },
+        )
+    )
+
+    from app.core.config import settings
+
+    items.append(
+        _diagnostic_item(
+            key="llm.openai",
+            title="OpenAI yapılandırması",
+            status="ok" if bool(settings.OPENAI_API_KEY) else "critical",
+            detail=(
+                f"OpenAI anahtarı mevcut; model {settings.OPENAI_MODEL}."
+                if settings.OPENAI_API_KEY
+                else "OPENAI_API_KEY tanımlı değil."
+            ),
+            remediation="Backend ortam değişkenlerine OPENAI_API_KEY ve OPENAI_MODEL ekle.",
+            metadata={"model": settings.OPENAI_MODEL, "configured": bool(settings.OPENAI_API_KEY)},
+        )
+    )
+
+    runtime_map = get_all_source_health()
+    active_source_findings = []
+    for source in OFFICIAL_SOURCE_CATALOG:
+        runtime = runtime_map.get(source["key"], {})
+        status, age_minutes = _resolve_source_health_status(source, runtime)
+        if source.get("ingest_status") == "active" and status in {"failing", "stale", "missing"}:
+            active_source_findings.append({
+                "key": source["key"],
+                "name": source.get("name"),
+                "status": status,
+                "age_minutes": age_minutes,
+                "last_error": runtime.get("last_error"),
+            })
+    items.append(
+        _diagnostic_item(
+            key="sources.official",
+            title="Resmi kaynak taramaları",
+            status="critical" if any(f["status"] == "failing" for f in active_source_findings) else "warning" if active_source_findings else "ok",
+            detail=(
+                f"{len(active_source_findings)} aktif kaynak ilgi istiyor."
+                if active_source_findings
+                else "Aktif resmi kaynaklarda açık hata yok."
+            ),
+            remediation="Kaynak detayında son hatayı incele; gerekirse /api/sources/scan/{source_key} ile manuel tara.",
+            metadata={"findings": active_source_findings},
+        )
+    )
+
+    latest_snapshot = (
+        await db.execute(select(func.max(SignalDecisionSnapshot.decision_date)))
+    ).scalar_one_or_none()
+    snapshot_count = (await db.execute(select(func.count(SignalDecisionSnapshot.id)))).scalar() or 0
+    snapshot_age_days = (now.date() - latest_snapshot).days if latest_snapshot else None
+    signal_status = "critical" if latest_snapshot is None else "warning" if snapshot_age_days is not None and snapshot_age_days > 3 else "ok"
+    items.append(
+        _diagnostic_item(
+            key="signals.snapshots",
+            title="Sinyal snapshot döngüsü",
+            status=signal_status,
+            detail=(
+                "Henüz sinyal snapshot yok."
+                if latest_snapshot is None
+                else f"Son snapshot {latest_snapshot.isoformat()}, toplam {snapshot_count} kayıt."
+            ),
+            remediation="Sinyal Merkezi'nde Bugünü Kaydet veya scheduler background_signal_snapshot çalışmalı.",
+            metadata={"latest_snapshot_date": latest_snapshot.isoformat() if latest_snapshot else None, "snapshot_count": snapshot_count},
+        )
+    )
+
+    measured_count = (
+        await db.execute(
+            select(func.count(SignalDecisionSnapshot.id)).where(SignalDecisionSnapshot.actual_return_1w_pct.isnot(None))
+        )
+    ).scalar() or 0
+    items.append(
+        _diagnostic_item(
+            key="signals.outcomes",
+            title="Sinyal sonuç ölçümü",
+            status="warning" if measured_count < 20 else "ok",
+            detail=f"{measured_count} ölçülmüş 1 haftalık sinyal var.",
+            remediation="20+ ölçülmüş sinyal birikene kadar kalibrasyon observation modunda kalır.",
+            metadata={"measured_1w_count": measured_count, "minimum_for_calibration": 20},
+        )
+    )
+
+    backtest_ready = stock_count > 0 and price_count >= 1000 and "XU100.IS" in commodity_map
+    items.append(
+        _diagnostic_item(
+            key="strategy.backtest",
+            title="Backtest altyapısı",
+            status="ok" if backtest_ready else "critical",
+            detail=(
+                "Strateji backtest için hisse fiyatları ve BIST100 benchmark hazır."
+                if backtest_ready
+                else "Backtest için fiyat geçmişi veya BIST100 benchmark eksik."
+            ),
+            remediation="Hisse fiyat geçmişi ve XU100.IS referans verisini güncelle.",
+            metadata={"price_rows": price_count, "has_benchmark": "XU100.IS" in commodity_map},
+        )
+    )
+
+    active_positions = (
+        await db.execute(select(func.count(PortfolioPosition.id)).where(PortfolioPosition.is_active == True))  # noqa: E712
+    ).scalar() or 0
+    items.append(
+        _diagnostic_item(
+            key="risk.alerts",
+            title="Risk ve alarm denetçisi",
+            status="ok",
+            detail=f"Risk denetçisi çalışır durumda; {active_positions} aktif pozisyon izleniyor.",
+            remediation="Pozisyon yoksa alarm motoru yalnızca KAP, model skoru ve yeni sinyalleri izler.",
+            metadata={"active_positions": active_positions},
+        )
+    )
+
+    try:
+        from app.main import scheduler
+
+        scheduler_jobs = {job.func.__name__ for job in scheduler.get_jobs()}
+        expected_jobs = {
+            "background_signal_snapshot",
+            "background_signal_outcome_evaluation",
+            "background_data_update",
+            "background_kap_scan",
+        }
+        missing_jobs = sorted(expected_jobs - scheduler_jobs)
+        scheduler_running = bool(getattr(scheduler, "running", False))
+        scheduler_status = "critical" if not scheduler_running or missing_jobs else "ok"
+        items.append(
+            _diagnostic_item(
+                key="scheduler.jobs",
+                title="Zamanlanmış işler",
+                status=scheduler_status,
+                detail=(
+                    "Scheduler çalışıyor ve kritik işler kayıtlı."
+                    if scheduler_status == "ok"
+                    else f"Scheduler running={scheduler_running}, eksik işler: {', '.join(missing_jobs) or 'yok'}."
+                ),
+                remediation="Backend lifespan başlatıldığından ve APScheduler job kayıtlarından emin ol.",
+                metadata={"running": scheduler_running, "job_count": len(scheduler_jobs), "missing_jobs": missing_jobs},
+            )
+        )
+    except Exception as exc:
+        items.append(
+            _diagnostic_item(
+                key="scheduler.jobs",
+                title="Zamanlanmış işler",
+                status="critical",
+                detail=f"Scheduler okunamadı: {exc}",
+                remediation="backend/app/main.py scheduler başlangıcını incele.",
+            )
+        )
+
+    status_rank = {"ok": 0, "warning": 1, "critical": 2}
+    worst = max(items, key=lambda item: status_rank[item["status"]])["status"]
+    overall = "down" if worst == "critical" else "degraded" if worst == "warning" else "healthy"
+    return {
+        "status": overall,
+        "summary": {
+            "ok": sum(1 for item in items if item["status"] == "ok"),
+            "warning": sum(1 for item in items if item["status"] == "warning"),
+            "critical": sum(1 for item in items if item["status"] == "critical"),
+            "total": len(items),
+        },
+        "items": items,
+        "timestamp": now.isoformat(),
     }
 
 

@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime, timezone
 
 from app.services.market_intelligence import MarketIntelligenceService
 
@@ -159,3 +160,70 @@ async def test_unified_feed_filters_stale_company_items(monkeypatch):
 
     assert len(feed) == 1
     assert feed[0]["publisher"] == "TUIK"
+
+
+@pytest.mark.asyncio
+async def test_unified_feed_survives_single_source_failure_and_enriches_ai(monkeypatch):
+    service = MarketIntelligenceService()
+    now = datetime.now(timezone.utc).isoformat()
+
+    async def failing_kap(limit=20):
+        raise RuntimeError("kap down")
+
+    async def fake_official(limit=20):
+        return [
+            {
+                "headline": "TCMB sadeleşme adımı attı",
+                "summary": "Karar bankacılık ve endeks hisseleri için yakından izleniyor.",
+                "source_url": "https://www.tcmb.gov.tr/test",
+                "publisher": "TCMB",
+                "sentiment_score": 0.2,
+                "importance_score": 0.9,
+                "timestamp": now,
+                "category": "macro",
+                "thesis_horizon": "medium_term",
+            }
+        ]
+
+    async def fake_external(limit=20):
+        return []
+
+    monkeypatch.setattr("app.services.market_intelligence.kap_parser.get_recent_feed", failing_kap)
+    monkeypatch.setattr(service, "get_official_feed", fake_official)
+    monkeypatch.setattr("app.services.market_intelligence.external_news_rss_collector.fetch_market_news", fake_external)
+
+    feed = await service.get_unified_feed(limit=10)
+
+    assert len(feed) == 1
+    assert feed[0]["publisher"] == "TCMB"
+    assert feed[0]["ai_summary"]
+    assert feed[0]["ai_assessment"]["label"] == "Olumlu"
+
+
+@pytest.mark.asyncio
+async def test_overview_includes_ai_digest(monkeypatch):
+    service = MarketIntelligenceService()
+
+    async def fake_feed(limit=10):
+        return [
+            {
+                "publisher": "KAP",
+                "headline": "THYAO yeni uçak finansmanı açıkladı",
+                "trigger_id": "thyao",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "importance_score": 0.8,
+                "ai_assessment": {"stance": "positive"},
+                "thesis_horizon": "medium_term",
+            }
+        ]
+
+    async def fake_scenarios(limit=10):
+        return []
+
+    monkeypatch.setattr(service, "get_unified_feed", fake_feed)
+    monkeypatch.setattr(service, "get_unified_scenarios", fake_scenarios)
+
+    overview = await service.get_overview(limit=10)
+
+    assert overview["ai_digest"]["summary"]
+    assert overview["ai_digest"]["generated_by"] == "local_ai_rules"

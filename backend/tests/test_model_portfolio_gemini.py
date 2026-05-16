@@ -1,11 +1,11 @@
-"""Phase 39: _generate_gemini_rationale() unit testleri — LLM-04 doğrulaması."""
+"""Phase 39: _generate_gemini_rationale() compatibility tests — LLM-04 doğrulaması."""
 import pytest
 from unittest.mock import AsyncMock, patch
 
 
 @pytest.mark.asyncio
 async def test_gemini_rationale_with_changes():
-    """Eklenen/çıkarılan hisseler varsa prompt bunları içerir ve Gemini çıktısı döner."""
+    """Eklenen/çıkarılan hisseler varsa prompt bunları içerir ve LLM çıktısı döner."""
     changes = {"added": ["THYAO", "GARAN"], "removed": ["EREGL"], "increased": [], "decreased": [], "unchanged": []}
     mock_response = "Bu hafta model portföy iki hisse ekledi, bir hisseyi çıkardı."
 
@@ -21,7 +21,7 @@ async def test_gemini_rationale_with_changes():
 
 @pytest.mark.asyncio
 async def test_gemini_rationale_no_changes():
-    """Değişiklik yoksa prompt 'büyük değişiklik yapılmadı' içerir."""
+    """Değişiklik yoksa prompt değişiklik yapılmadığını içerir."""
     changes = {"added": [], "removed": [], "increased": [], "decreased": [], "unchanged": []}
     captured: list[str] = []
 
@@ -36,7 +36,7 @@ async def test_gemini_rationale_no_changes():
         from app.services.model_portfolio import _generate_gemini_rationale
         result = await _generate_gemini_rationale(changes, 8)
 
-    assert "büyük değişiklik" in captured[0]
+    assert "önemli bir değişiklik yapılmadı" in captured[0]
     assert result == "Portföy dengede kaldı."
 
 

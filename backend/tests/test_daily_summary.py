@@ -18,7 +18,7 @@ def clear_cache():
 
 @pytest.mark.asyncio
 async def test_cache_miss_calls_gemini():
-    """Cache-miss path: gemini_service.generate is called and from_cache is False."""
+    """Cache-miss path: llm service generate is called and from_cache is False."""
     mock_generate = AsyncMock(return_value="Bugün BIST100 yükseliş eğiliminde.")
     fake_gemini = MagicMock()
     fake_gemini.generate = mock_generate
@@ -71,9 +71,9 @@ async def test_cache_hit_skips_gemini():
 
 @pytest.mark.asyncio
 async def test_gemini_error_returns_fallback_not_500():
-    """When Gemini raises, endpoint returns a fallback string — never a 500."""
+    """When the LLM provider raises, endpoint returns a fallback string — never a 500."""
     async def _failing_generate(*args, **kwargs):
-        raise RuntimeError("Gemini quota exceeded")
+        raise RuntimeError("LLM quota exceeded")
 
     intel_module._summary_cache.clear()
 

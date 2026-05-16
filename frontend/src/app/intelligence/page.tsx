@@ -1,20 +1,28 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import AppShell from '@/components/AppShell';
-import api, { MarketFeedItem, KapNotification } from '@/lib/api';
+import api, { KapNotification, MarketFeedItem } from '@/lib/api';
 import styles from './page.module.css';
 
-// ── Types ──────────────────────────────────────────────────
-
 type FilterTab = 'tumu' | 'kap' | 'piyasa' | 'makro' | 'resmi';
-
 type ImpactLevel = 'high' | 'medium' | 'low';
+
+interface AiAssessment {
+  stance?: string;
+  label?: string;
+  action?: string;
+  reasoning?: string;
+  risk?: string;
+  confidence?: number;
+}
 
 interface FeedEntry {
   id: string;
   headline: string;
   summary?: string;
+  aiSummary?: string;
+  aiAssessment?: AiAssessment | null;
   publisher: string;
   symbol?: string;
   category?: string;
@@ -24,31 +32,46 @@ interface FeedEntry {
   type: 'intelligence' | 'kap';
 }
 
-// ── Helpers ────────────────────────────────────────────────
+const FILTERS: { key: FilterTab; label: string }[] = [
+  { key: 'tumu', label: 'Tümü' },
+  { key: 'kap', label: 'KAP' },
+  { key: 'piyasa', label: 'Piyasa' },
+  { key: 'makro', label: 'Makro' },
+  { key: 'resmi', label: 'Resmi' },
+];
 
 function getImpact(score: number): ImpactLevel {
-  if (score > 0.7) return 'high';
-  if (score > 0.4) return 'medium';
+  if (score >= 0.75) return 'high';
+  if (score >= 0.48) return 'medium';
   return 'low';
 }
 
 function impactLabel(level: ImpactLevel): string {
-  if (level === 'high') return 'Yüksek Etki';
-  if (level === 'medium') return 'Orta Etki';
-  return 'Düşük Etki';
+  if (level === 'high') return 'Yüksek etki';
+  if (level === 'medium') return 'Orta etki';
+  return 'Düşük etki';
 }
 
-function formatTime(iso: string): string {
+function formatTime(iso: string | null | undefined): string {
+  if (!iso) return '-';
   try {
     const d = new Date(iso);
-    const now = new Date();
-    const diffMs = now.getTime() - d.getTime();
-    const diffMin = Math.floor(diffMs / 60000);
+    if (Number.isNaN(d.getTime())) return '-';
+    const diffMin = Math.floor((Date.now() - d.getTime()) / 60000);
     if (diffMin < 1) return 'Az önce';
-    if (diffMin < 60) return `${diffMin}dk önce`;
+    if (diffMin < 60) return `${diffMin} dk önce`;
     const diffH = Math.floor(diffMin / 60);
-    if (diffH < 24) return `${diffH}s önce`;
-    return d.toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    if (diffH < 24) return `${diffH} sa önce`;
+    return d.toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '-';
+  }
+}
+
+function getDomain(url?: string | null): string {
+  if (!url) return '';
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
   } catch {
     return '';
   }
@@ -64,11 +87,10 @@ function isOfficialItem(entry: FeedEntry): boolean {
 
 function isMakroItem(entry: FeedEntry): boolean {
   const cat = (entry.category ?? '').toLowerCase();
-  return ['TCMB', 'TUIK', 'TÜİK', 'HMB'].includes(entry.publisher) || cat === 'macro' || cat === 'makro' || cat.includes('macro') || cat.includes('makro');
+  return ['TCMB', 'TUIK', 'TÜİK', 'HMB'].includes(entry.publisher) || cat.includes('macro') || cat.includes('makro') || cat === 'fiscal';
 }
 
 function isTurkeySource(entry: FeedEntry): boolean {
-  const source = entry.publisher;
   const allowedSources = new Set([
     'KAP',
     'TCMB',
@@ -117,29 +139,23 @@ function isTurkeySource(entry: FeedEntry): boolean {
     'investaz.com.tr',
     'news.google.com',
   ];
-  return allowedSources.has(source) && allowedDomains.some((domain) => url.includes(domain));
-}
-
-function getDomain(url?: string | null): string {
-  if (!url) return '';
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return '';
-  }
+  return allowedSources.has(entry.publisher) && (!url || allowedDomains.some((domain) => url.includes(domain)));
 }
 
 function fromMarketFeedItem(item: MarketFeedItem, index: number): FeedEntry {
+  const importance = item.importance_score ?? Math.min(0.9, Math.max(0.25, Math.abs(item.sentiment_score || 0) + 0.35));
   return {
     id: `intel-${item.trigger_id}-${item.timestamp}-${index}`,
     headline: item.headline,
-    summary: item.original_headline !== item.headline ? item.original_headline : undefined,
+    summary: item.summary ?? item.ai_summary ?? (item.original_headline !== item.headline ? item.original_headline : undefined),
+    aiSummary: item.ai_summary ?? item.summary ?? undefined,
+    aiAssessment: item.ai_assessment ?? null,
     publisher: item.publisher ?? '',
     symbol: item.symbol,
     category: item.category,
     timestamp: item.timestamp,
     sourceUrl: item.source_url,
-    importanceScore: item.importance_score ?? (item.sentiment_score > 0.6 ? 0.75 : item.sentiment_score > 0.3 ? 0.5 : 0.2),
+    importanceScore: importance,
     type: 'intelligence',
   };
 }
@@ -148,104 +164,108 @@ function fromKapNotification(item: KapNotification, index: number): FeedEntry {
   return {
     id: `kap-${item.id}-${item.published_at}-${index}`,
     headline: item.title,
+    summary: 'KAP bildirimi yayınlandı; şirket etkisi fiyat, hacim ve devam bildirimiyle birlikte izlenmeli.',
+    aiSummary: undefined,
+    aiAssessment: {
+      stance: 'neutral',
+      label: 'İzle',
+      action: 'KAP devamını kontrol et',
+      reasoning: item.symbol ? `${item.symbol} için şirket özelinde resmi bildirim.` : 'Resmi KAP bildirimi.',
+      risk: 'Bildirim metni işlem kararından önce detaylı okunmalı.',
+      confidence: 0.68,
+    },
     publisher: 'KAP',
     symbol: item.symbol,
     timestamp: item.published_at,
     sourceUrl: item.kap_url,
-    importanceScore: 0.6,
+    importanceScore: 0.68,
     type: 'kap',
   };
 }
 
-// ── Skeleton ───────────────────────────────────────────────
-
 function SkeletonCards() {
   return (
     <div className={styles.feedList}>
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className={styles.skeletonCard}>
-          <div className={styles.skeletonBar} />
-          <div className={styles.skeletonBody}>
-            <div className={styles.skeletonMeta} />
-            <div className={styles.skeletonTitle} style={{ width: i % 2 === 0 ? '85%' : '72%' }} />
-            <div className={styles.skeletonSub} />
-          </div>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div key={index} className={styles.skeletonCard}>
+          <div className={styles.skeletonMeta} />
+          <div className={styles.skeletonTitle} />
+          <div className={styles.skeletonBody} />
         </div>
       ))}
     </div>
   );
 }
 
-// ── News Card ──────────────────────────────────────────────
-
-function NewsCard({ entry, expanded, onToggle, isNew = false }: {
+function NewsCard({ entry, expanded, onToggle, isNew }: {
   entry: FeedEntry;
   expanded: boolean;
   onToggle: () => void;
-  isNew?: boolean;
+  isNew: boolean;
 }) {
   const impact = getImpact(entry.importanceScore);
-  const label = impactLabel(impact);
+  const assessment = entry.aiAssessment;
 
   return (
-    <div
-      className={`${styles.card} ${expanded ? styles.cardExpanded : ''}`}
+    <article
+      className={`${styles.newsCard} ${expanded ? styles.newsCardExpanded : ''}`}
       onClick={onToggle}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onToggle(); }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') onToggle();
+      }}
     >
-      <div className={`${styles.impactBar} ${styles[`impactBar_${impact}`]}`} />
-
-      <div className={styles.cardBody}>
-        <div className={styles.metaRow}>
-          <span className={styles.publisher}>{entry.publisher}</span>
-          {entry.symbol && (
-            <span className={styles.symbolTag}>{entry.symbol}</span>
-          )}
-          <span className={styles.metaDot}>·</span>
-          <span className={styles.timeStamp}>{formatTime(entry.timestamp)}</span>
-          <div className={styles.spacer} />
-          {isNew && (
-            <span className={styles.newBadge}>Yeni</span>
-          )}
-          <span className={`${styles.impactBadge} ${styles[`impactBadge_${impact}`]}`}>{label}</span>
-        </div>
-
-        <div className={styles.headline}>{entry.headline}</div>
-
-        {entry.summary && !expanded && (
-          <div className={styles.summary}>{entry.summary}</div>
-        )}
-
-        {expanded && (
-          <div className={styles.expandedContent}>
-            {entry.summary && (
-              <div className={styles.expandedSummary}>{entry.summary}</div>
-            )}
-            {entry.sourceUrl && (
-              <a
-                href={entry.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.sourceLink}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {getDomain(entry.sourceUrl) || 'Kaynak'}
-              </a>
-            )}
-          </div>
-        )}
+      <div className={styles.metaRow}>
+        <span className={styles.publisher}>{entry.publisher}</span>
+        {entry.symbol && <span className={styles.symbol}>{entry.symbol}</span>}
+        <span className={styles.time}>{formatTime(entry.timestamp)}</span>
+        {isNew && <span className={styles.newBadge}>Yeni</span>}
+        <span className={`${styles.impactBadge} ${styles[`impact_${impact}`]}`}>{impactLabel(impact)}</span>
       </div>
-    </div>
+
+      <h2 className={styles.headline}>{entry.headline}</h2>
+      {entry.summary && <p className={styles.summary}>{entry.summary}</p>}
+
+      <div className={styles.aiBox}>
+        <div>
+          <span>AI görüşü</span>
+          <strong>{assessment?.label ?? 'İzle'}</strong>
+        </div>
+        <div>
+          <span>Aksiyon</span>
+          <strong>{assessment?.action ?? 'Teknik teyit bekle'}</strong>
+        </div>
+        <div>
+          <span>Güven</span>
+          <strong>{assessment?.confidence != null ? `${Math.round(assessment.confidence * 100)}%` : '-'}</strong>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className={styles.expanded}>
+          {assessment?.reasoning && (
+            <p><strong>Gerekçe:</strong> {assessment.reasoning}</p>
+          )}
+          {assessment?.risk && (
+            <p><strong>Risk:</strong> {assessment.risk}</p>
+          )}
+          {entry.sourceUrl && (
+            <a href={entry.sourceUrl} target="_blank" rel="noopener noreferrer" onClick={(event) => event.stopPropagation()}>
+              {getDomain(entry.sourceUrl) || 'Kaynağı aç'}
+            </a>
+          )}
+        </div>
+      )}
+    </article>
   );
 }
-
-// ── Page ──────────────────────────────────────────────────
 
 export default function IntelligencePage() {
   const [entries, setEntries] = useState<FeedEntry[]>([]);
   const [dailySummary, setDailySummary] = useState<string | null>(null);
+  const [aiDigest, setAiDigest] = useState<string | null>(null);
+  const [sourceSummary, setSourceSummary] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterTab>('tumu');
@@ -261,7 +281,6 @@ export default function IntelligencePage() {
     const timer = window.setInterval(() => {
       void loadData({ silent: true });
     }, 10000);
-
     return () => window.clearInterval(timer);
   }, []);
 
@@ -273,22 +292,27 @@ export default function IntelligencePage() {
     } else {
       setLoading(true);
     }
-    setError(null);
+    if (!options?.silent) setError(null);
+
     try {
       const [overview, kapFeed] = await Promise.allSettled([
-        api.getIntelligenceOverview(50),
-        api.getKapFeed(20),
+        api.getIntelligenceOverview(60),
+        api.getKapFeed(30),
       ]);
 
-      const intelligenceEntries: FeedEntry[] =
+      const intelligenceEntries =
         overview.status === 'fulfilled'
-          ? overview.value.feed.map(fromMarketFeedItem).filter((entry) => entry.sourceUrl && entry.publisher && isTurkeySource(entry))
+          ? overview.value.feed.map(fromMarketFeedItem).filter((entry) => entry.publisher && isTurkeySource(entry))
+          : [];
+      const kapEntries =
+        kapFeed.status === 'fulfilled'
+          ? kapFeed.value.map(fromKapNotification).filter((entry) => isTurkeySource(entry))
           : [];
 
-      const kapEntries: FeedEntry[] =
-        kapFeed.status === 'fulfilled'
-          ? kapFeed.value.map(fromKapNotification).filter((entry) => entry.sourceUrl && isTurkeySource(entry))
-          : [];
+      if (overview.status === 'fulfilled') {
+        setAiDigest(overview.value.ai_digest?.summary ?? null);
+        setSourceSummary(overview.value.source_summary ?? {});
+      }
 
       const seen = new Set<string>();
       const merged = [...intelligenceEntries, ...kapEntries].filter((entry) => {
@@ -299,31 +323,32 @@ export default function IntelligencePage() {
       });
       merged.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-      const previousIds = seenEntryIdsRef.current;
-      const nextIds = new Set(merged.map((entry) => entry.id));
-      const incomingIds = options?.silent
-        ? new Set(merged.filter((entry) => !previousIds.has(entry.id)).map((entry) => entry.id))
-        : new Set<string>();
+      if (merged.length > 0) {
+        const previousIds = seenEntryIdsRef.current;
+        const nextIds = new Set(merged.map((entry) => entry.id));
+        const incomingIds = options?.silent
+          ? new Set(merged.filter((entry) => !previousIds.has(entry.id)).map((entry) => entry.id))
+          : new Set<string>();
 
-      setEntries(merged);
-      setNewEntryIds(incomingIds);
-      setLastUpdated(new Date().toISOString());
-      seenEntryIdsRef.current = nextIds;
+        setEntries(merged);
+        setNewEntryIds(incomingIds);
+        setLastUpdated(new Date().toISOString());
+        seenEntryIdsRef.current = nextIds;
+        setError(null);
 
-      // Non-blocking — banner is optional; never blocks feed loading
-      api.getDailySummary().then((r) => setDailySummary(r.summary)).catch(() => null);
-
-      if (incomingIds.size > 0) {
-        window.setTimeout(() => {
-          setNewEntryIds(new Set());
-        }, 8000);
+        if (incomingIds.size > 0) {
+          window.setTimeout(() => setNewEntryIds(new Set()), 8000);
+        }
+      } else if (!options?.silent) {
+        setEntries([]);
+        setError('Haber akışı şu anda boş. Kaynaklar yeniden denenecek.');
       }
 
-      if (intelligenceEntries.length === 0 && kapEntries.length === 0) {
-        setError('Haber verisi alınamadı');
-      }
+      void api.getDailySummary().then((result) => setDailySummary(result.summary)).catch(() => null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Veriler alınamadı');
+      if (!options?.silent) {
+        setError(err instanceof Error ? err.message : 'Haberler alınamadı');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -331,39 +356,86 @@ export default function IntelligencePage() {
     }
   }
 
-  const filtered = entries.filter((e) => {
+  const filtered = entries.filter((entry) => {
     if (filter === 'tumu') return true;
-    if (filter === 'kap') return isKapItem(e);
-    if (filter === 'resmi') return isOfficialItem(e);
-    if (filter === 'makro') return isMakroItem(e);
-    if (filter === 'piyasa') return !isKapItem(e) && !isMakroItem(e);
+    if (filter === 'kap') return isKapItem(entry);
+    if (filter === 'resmi') return isOfficialItem(entry);
+    if (filter === 'makro') return isMakroItem(entry);
+    if (filter === 'piyasa') return !isKapItem(entry) && !isMakroItem(entry);
     return true;
   });
 
-  const FILTERS: { key: FilterTab; label: string }[] = [
-    { key: 'tumu', label: 'Tümü' },
-    { key: 'kap', label: 'KAP' },
-    { key: 'piyasa', label: 'Piyasa' },
-    { key: 'makro', label: 'Makro' },
-    { key: 'resmi', label: 'Resmi' },
-  ];
+  const topSources = useMemo(() => {
+    const fallback = entries.reduce<Record<string, number>>((acc, entry) => {
+      acc[entry.publisher] = (acc[entry.publisher] ?? 0) + 1;
+      return acc;
+    }, {});
+    return Object.entries(Object.keys(sourceSummary).length ? sourceSummary : fallback)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
+  }, [entries, sourceSummary]);
 
   const sourceCount = new Set(entries.map((entry) => entry.publisher)).size;
+  const kapCount = entries.filter(isKapItem).length;
+  const highImpactCount = entries.filter((entry) => getImpact(entry.importanceScore) === 'high').length;
   const latestEntry = entries[0];
+  const heroSummary = aiDigest || dailySummary || 'Haber akışı hazırlanıyor. Sistem KAP, resmi kurumlar ve Türkiye piyasa kaynaklarını birlikte tarıyor.';
 
   return (
     <AppShell>
-      <div className={styles.page}>
-        {/* Header */}
-        <div className={styles.pageHeader}>
-          <div className={styles.headerLeft}>
-            <p className={styles.eyebrow}>TÜRKİYE · TÜRKÇE KAYNAKLAR</p>
-            <h1 className={styles.pageTitle}>Haberler</h1>
+      <main className={styles.page}>
+        <section className={styles.hero}>
+          <div className={styles.heroCopy}>
+            <span className={styles.eyebrow}>Haber Radarı</span>
+            <h1>BIST haber akışı ve AI etkisi</h1>
+            <p>{heroSummary}</p>
+            <div className={styles.heroFacts}>
+              <div>
+                <span>Kaynak</span>
+                <strong>{sourceCount || '-'}</strong>
+              </div>
+              <div>
+                <span>KAP</span>
+                <strong>{kapCount || '-'}</strong>
+              </div>
+              <div>
+                <span>Yüksek etki</span>
+                <strong>{highImpactCount || '-'}</strong>
+              </div>
+            </div>
           </div>
+
+          <aside className={styles.statusCard}>
+            <div className={styles.statusTop}>
+              <span className={refreshing ? styles.liveRefreshing : styles.liveIdle} />
+              <div>
+                <strong>{refreshing ? 'Yenileniyor' : 'Canlı akış'}</strong>
+                <p>{lastUpdated ? `Son kontrol ${formatTime(lastUpdated)}` : 'İlk veri bekleniyor'}</p>
+              </div>
+            </div>
+            <div className={styles.statusRows}>
+              <div>
+                <span>Son haber</span>
+                <strong>{latestEntry ? formatTime(latestEntry.timestamp) : '-'}</strong>
+              </div>
+              <div>
+                <span>Öncelik</span>
+                <strong>KAP + resmi + piyasa</strong>
+              </div>
+              <div>
+                <span>Kapsam</span>
+                <strong>Türkiye kaynakları</strong>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section className={styles.toolbar}>
           <div className={styles.filterPills}>
             {FILTERS.map(({ key, label }) => (
               <button
                 key={key}
+                type="button"
                 className={`${styles.pill} ${filter === key ? styles.pillActive : ''}`}
                 onClick={() => setFilter(key)}
               >
@@ -371,56 +443,67 @@ export default function IntelligencePage() {
               </button>
             ))}
           </div>
-        </div>
+          <button type="button" className={styles.refreshButton} onClick={() => void loadData()}>
+            Yenile
+          </button>
+        </section>
 
-        <div className={styles.scopeRail}>
-          <span>TR</span>
-          <span>Türkçe</span>
-          <span>{sourceCount > 0 ? `${sourceCount} kaynak` : 'Kaynak bekleniyor'}</span>
-          <span>{latestEntry ? `Son: ${formatTime(latestEntry.timestamp)}` : 'Son veri yok'}</span>
-          <span className={refreshing ? styles.liveRefreshing : styles.liveIdle}>
-            {refreshing ? 'Yenileniyor' : lastUpdated ? `Canlı: ${formatTime(lastUpdated)}` : 'Canlı'}
-          </span>
-        </div>
+        {error && <div className={styles.errorMsg}>{error}</div>}
 
-        {/* ─── Günlük AI Piyasa Özeti ─── */}
-        {dailySummary && (
-          <div className={styles.aiSummaryBanner}>
-            <span className={styles.aiSummaryIcon}>✦</span>
-            <div className={styles.aiSummaryText}>
-              <span className={styles.aiSummaryLabel}>Günlük Piyasa Özeti</span>
-              <p className={styles.aiSummaryBody}>{dailySummary}</p>
+        <section className={styles.contentGrid}>
+          <div className={styles.feedPanel}>
+            <div className={styles.panelHeader}>
+              <div>
+                <span className={styles.eyebrow}>Akış</span>
+                <h2>{filter === 'tumu' ? 'Öne çıkan haberler' : `${FILTERS.find((item) => item.key === filter)?.label} haberleri`}</h2>
+              </div>
+              <span>{filtered.length} kayıt</span>
             </div>
-          </div>
-        )}
 
-        {/* Content */}
-        {error && (
-          <div className={styles.errorMsg}>{error}</div>
-        )}
+            {loading ? (
+              <SkeletonCards />
+            ) : filtered.length === 0 ? (
+              <div className={styles.emptyState}>
+                <strong>Bu filtrede haber yok</strong>
+                <p>Akış geldiğinde burada özet ve AI değerlendirmesiyle gösterilecek.</p>
+              </div>
+            ) : (
+              <div className={styles.feedList}>
+                {filtered.map((entry) => (
+                  <NewsCard
+                    key={entry.id}
+                    entry={entry}
+                    expanded={expandedId === entry.id}
+                    onToggle={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
+                    isNew={newEntryIds.has(entry.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
 
-        {loading ? (
-          <SkeletonCards />
-        ) : filtered.length === 0 ? (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>📭</div>
-            <div className={styles.emptyTitle}>Haber bulunamadı</div>
-            <p className={styles.emptyDesc}>Bu filtreyle eşleşen haber bulunamadı. Filtre seçimini değiştirin.</p>
-          </div>
-        ) : (
-          <div className={styles.feedList}>
-            {filtered.map((entry) => (
-              <NewsCard
-                key={entry.id}
-                entry={entry}
-                expanded={expandedId === entry.id}
-                onToggle={() => setExpandedId(expandedId === entry.id ? null : entry.id)}
-                isNew={newEntryIds.has(entry.id)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+          <aside className={styles.digestPanel}>
+            <div className={styles.digestCard}>
+              <span className={styles.eyebrow}>Günlük Özet</span>
+              <p>{dailySummary || 'Günlük piyasa özeti hazırlanıyor.'}</p>
+            </div>
+
+            <div className={styles.digestCard}>
+              <span className={styles.eyebrow}>Kaynak Dağılımı</span>
+              <div className={styles.sourceList}>
+                {topSources.length > 0 ? topSources.map(([source, count]) => (
+                  <div key={source}>
+                    <span>{source}</span>
+                    <strong>{count}</strong>
+                  </div>
+                )) : (
+                  <p className={styles.muted}>Kaynak verisi bekleniyor.</p>
+                )}
+              </div>
+            </div>
+          </aside>
+        </section>
+      </main>
     </AppShell>
   );
 }

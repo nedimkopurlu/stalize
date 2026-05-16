@@ -3,6 +3,7 @@ Fundamental Analysis Service
 Fetches and calculates fundamental data using yfinance.
 """
 import logging
+import math
 from typing import Dict, Any, Optional
 import yfinance as yf
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,7 +21,7 @@ class FundamentalAnalysisEngine:
     def _safe_float(value: Any) -> Optional[float]:
         try:
             val = float(value)
-            if val != val:  # check for NaN
+            if val != val or not math.isfinite(val):  # check for NaN/inf
                 return None
             return val
         except (ValueError, TypeError):

@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 from httpx import AsyncClient, ASGITransport
 from app.main import app
 
-MOCK_ANALYSIS = "AKBNK için Gemini analizi: Güçlü finansal göstergeler."
+MOCK_ANALYSIS = "AKBNK için OpenAI analizi: Güçlü finansal göstergeler."
 
 
 @pytest.mark.asyncio

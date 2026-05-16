@@ -279,7 +279,7 @@ async def _generate_gemini_rationale(
 
     change_section = "\n".join(change_lines)
 
-    prompt = f"""Haftalık BIST100 model portföyü AI tarafından güncellendi. Yatırımcılara bu kararları açıkla.
+    prompt = f"""Haftalık BIST model portföyü AI tarafından güncellendi. Yatırımcılara bu kararları açıkla.
 
 ## Portföy Özeti
 - Toplam hisse sayısı: {holdings_count}
@@ -540,7 +540,7 @@ async def generate_weekly_model_portfolio(force: bool = False, target_date: Opti
 
         await db.commit()
 
-    # ── Gemini haftalık gerekçe (LLM-04) ──────────────────────────────────
+    # ── OpenAI haftalık gerekçe (LLM-04) ──────────────────────────────────
     try:
         # Önceki haftayla karşılaştırarak değişiklikleri hesapla
         previous_week_holdings: list[ModelPortfolioHolding] = []
@@ -558,22 +558,22 @@ async def generate_weekly_model_portfolio(force: bool = False, target_date: Opti
                 self.allocation_pct = 0
 
         current_fakes = [_FakeHolding(s.symbol) for s in selected]
-        changes_for_gemini = _summarize_week_changes(current_fakes, previous_week_holdings)  # type: ignore[arg-type]
+        changes_for_llm = _summarize_week_changes(current_fakes, previous_week_holdings)  # type: ignore[arg-type]
 
-        gemini_text = await _generate_gemini_rationale(changes_for_gemini, len(selected), selected_stocks=selected)
+        llm_text = await _generate_gemini_rationale(changes_for_llm, len(selected), selected_stocks=selected)
 
-        if gemini_text and FALLBACK_MESSAGE not in gemini_text:
+        if llm_text and FALLBACK_MESSAGE not in llm_text:
             async with AsyncSessionLocal() as update_db:
                 upd_result = await update_db.execute(
                     select(ModelPortfolioWeek).where(ModelPortfolioWeek.id == week.id)
                 )
                 w = upd_result.scalar_one_or_none()
                 if w:
-                    w.review_summary = gemini_text
+                    w.review_summary = llm_text
                     await update_db.commit()
-            logger.info(f"MODEL_PORTFOLIO Gemini gerekçe yazıldı (week_id={week.id})")
+            logger.info(f"MODEL_PORTFOLIO OpenAI gerekçe yazıldı (week_id={week.id})")
     except Exception as _e:
-        logger.warning(f"Gemini haftalık gerekçe üretilemedi — deterministik fallback korunuyor: {_e}")
+        logger.warning(f"OpenAI haftalık gerekçe üretilemedi — deterministik fallback korunuyor: {_e}")
 
     await take_model_portfolio_snapshot(for_week_start=week_start)
     payload = await get_current_model_portfolio()

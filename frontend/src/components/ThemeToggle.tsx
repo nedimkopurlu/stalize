@@ -1,31 +1,41 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 
-function getPreferredTheme(): 'dark' | 'light' {
-  const stored = window.localStorage.getItem('stalize-theme');
+type Theme = 'dark' | 'light';
+
+const THEME_KEY = 'stalize-theme';
+const THEME_CHANGE_EVENT = 'stalize-theme-change';
+
+function getPreferredTheme(): Theme {
+  if (typeof window === 'undefined') return 'dark';
+  const stored = window.localStorage.getItem(THEME_KEY);
   if (stored === 'light' || stored === 'dark') return stored;
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 }
 
+function subscribeTheme(listener: () => void) {
+  window.addEventListener('storage', listener);
+  window.addEventListener(THEME_CHANGE_EVENT, listener);
+
+  return () => {
+    window.removeEventListener('storage', listener);
+    window.removeEventListener(THEME_CHANGE_EVENT, listener);
+  };
+}
+
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [hasHydrated, setHasHydrated] = useState(false);
+  const theme = useSyncExternalStore(subscribeTheme, getPreferredTheme, () => 'dark');
 
   useEffect(() => {
-    setTheme(getPreferredTheme());
-    setHasHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hasHydrated) return;
     document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem('stalize-theme', theme);
-  }, [hasHydrated, theme]);
+    window.localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
 
   function toggleTheme() {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
+    window.localStorage.setItem(THEME_KEY, nextTheme);
+    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
   }
 
   return (

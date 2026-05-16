@@ -1,8 +1,12 @@
 """Shared test fixtures for Phase 1 Foundation Repair tests."""
 import asyncio
+import os
 import pytest
 from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
+
+os.environ.setdefault("ENVIRONMENT", "test")
+os.environ.setdefault("RUN_FULL_INITIAL_LOAD_ON_STARTUP", "false")
 
 
 @pytest.fixture(scope="session")

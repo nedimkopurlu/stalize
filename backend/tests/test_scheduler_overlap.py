@@ -112,3 +112,15 @@ async def test_model_portfolio_generation_not_intraday_forced():
     jobs = await _get_all_jobs_via_lifespan()
     job = next(job for job in jobs if job.func.__name__ == "background_model_portfolio_generate")
     assert getattr(job.trigger, "interval", None) >= timedelta(hours=6)
+
+
+@pytest.mark.asyncio
+async def test_signal_tracking_jobs_are_scheduled():
+    """Signal snapshots and outcome evaluations must run automatically on weekdays."""
+    jobs = await _get_all_jobs_via_lifespan()
+    job_funcs = {job.func.__name__: job for job in jobs}
+
+    assert "background_signal_snapshot" in job_funcs
+    assert "background_signal_outcome_evaluation" in job_funcs
+    assert getattr(job_funcs["background_signal_snapshot"], "max_instances", None) == 1
+    assert getattr(job_funcs["background_signal_outcome_evaluation"], "misfire_grace_time", None) == 300

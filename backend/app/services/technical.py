@@ -421,7 +421,7 @@ class TechnicalAnalysisEngine:
         return round(float(last_close) - 2 * float(atr), 2)
 
     def _compute_target_price(self, df: pd.DataFrame) -> Optional[float]:
-        """İlk direnç (SGNL-01): son 20 bar içindeki last_close üstündeki en yüksek high."""
+        """İlk direnç; direnç yoksa last_close üstüne %5 güvenli hedef."""
         if len(df) < 1:
             return None
         last_close = df["close"].iloc[-1]
@@ -430,7 +430,7 @@ class TechnicalAnalysisEngine:
         window = df["high"].tail(20)
         above = window[window > float(last_close)]
         if len(above) == 0:
-            return None
+            return round(float(last_close) * 1.05, 2)
         return round(float(above.max()), 2)
 
     # ─── RSI DIVERGENCE (SGNL-03) ────────────────────────────────────────
@@ -516,7 +516,33 @@ class TechnicalAnalysisEngine:
 
             if len(prices) < 50:
                 logger.warning(f"{symbol}: Yetersiz fiyat verisi ({len(prices)} gün)")
-                return None
+                stock.technical_score = stock.technical_score if stock.technical_score is not None else 50.0
+                await db.commit()
+                current = stock.current_price
+                return {
+                    "symbol": symbol,
+                    "score": stock.technical_score,
+                    "recommendation": stock.recommendation or "TUT",
+                    "signals": [],
+                    "support": None,
+                    "resistance": None,
+                    "stop_loss": round(current * 0.92, 2) if current else None,
+                    "target_price": round(current * 1.12, 2) if current else None,
+                    "indicators": {
+                        "last_close": current,
+                        "rsi_14": None,
+                        "macd": None,
+                        "macd_signal": None,
+                        "adx": None,
+                        "bb_width": None,
+                        "sma_50": None,
+                        "sma_200": None,
+                        "ema_trend_score": 50.0,
+                    },
+                    "ema_50": [],
+                    "ema_200": [],
+                    "status": "insufficient_history",
+                }
 
             # Build DataFrame
             data = {
@@ -607,8 +633,8 @@ class TechnicalAnalysisEngine:
     # ─── ANALYZE ALL STOCKS ──────────────────────────────────────────────
 
     async def analyze_all(self):
-        """Run technical analysis for all BIST100 stocks."""
-        logger.info("📊 Teknik analiz başlıyor (tüm BIST100)...")
+        """Run technical analysis for all active BIST stocks."""
+        logger.info("📊 Teknik analiz başlıyor (tüm aktif BIST hisseleri)...")
 
         async with AsyncSessionLocal() as db:
             result = await db.execute(select(Stock.symbol).where(Stock.is_active))
